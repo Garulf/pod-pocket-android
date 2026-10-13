@@ -50,7 +50,6 @@ import au.com.shiftyjelly.pocketcasts.compose.components.EmailAndPasswordFields
 import au.com.shiftyjelly.pocketcasts.compose.components.TextC50
 import au.com.shiftyjelly.pocketcasts.compose.components.TextH40
 import au.com.shiftyjelly.pocketcasts.compose.components.TextP40
-import au.com.shiftyjelly.pocketcasts.compose.components.TextP50
 import au.com.shiftyjelly.pocketcasts.compose.preview.ThemePreviewParameterProvider
 import au.com.shiftyjelly.pocketcasts.compose.theme
 import au.com.shiftyjelly.pocketcasts.models.type.Subscription
@@ -140,6 +139,8 @@ internal fun OnboardingLoginPage(
                 onUpdatePassword = viewModel::updatePassword,
                 isCreatingAccount = false,
                 emailPlaceholder = stringResource(R.string.pod_pocket_username_or_email),
+                emailErrorMessage = stringResource(R.string.pod_pocket_username_required),
+                passwordErrorMessage = stringResource(R.string.pod_pocket_password_required),
                 modifier = Modifier.padding(vertical = 16.dp),
             )
 
@@ -167,6 +168,7 @@ internal fun OnboardingLoginPage(
             ContinueWithoutAccountButton(
                 viewModel = serverUrlViewModel,
                 onContinue = onContinueWithoutAccount,
+                enabled = state.enableSubmissionFields,
             )
 
             if (viewModel.showContinueWithGoogleButton && !(flow is OnboardingFlow.Upsell || flow is OnboardingFlow.UpsellSuggestedFolder)) {

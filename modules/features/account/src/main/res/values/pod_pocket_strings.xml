@@ -7,4 +7,9 @@
     <string name="pod_pocket_server_unreachable">Could not reach the server (%1$s). Check the address and try again.</string>
     <string name="pod_pocket_username_or_email">Username or email</string>
     <string name="pod_pocket_continue_without_account">Continue without an account</string>
+    <string name="pod_pocket_server_not_pod_pocket">This server is not a Pod Pocket server</string>
+    <string name="pod_pocket_username_required">Enter your username or email</string>
+    <string name="pod_pocket_password_required">Enter your password</string>
+    <string name="pod_pocket_sign_in">Sign in</string>
+    <string name="pod_pocket_get_started_copy">Sign in to sync your listening experience across all your devices.</string>
 </resources>

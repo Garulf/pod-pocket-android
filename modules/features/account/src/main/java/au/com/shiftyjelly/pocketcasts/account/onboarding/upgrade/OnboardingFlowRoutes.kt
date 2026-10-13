@@ -12,6 +12,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import au.com.shiftyjelly.pocketcasts.account.onboarding.AccountBenefitsPage
 import au.com.shiftyjelly.pocketcasts.account.onboarding.OnboardingCreateAccountPage
+import au.com.shiftyjelly.pocketcasts.account.R
 import au.com.shiftyjelly.pocketcasts.account.onboarding.OnboardingForgotPasswordPage
 import au.com.shiftyjelly.pocketcasts.account.onboarding.OnboardingGetStartedPage
 import au.com.shiftyjelly.pocketcasts.account.onboarding.OnboardingLoginOrSignUpPage
@@ -254,7 +255,7 @@ object OnboardingFlowRoutes {
             AppTheme(theme) {
                 AccountBenefitsPage(
                     mainCtaColor = MaterialTheme.theme.colors.primaryInteractive01,
-                    mainCtaLabel = stringResource(LR.string.onboarding_create_account),
+                    mainCtaLabel = stringResource(R.string.pod_pocket_sign_in),
                     onGetStartedClick = {
                         viewModel.onGetStartedClick()
                         navController.navigate(ROUTE_SIGN_UP)

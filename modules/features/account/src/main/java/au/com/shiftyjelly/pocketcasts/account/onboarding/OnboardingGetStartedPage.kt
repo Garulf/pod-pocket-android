@@ -236,7 +236,7 @@ private fun Content(
             Spacer(Modifier.height(8.dp))
 
             TextH40(
-                text = stringResource(LR.string.onboarding_create_an_account_to),
+                text = stringResource(R.string.pod_pocket_get_started_copy),
                 modifier = Modifier
                     .padding(horizontal = 24.dp)
                     .fillMaxWidth(),

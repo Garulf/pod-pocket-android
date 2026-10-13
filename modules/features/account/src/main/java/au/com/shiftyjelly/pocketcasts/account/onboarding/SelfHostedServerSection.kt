@@ -21,6 +21,7 @@ import au.com.shiftyjelly.pocketcasts.compose.buttons.RowOutlinedButton
 import au.com.shiftyjelly.pocketcasts.compose.components.FormField
 import au.com.shiftyjelly.pocketcasts.compose.components.TextP40
 import au.com.shiftyjelly.pocketcasts.compose.theme
+import au.com.shiftyjelly.pocketcasts.selfhosted.NOT_POD_POCKET_REASON
 import au.com.shiftyjelly.pocketcasts.selfhosted.ServerStatus
 import au.com.shiftyjelly.pocketcasts.selfhosted.ServerUrlViewModel
 
@@ -61,12 +62,16 @@ internal fun SelfHostedServerField(
 internal fun ContinueWithoutAccountButton(
     viewModel: ServerUrlViewModel,
     onContinue: () -> Unit,
+    enabled: Boolean,
     modifier: Modifier = Modifier,
 ) {
+    val state by viewModel.state.collectAsState()
+
     RowOutlinedButton(
         text = stringResource(R.string.pod_pocket_continue_without_account),
         onClick = { viewModel.checkConnection(onContinue) },
         includePadding = false,
+        enabled = enabled && state.status != ServerStatus.Checking,
         modifier = modifier,
     )
 }
@@ -77,7 +82,11 @@ private fun ServerStatus.message(): String? = when (this) {
     ServerStatus.Invalid -> stringResource(R.string.pod_pocket_server_url_invalid)
     ServerStatus.Checking -> stringResource(R.string.pod_pocket_server_checking)
     is ServerStatus.Reachable -> stringResource(R.string.pod_pocket_server_reachable, host)
-    is ServerStatus.Unreachable -> stringResource(R.string.pod_pocket_server_unreachable, reason)
+    is ServerStatus.Unreachable -> if (reason == NOT_POD_POCKET_REASON) {
+        stringResource(R.string.pod_pocket_server_not_pod_pocket)
+    } else {
+        stringResource(R.string.pod_pocket_server_unreachable, reason)
+    }
 }
 
 @Composable

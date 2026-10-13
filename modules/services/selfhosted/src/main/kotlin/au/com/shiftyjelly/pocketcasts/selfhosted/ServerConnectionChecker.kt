@@ -23,6 +23,8 @@ sealed interface ConnectionResult {
     data class Unreachable(val reason: String) : ConnectionResult
 }
 
+const val NOT_POD_POCKET_REASON = "not a Pod Pocket server"
+
 class OkHttpServerConnectionChecker(
     client: OkHttpClient,
 ) : ServerConnectionChecker {
@@ -72,7 +74,7 @@ class OkHttpServerConnectionChecker(
 
     private companion object {
         const val MAX_BODY_BYTES = 64L * 1024
-        val NOT_POD_POCKET = ConnectionResult.Unreachable("not a Pod Pocket server")
+        val NOT_POD_POCKET = ConnectionResult.Unreachable(NOT_POD_POCKET_REASON)
         val healthAdapter = Moshi.Builder().build()
             .adapter<Map<String, Any?>>(Types.newParameterizedType(Map::class.java, String::class.java, Any::class.java))
     }
