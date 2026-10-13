@@ -180,6 +180,7 @@ internal data class AccountSectionsState(
         winbackInitParams = winbackInitParams,
         availableSections = buildList {
             addAll(AccountSection.entries)
+            removeAll(AccountSection.unsupportedByServer)
             if (email == null) {
                 remove(AccountSection.ChangeAvatar)
             }
@@ -268,6 +269,14 @@ internal enum class AccountSection(
     ;
 
     companion object {
+        val unsupportedByServer = setOf(
+            ChangeAvatar,
+            ChangeEmail,
+            ChangePassword,
+            CancelSubscription,
+            DeleteAccount,
+        )
+
         val groupedSections = listOf(
             listOf(
                 ChangeAvatar,
