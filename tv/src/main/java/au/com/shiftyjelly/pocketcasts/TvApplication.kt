@@ -19,6 +19,8 @@ import au.com.shiftyjelly.pocketcasts.utils.featureflag.providers.PreferencesFea
 import au.com.shiftyjelly.pocketcasts.utils.log.LogBuffer
 import au.com.shiftyjelly.pocketcasts.utils.log.LogBufferUncaughtExceptionHandler
 import au.com.shiftyjelly.pocketcasts.utils.log.RxJavaUncaughtExceptionHandling
+import coil3.ImageLoader
+import coil3.SingletonImageLoader
 import com.google.firebase.FirebaseApp
 import dagger.hilt.android.HiltAndroidApp
 import java.io.File
@@ -59,10 +61,13 @@ class TvApplication :
 
     @Inject lateinit var initializeRemoteLogging: InitializeRemoteLogging
 
+    @Inject lateinit var coilImageLoader: ImageLoader
+
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     override fun onCreate() {
         super.onCreate()
+        SingletonImageLoader.setSafe { coilImageLoader }
         if (BuildConfig.DEBUG) {
             Timber.plant(TimberDebugTree())
         }

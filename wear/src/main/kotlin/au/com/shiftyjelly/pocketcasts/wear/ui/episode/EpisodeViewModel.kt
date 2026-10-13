@@ -95,6 +95,7 @@ class EpisodeViewModel @Inject constructor(
     private val audioOutputSelectorHelper: AudioOutputSelectorHelper,
     private val userEpisodeManager: UserEpisodeManager,
     @DefaultDispatcher private val backgroundDispatcher: CoroutineDispatcher,
+    private val imageLoader: ImageLoader,
 ) : AndroidViewModel(appContext as Application) {
     private var playAttempt: Job? = null
     private val sourceView = SourceView.EPISODE_DETAILS
@@ -453,13 +454,12 @@ class EpisodeViewModel @Inject constructor(
 
     private suspend fun extractColorFromEpisodeArtwork(userEpisode: UserEpisode): Color = userEpisode.artworkUrl?.let { artworkUrl ->
         val context = getApplication<Application>()
-        val loader = ImageLoader(context)
         val request = ImageRequest.Builder(context)
             .data(artworkUrl)
             .allowHardware(false) // Disable hardware bitmaps.
             .build()
 
-        val successResult = loader.execute(request) as? SuccessResult
+        val successResult = imageLoader.execute(request) as? SuccessResult
             ?: return@let null
         val bitmap = successResult.image.toBitmap()
 
