@@ -792,6 +792,10 @@
             android:name="au.com.shiftyjelly.pocketcasts.engage.EngageSdkBroadcastReceiver"
             tools:node="remove" />
 
+        <activity
+            android:name="au.com.shiftyjelly.pocketcasts.profile.cloud.AddFileActivity"
+            tools:node="remove" />
+
         <!-- Samsung Carmode -->
         <meta-data android:name="com.sec.android.automotive.drivelink.notification.SmallIcon" android:resource="@drawable/notification"/>
 

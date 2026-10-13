@@ -1824,9 +1824,7 @@ class MainActivity :
                     addFragment(ShareListIncomingFragment.newInstance(deepLink.path, SourceView.fromString(deepLink.sourceView)))
                 }
 
-                is CloudFilesDeepLink -> {
-                    openCloudFiles()
-                }
+                is CloudFilesDeepLink -> Unit
 
                 is UpsellDeepLink -> {
                     closePlayer()

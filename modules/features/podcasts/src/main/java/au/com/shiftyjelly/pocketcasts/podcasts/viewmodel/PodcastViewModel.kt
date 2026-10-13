@@ -892,7 +892,7 @@ private fun Flowable<CombinedData>.buildUiState(
                 .asFlowable()
                 .doOnNext {
                     // load the recommendations after the episodes have been loaded
-                    recommendationsHandler.setEnabled(true)
+                    recommendationsHandler.setEnabled(false)
                 }
                 .map {
                     val sortFunction = podcast.grouping.sortFunction
