@@ -149,23 +149,16 @@ jobs:
           VERSION: ${{ needs.apk.outputs.version }}
           SIGNED: ${{ needs.apk.outputs.signed }}
         run: |
-          if [ "$SIGNED" = "true" ]; then
-            asset="pod-pocket-$VERSION.apk"
-            stale_asset="pod-pocket-$VERSION-debug.apk"
-            prerelease=false
-            title="Pod Pocket $VERSION"
-            notes="Signed release build of Pod Pocket $VERSION."
-          else
-            asset="pod-pocket-$VERSION-debug.apk"
-            stale_asset="pod-pocket-$VERSION.apk"
-            prerelease=true
-            title="Pod Pocket $VERSION (debug build)"
-            notes="Debug build of Pod Pocket $VERSION, signed with the public debug key. It installs side by side with a release build as net.garulf.podpocket.debug."
+          if [ "$SIGNED" != "true" ]; then
+            echo "::error::Publishing a release needs the signing secrets KEYSTORE_BASE64, KEYSTORE_PASSWORD, KEY_ALIAS and KEY_PASSWORD. The debug APK is only available as a CI artifact."
+            exit 1
           fi
+          asset="dist/pod-pocket-$VERSION.apk"
+          title="Pod Pocket $VERSION"
+          notes="Signed release build of Pod Pocket $VERSION."
           if gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1; then
-            gh release upload "$GITHUB_REF_NAME" "dist/$asset" --clobber
-            gh release delete-asset "$GITHUB_REF_NAME" "$stale_asset" --yes || true
-            gh release edit "$GITHUB_REF_NAME" --title "$title" --notes "$notes" --prerelease="$prerelease"
+            gh release upload "$GITHUB_REF_NAME" "$asset" --clobber
+            gh release edit "$GITHUB_REF_NAME" --title "$title" --notes "$notes" --prerelease=false
           else
-            gh release create "$GITHUB_REF_NAME" "dist/$asset" --title "$title" --notes "$notes" --prerelease="$prerelease"
+            gh release create "$GITHUB_REF_NAME" "$asset" --title "$title" --notes "$notes"
           fi
