@@ -91,12 +91,12 @@ Language: nb_NO
     <string name="settings_app_icon_patron_glow">Patron Glow</string>
     <string name="settings_app_icon_patron_dark">Patron Dark</string>
     <string name="settings_forums">Pod Pocket-forumer</string>
-    <string name="settings_forums_description">Gå til Pod Pocket\'s forumer (%1$s) der støtteteamet kan hjelpe deg.</string>
+    <string name="settings_forums_description">Gå til Pod Pockets forumer (%1$s) der støtteteamet kan hjelpe deg.</string>
     <string name="settings_take_me_there">Bring meg dit</string>
     <string name="profile_upgrade_to_patron">Oppgrader til Patron</string>
     <string name="upgrade_to">Oppgrader til %s</string>
-    <string name="onboarding_patron_subscribe">Abonner på Pocket Casts Patron</string>
-    <string name="onboarding_plus_subscribe">Abonner på Pocket Casts Plus</string>
+    <string name="onboarding_patron_subscribe">Abonner på Pod Pocket Patron</string>
+    <string name="onboarding_plus_subscribe">Abonner på Pod Pocket Plus</string>
     <string name="profile_account">Konto</string>
     <string name="profile_patron_expires_in">Patron utløper om %s</string>
     <string name="log_in_subtitle">Begynn å lytte til favorittpodcastene</string>
@@ -198,10 +198,10 @@ Language: nb_NO
     <string name="no_episode_ids_provided">Ingen episode-ID oppgitt</string>
     <string name="no_episodes_found_for_episode_ids_x">Fant ingen episoder for episode-ID %1$s</string>
     <string name="episode_count">Antall episoder</string>
-    <string name="profile_cancel_confirm_item_plus">Tilgang til Pocket Casts Plus-funksjoner blir sperret etter denne datoen.</string>
+    <string name="profile_cancel_confirm_item_plus">Tilgang til Pod Pocket Plus-funksjoner blir sperret etter denne datoen.</string>
     <string name="profile_cancel_confirm_item_folders">Mappene blir fjernet og innholdet flyttes tilbake til Podcasts-skjermbildet.</string>
-    <string name="profile_cancel_confirm_item_uploads">Alle filer lastet opp til Pocket Casts-kontoen din, blir slettet (men filer lastet ned på mobilenhetene dine, blir værende).</string>
-    <string name="profile_cancel_confirm_item_web_player">Du vil ikke lenger ha tilgang til Pocket Casts gjennom nettleseren eller datamaskinen din.</string>
+    <string name="profile_cancel_confirm_item_uploads">Alle filer lastet opp til Pod Pocket-kontoen din, blir slettet (men filer lastet ned på mobilenhetene dine, blir værende).</string>
+    <string name="profile_cancel_confirm_item_web_player">Du vil ikke lenger ha tilgang til Pod Pocket gjennom nettleseren eller datamaskinen din.</string>
     <string name="profile_cancel_confirm_stay_button_title">Jeg vil faktisk bli værende</string>
     <string name="profile_cancel_confirm_cancel_button_title">Ja, kanseller abonnementet</string>
     <string name="profile_cancel_confirm_subtitle">Dette endrer abonnementet til en gratiskonto.</string>
@@ -230,7 +230,7 @@ Language: nb_NO
     <string name="onboarding_log_in">Logg på</string>
     <string name="onboarding_create_account">Opprett konto</string>
     <string name="onboarding_sign_up">Registrer deg</string>
-    <string name="onboarding_plus_become_a_plus_member">Bli Plus-medlem og lås opp alle Pocket Cast-funksjonene</string>
+    <string name="onboarding_plus_become_a_plus_member">Bli Plus-medlem og lås opp alle Pod Pocket-funksjonene</string>
     <string name="onboarding_plus_continuing_agrees_to">Ved å fortsette godtar du %1$s og %2$s</string>
     <string name="onboarding_plus_privacy_policy">Retningslinjer for personvern</string>
     <string name="onboarding_plus_terms_and_conditions">Vilkår</string>
@@ -244,7 +244,7 @@ Language: nb_NO
     <string name="onboarding_recommendations_find_favorite_podcasts">Finn favorittpodcasten din</string>
     <string name="onboarding_recommendations_make_pocket_casts_yours">Gjør Pod Pocket til din egen ved å velge favorittpodcaster eller importere dem fra en annen podcastspiller. Du kan alltids gjøre dette senere.</string>
     <string name="onboarding_recommendations_import">Importer</string>
-    <string name="onboarding_upgrade_everything_you_love_about_pocket_casts_plus">Alt du liker med Pocket Casts, pluss mye mer</string>
+    <string name="onboarding_upgrade_everything_you_love_about_pocket_casts_plus">Alt du liker med Pod Pocket, pluss mye mer</string>
     <string name="onboarding_plus_feature_desktop_apps_text">Lytt på flere steder med appene våre for Windows, macOS og nett.</string>
     <string name="onboarding_plus_feature_folders_title">Mapper</string>
     <string name="onboarding_plus_feature_folders_text">Ordne podcastene i mapper og synkroniser dem mellom alle enhetene dine.</string>
@@ -414,7 +414,7 @@ Language: nb_NO
     <string name="settings_about_work_with_us">Arbeid med oss</string>
     <string name="settings_about_instagram">Instagram</string>
     <string name="settings_about_rate_us">Gi oss en rangering</string>
-    <string name="settings_about_share_with_friends_message">Hei! Her er en lenke for å laste ned Pod Pocket-appen. Jeg liker den svært godt, og det tror jeg du også vil gjøre. \nhttps://www.pocketcasts.com</string>
+    <string name="settings_about_share_with_friends_message">Hei! Her er en lenke for å laste ned Pod Pocket-appen. Jeg liker den svært godt, og det tror jeg du også vil gjøre. \nhttps://github.com/Garulf/pod-pocket-android</string>
     <string name="settings_about_share_with_friends">Del med venner</string>
     <string name="collapsed">Skjult</string>
     <string name="expanded">Vist</string>

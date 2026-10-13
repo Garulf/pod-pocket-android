@@ -271,7 +271,7 @@ Language: ca
     <string name="profile_last_refresh_at">Darrera actualització: %s</string>
     <string name="profile_just_now">Ara mateix</string>
     <string name="referrals_claim_guest_pass_description_installment">Gratuït durant %1$s, després %2$s/mes durant %3$d mesos. Compromís total: %4$s en 1 any.</string>
-    <string name="winback_claimed_offer_message_6">Gràcies per triar Pocket Casts. El teu pla de pagament a terminis de 12 mesos amb descompte comença després del teu període de facturació actual.</string>
+    <string name="winback_claimed_offer_message_6">Gràcies per triar Pod Pocket. El teu pla de pagament a terminis de 12 mesos amb descompte comença després del teu període de facturació actual.</string>
     <string name="winback_claimed_offer_message_5">50% de descompte el teu any vinent amb pagaments mensuals!</string>
     <string name="winback_offer_free_offer_installment_description">Assegura\'t un any de Pod Pocket Plus a meitat de preu amb 12 pagaments mensuals de %1$s. El teu pla de pagament a terminis amb descompte comença quan acabi el teu pla actual.</string>
     <string name="winback_offer_free_offer_installment_title">Aconsegueix un 50%% de descompte el teu any vinent — paga només %1$s/mes i estalvia %2$s</string>
@@ -730,7 +730,7 @@ Language: ca
     <string name="winback_changing_plan">Canviant el pla</string>
     <string name="winback_too_many_subscritpions_title">S\'han trobat diverses subscripcions</string>
     <string name="winback_too_many_subscritpions_button_label">Gestiona les subscripcions a Play Store</string>
-    <string name="winback_too_many_subscritpions_note">Tens més d\'una subscripció activa a Pocket Casts. Gestiona les teves subscripcions a la Play Store per a evitar càrrecs duplicats.</string>
+    <string name="winback_too_many_subscritpions_note">Tens més d\'una subscripció activa a Pod Pocket. Gestiona les teves subscripcions a la Play Store per a evitar càrrecs duplicats.</string>
     <string name="winback_available_plans_billing_note">El teu nou pla s\'activarà al final del teu període de facturació actual.</string>
     <string name="winback_available_plans_title">Plans disponibles</string>
     <string name="winback_error_fetch_description">Hi ha hagut un problema per a obtenir els teus plans.</string>
@@ -823,7 +823,7 @@ Language: ca
     <string name="referrals_claim_guest_pass_description">La subscripció es renovarà automàticament a un pagament anual de %s.</string>
     <string name="error_generic_message">Alguna cosa ha anat malament. Torna-ho a provar més tard.</string>
     <string name="player_sleep_timer_settings">Configuració del temporitzador de son</string>
-    <string name="referrals_share_subject">%1$s accés de convidat a Pocket Casts</string>
+    <string name="referrals_share_subject">%1$s accés de convidat a Pod Pocket</string>
     <string name="referrals_invalid_offer_title">Aquesta oferta no està disponible</string>
     <string name="referrals_invalid_offer_description">La invitació només es pot bescanviar una vegada i està disponible per a aquells sense una subscripció Plus o Patron activa. Gràcies per escoltar!</string>
     <string name="referrals_activate_my_pass">Activa la meva invitació</string>
@@ -1003,7 +1003,7 @@ Language: ca
     <string name="podcast_submit_rating_no_internet">No s\'ha trobat connexió a Internet. Connecta\'t per a enviar una valoració.</string>
     <string name="podcast_rate">Valoració %s</string>
     <string name="submit">Envia</string>
-    <string name="bookmarks_upsell_instructions">Desa les marques de temps dels teus episodis favorits i desbloqueja moltes més funcions amb Pocket Casts Plus.</string>
+    <string name="bookmarks_upsell_instructions">Desa les marques de temps dels teus episodis favorits i desbloqueja moltes més funcions amb Pod Pocket Plus.</string>
     <string name="bookmarks_upsell_instructions_early_access">Aconsegueix accés anticipat a aquesta funció amb Pod Pocket Patron i guarda els marcadors de temps dels teus episodis preferits. Disponible aviat per als subscriptors Plus.</string>
     <string name="error_loading_show_notes">No s\'han pogut trobar les notes d\'aquest episodi.</string>
     <string name="player_tab_notes">Notes</string>
@@ -1455,7 +1455,7 @@ Language: ca
     <string name="collapsed">Col·lapsat</string>
     <string name="expanded">Expandit</string>
     <string name="settings_about_share_with_friends">Comparteix amb amics</string>
-    <string name="settings_about_share_with_friends_message">Ei! Aquí tens un enllaç per a descarregar l\'app Pod Pocket. Realment m\'està agradant i he pensat que a tu també et podria agradar. \nhttps://www.pocketcasts.com</string>
+    <string name="settings_about_share_with_friends_message">Ei! Aquí tens un enllaç per a descarregar l\'app Pod Pocket. Realment m\'està agradant i he pensat que a tu també et podria agradar. \nhttps://github.com/Garulf/pod-pocket-android</string>
     <string name="discover_popular">Popular</string>
     <string name="discover_top">Primer</string>
     <string name="episode_bonus">Bonus</string>

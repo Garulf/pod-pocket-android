@@ -156,7 +156,7 @@ class OpmlExporter(
                 attribute("", "version", "1.0")
                 startTag("", "head")
                 startTag("", "title")
-                text("Pocket Casts Feeds")
+                text("Pod Pocket Feeds")
                 endTag("", "title")
                 endTag("", "head")
                 startTag("", "body")

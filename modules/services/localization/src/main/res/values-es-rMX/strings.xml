@@ -188,8 +188,8 @@ Language: es
     <string name="tv_onboarding_syncing">Sincronizando tus podcasts\u2026</string>
     <string name="tv_onboarding_browse_without_account">Navegar sin una cuenta</string>
     <string name="tv_onboarding_create_free_account">Crear cuenta gratuita</string>
-    <string name="tv_onboarding_welcome_tv">Te damos la bienvenida a Pocket Casts TV</string>
-    <string name="tv_onboarding_welcome">Te damos la bienvenida a Pocket Casts</string>
+    <string name="tv_onboarding_welcome_tv">Te damos la bienvenida a Pod Pocket TV</string>
+    <string name="tv_onboarding_welcome">Te damos la bienvenida a Pod Pocket</string>
     <string name="sort_longest_to_shortest">De más largos a más cortos</string>
     <string name="sort_shortest_to_longest">De más cortos a más largos</string>
     <string name="synced_transcripts_whats_new_button_note">Las transcripciones sincronizadas solo están disponibles para los episodios recientes.</string>
@@ -275,7 +275,7 @@ Language: es
     <string name="profile_last_refresh_at">Última actualización: %s</string>
     <string name="profile_just_now">Justo ahora</string>
     <string name="referrals_claim_guest_pass_description_installment">Gratis durante %1$s y después %2$s al mes durante %3$d meses. Compromiso total: %4$s más de 1 año.</string>
-    <string name="winback_claimed_offer_message_6">Gracias por elegir Pocket Casts. Tu plan de 12 plazos con descuento empezará después de tu periodo de facturación actual.</string>
+    <string name="winback_claimed_offer_message_6">Gracias por elegir Pod Pocket. Tu plan de 12 plazos con descuento empezará después de tu periodo de facturación actual.</string>
     <string name="winback_claimed_offer_message_5">¡50 % de descuento en tu próximo año con pagos mensuales!</string>
     <string name="plus_yearly_installments">Plan anual: paga mensualmente</string>
     <string name="winback_offer_free_offer_installment_description">Consigue un año de Pod Pocket Plus a mitad de precio con 12 pagos mensuales de %1$s. Tu plan a plazos con descuento empezará cuando finalice tu plan actual.</string>
@@ -336,7 +336,7 @@ Language: es
     <string name="end_of_year_failed_to_load_message">No hemos podido cargar Playback</string>
     <string name="end_of_year_stories_already_subscribed_to_plus">Tus ventajas Plus desbloquean estadísticas adicionales y funciones avanzadas</string>
     <string name="end_of_year_stories_subscribe_to_plus">Suscríbete a Pod Pocket Plus para conseguir estadísticas ampliadas, marcadores, carpetas, selección de capítulos y más formas de profundizar en tus hábitos de escucha</string>
-    <string name="end_of_year_stories_plus_title">¡Gracias por apoyar Pocket Casts!</string>
+    <string name="end_of_year_stories_plus_title">¡Gracias por apoyar Pod Pocket!</string>
     <string name="end_of_year_stories_theres_more">¿Quieres un análisis a fondo?</string>
     <string name="end_of_year_story_longest_episode_stats">El episodio más largo fue «%1$s» de «%2$s»</string>
     <string name="end_of_year_story_longest_episode_subtitle">¡Esperamos que hicieras estiramientos antes!</string>
@@ -617,8 +617,8 @@ Language: es
     <string name="recommended_by_creator">Programas recomendados por el creador</string>
     <string name="winback_cancel_subscription_continue_cancel_button_label">Continuar con la cancelación</string>
     <string name="winback_cancel_subscription_accept_offer_button_label">Aceptar oferta</string>
-    <string name="winback_claimed_offer_message_4">Gracias por elegir Pocket Casts. Tu año con descuento empezará después de tu periodo de facturación actual.</string>
-    <string name="winback_claimed_offer_message_2">Gracias por elegir Pocket Casts. Tu mes gratuito se añadirá a tu suscripción actual.</string>
+    <string name="winback_claimed_offer_message_4">Gracias por elegir Pod Pocket. Tu año con descuento empezará después de tu periodo de facturación actual.</string>
+    <string name="winback_claimed_offer_message_2">Gracias por elegir Pod Pocket. Tu mes gratuito se añadirá a tu suscripción actual.</string>
     <string name="winback_offer_free_offer_yearly_description">Paga %1$s ahora para conseguir un año de Pod Pocket Plus a mitad de precio. Tu año con descuento empezará cuando finalice tu plan actual.</string>
     <string name="winback_offer_free_offer_title">Consigue tu próximo mes gratis y ahorra %1$s</string>
     <string name="recommendations_loved_by_listeners">Les encanta a los oyentes de</string>
@@ -634,7 +634,7 @@ Language: es
     <string name="account_benefit_backups_title">Copias de seguridad fiables</string>
     <string name="account_benefit_sync_title">Sincronización entre dispositivos</string>
     <string name="account_encourage_benefits_title">Ventajas de la cuenta</string>
-    <string name="account_encourage_description">Crea una cuenta o inicia sesión para disfrutar al máximo de Pocket Casts.</string>
+    <string name="account_encourage_description">Crea una cuenta o inicia sesión para disfrutar al máximo de Pod Pocket.</string>
     <string name="account_encourage_title">Hemos detectado que no has iniciado sesión</string>
     <string name="account_benefit_sync_description">Sincroniza tu progreso y tus programas en todos tus dispositivos.</string>
     <string name="onboarding_get_started">Empezar ahora</string>
@@ -688,7 +688,7 @@ Language: es
     <string name="large_player_widget_label">Controles de podcasts y lista «A continuación»</string>
     <string name="transcript_generated_header">Esta transcripción se genera automáticamente y solo está disponible para los suscriptores de Plus.</string>
     <string name="transcript_generated_paywall_description">Suscríbete a Plus para acceder a ella y a otras funciones Premium, como los marcadores y las carpetas.</string>
-    <string name="transcript_generated_paywall_title">Pocket Casts genera automáticamente esta transcripción.</string>
+    <string name="transcript_generated_paywall_title">Pod Pocket genera automáticamente esta transcripción.</string>
     <string name="onboarding_plus_feature_chapters_title">Preselección de capítulos</string>
     <string name="onboarding_plus_feature_bookmarks_title">Marcadores</string>
     <string name="podcast_header_redesign_message">Toca el título del podcast para contraer o ampliar la descripción y los detalles</string>
@@ -706,7 +706,7 @@ Language: es
     <string name="suggested_folders_replace_folders_button">Reemplazar carpetas</string>
     <string name="suggested_folders_use_subtitle">Hemos organizado tus podcasts en carpetas. Guárdalas ahora y personalízalas más tarde para que se adapten a tu estilo.</string>
     <string name="onboarding_plus_feature_up_next_shuffle_title">Reproducción aleatoria</string>
-    <string name="suggested_folders_plus_prompt">Organiza tus programas con Pocket Casts Plus, y mucho más</string>
+    <string name="suggested_folders_plus_prompt">Organiza tus programas con Pod Pocket Plus, y mucho más</string>
     <string name="onboarding_import_from_url_description">Importa tus podcasts desde un archivo OPML a través de una URL.</string>
     <string name="onboarding_import_from_url_failed">Se ha producido un error al importar el OPML</string>
     <string name="onboarding_import_from_url_error_message">URL no válida</string>
@@ -733,7 +733,7 @@ Language: es
     <string name="winback_cancel_subscription_header_description">Tu plan se cambiará a una cuenta gratuita.</string>
     <string name="winback_changing_plan">Cómo cambiar de plan</string>
     <string name="winback_too_many_subscritpions_button_label">Gestionar suscripciones en Play Store</string>
-    <string name="winback_too_many_subscritpions_note">Tienes más de una suscripción activa a Pocket Casts. Gestiona tus suscripciones en Play Store para evitar que se te cobre dos veces.</string>
+    <string name="winback_too_many_subscritpions_note">Tienes más de una suscripción activa a Pod Pocket. Gestiona tus suscripciones en Play Store para evitar que se te cobre dos veces.</string>
     <string name="winback_too_many_subscritpions_title">Se han encontrado varias suscripciones</string>
     <string name="winback_error_fetch_description">Lo sentimos, pero se ha producido un error al recuperar tus planes.</string>
     <string name="winback_available_plans_title">Planes disponibles</string>
@@ -746,7 +746,7 @@ Language: es
     <string name="winback_claimed_offer_message_1">¡Disfruta de tu mes gratuito!</string>
     <string name="winback_offer_cancel_continue_button_label">Ir a Cancelación</string>
     <string name="winback_offer_help_description">¿Tienes problemas con alguna función?</string>
-    <string name="winback_offer_help_title">¿Necesitas ayuda con Pocket Casts?</string>
+    <string name="winback_offer_help_title">¿Necesitas ayuda con Pod Pocket?</string>
     <string name="winback_offer_differnt_plan_description">Encuentra el plan adecuado para ti.</string>
     <string name="winback_offer_differnt_plan_title">¿Necesitas un plan diferente?</string>
     <string name="winback_offer_free_offer_button_label">Reclamar oferta</string>
@@ -770,11 +770,11 @@ Language: es
     <string name="plus_subscription_finished">Suscripción terminada</string>
     <string name="chapter_time_remaining_content_description">Quedan %s del capítulo</string>
     <string name="chapter_count_summary">%1$d de %2$d</string>
-    <string name="referrals_share_text">Hola:\n\nAquí tienes un pase de invitado de %1$s para Pocket Casts Plus, mi reproductor de podcast favorito. Cuenta con funciones únicas como los marcadores, las carpetas y muchas más que no encontrarás en otras plataformas. Creemos que a ti también te encantará.</string>
-    <string name="files_plus_prompt">Sube tus archivos con Pocket Casts Plus, y mucho más</string>
-    <string name="icons_plus_prompt">Consigue iconos exclusivos de aplicaciones con Pocket Casts Plus, y mucho más</string>
-    <string name="themes_plus_prompt">Consigue temas exclusivos con Pocket Casts Plus, y mucho más</string>
-    <string name="folders_plus_prompt">Organiza tus podcasts con Pocket Casts Plus, y mucho más</string>
+    <string name="referrals_share_text">Hola:\n\nAquí tienes un pase de invitado de %1$s para Pod Pocket Plus, mi reproductor de podcast favorito. Cuenta con funciones únicas como los marcadores, las carpetas y muchas más que no encontrarás en otras plataformas. Creemos que a ti también te encantará.</string>
+    <string name="files_plus_prompt">Sube tus archivos con Pod Pocket Plus, y mucho más</string>
+    <string name="icons_plus_prompt">Consigue iconos exclusivos de aplicaciones con Pod Pocket Plus, y mucho más</string>
+    <string name="themes_plus_prompt">Consigue temas exclusivos con Pod Pocket Plus, y mucho más</string>
+    <string name="folders_plus_prompt">Organiza tus podcasts con Pod Pocket Plus, y mucho más</string>
     <string name="end_of_year_story_top_podcast_title">Tus pódcast favoritos de %1$d</string>
     <string name="drag_down_to_dismiss_content_description">Arrastrar hacia abajo para descartar</string>
     <string name="maybe_later">Quizá más adelante</string>
@@ -788,7 +788,7 @@ Language: es
     <string name="podcasts_no_subscriptions">No se han encontrado pódcasts.</string>
     <string name="unsubscribe">Dejar de seguir</string>
     <string name="subscribe">Seguir</string>
-    <string name="up_next_shuffle_plus_prompt">Reproduce tus episodios de forma aleatoria con Pocket Casts Plus, y mucho más</string>
+    <string name="up_next_shuffle_plus_prompt">Reproduce tus episodios de forma aleatoria con Pod Pocket Plus, y mucho más</string>
     <string name="save_space_by_managing_downloaded_episodes">Guardar %1$s – mediante la gestión de los episodios descargados.</string>
     <string name="pencil_clean_up_icon_content_description">Limpieza de lápiz</string>
     <string name="manage_downloads">Gestionar descargas</string>
@@ -827,7 +827,7 @@ Language: es
     <string name="profile_cloud_add_invalid_file">No se ha podido cargar el archivo seleccionado. Inténtalo de nuevo o elige un archivo diferente.</string>
     <string name="error_generic_message">Se ha producido un error. Inténtalo de nuevo más tarde.</string>
     <string name="player_sleep_timer_settings">Ajustes del temporizador</string>
-    <string name="referrals_share_subject">Pase de invitado de %1$s para Pocket Casts Plus.</string>
+    <string name="referrals_share_subject">Pase de invitado de %1$s para Pod Pocket Plus.</string>
     <string name="referrals_invalid_offer_title">Esta oferta no está disponible</string>
     <string name="referrals_invalid_offer_description">Este pase de invitado solo puede canjearse una vez y está disponible para quienes no tengan una suscripción Plus o Patron activa. Gracias por escucharnos.</string>
     <string name="referrals_activate_my_pass">Activar mi pase</string>
@@ -835,7 +835,7 @@ Language: es
     <string name="referrals_claim_guess_pass_banner_card_subtitle">Desbloquea la experiencia auditiva completa</string>
     <string name="referrals_claim_guess_pass_banner_card_title">Solicita tu pase de invitado de %1$s a Plus</string>
     <string name="referrals_share_guest_pass">Compartir pase de invitado</string>
-    <string name="referrals_send_guest_pass_title">Regala %1$s de Pocket Casts Plus</string>
+    <string name="referrals_send_guest_pass_title">Regala %1$s de Pod Pocket Plus</string>
     <string name="move_down">Bajar</string>
     <string name="move_up">Subir</string>
     <string name="search_episodes_not_found_summary">No hemos podido encontrar ningún episodio para esa búsqueda. Prueba con otra palabra clave.</string>
@@ -1007,8 +1007,8 @@ Language: es
     <string name="podcast_submit_rating_no_internet">No se ha encontrado ninguna conexión a Internet. Conéctate a Internet para enviar una valoración.</string>
     <string name="podcast_rate">Puntúa %s</string>
     <string name="submit">Enviar</string>
-    <string name="bookmarks_upsell_instructions_early_access">Obtén acceso anticipado a esta función con Pocket Casts Patron y guarda las marcas de tiempo de tus episodios favoritos. Disponible próximamente para los suscriptores Plus.</string>
-    <string name="bookmarks_upsell_instructions">Guarda las marcas de tiempo de tus episodios favoritos y desbloquea muchas más funciones con Pocket Casts Plus.</string>
+    <string name="bookmarks_upsell_instructions_early_access">Obtén acceso anticipado a esta función con Pod Pocket Patron y guarda las marcas de tiempo de tus episodios favoritos. Disponible próximamente para los suscriptores Plus.</string>
+    <string name="bookmarks_upsell_instructions">Guarda las marcas de tiempo de tus episodios favoritos y desbloquea muchas más funciones con Pod Pocket Plus.</string>
     <string name="error_loading_show_notes">No se han encontrado las notas de este episodio.</string>
     <string name="podcast_no_bookmarks_found">No se han encontrado marcadores</string>
     <string name="player_tab_notes">Detalles</string>
@@ -1228,10 +1228,10 @@ Language: es
     <string name="pocket_casts_query_filters">Consultar playlists en Pod Pocket</string>
     <string name="profile_cancel_confirm_cancel_button_title">\"Sí, cancelar mi suscripción\"</string>
     <string name="profile_cancel_confirm_stay_button_title">\"En realidad, quiero quedarme\"</string>
-    <string name="profile_cancel_confirm_item_uploads">Todos los archivos subidos a tu cuenta de Pocket Casts se eliminarán (sin embargo, los archivos que hayas descargado en tu dispositivo móvil se mantendrán).</string>
+    <string name="profile_cancel_confirm_item_uploads">Todos los archivos subidos a tu cuenta de Pod Pocket se eliminarán (sin embargo, los archivos que hayas descargado en tu dispositivo móvil se mantendrán).</string>
     <string name="profile_cancel_confirm_item_folders">Tus carpetas se eliminarán y sus contenidos se trasladarán a la pantalla Podcast.</string>
-    <string name="profile_cancel_confirm_item_plus">El acceso a las funciones de Pocket Casts Plus estará bloqueado después de esta fecha.</string>
-    <string name="profile_cancel_confirm_item_web_player">Ya no podrás acceder a Pocket Casts a través del navegador web ni del ordenador de sobremesa.</string>
+    <string name="profile_cancel_confirm_item_plus">El acceso a las funciones de Pod Pocket Plus estará bloqueado después de esta fecha.</string>
+    <string name="profile_cancel_confirm_item_web_player">Ya no podrás acceder a Pod Pocket a través del navegador web ni del ordenador de sobremesa.</string>
     <string name="profile_cancel_confirm_sub_expiry_date_fallback">la fecha de caducidad</string>
     <string name="profile_cancel_confirm_sub_expiry">Tu suscripción actual estará activa hasta el %1$s.</string>
     <string name="profile_cancel_confirm_subtitle">Esto cambiará tu plan a una cuenta gratuita.</string>
@@ -1267,7 +1267,7 @@ Language: es
     <string name="plus_trial_duration_free_trial">Prueba gratuita de %s</string>
     <string name="onboarding_welcome_recommendations_button">Buscar mi siguiente pódcast</string>
     <string name="onboarding_welcome_recommendations_text">Encuentra pódcasts poco conocidos y pódcasts populares en nuestra página Descubrir, con selecciones elegidas con cariño.</string>
-    <string name="onboarding_plus_become_a_plus_member">Conviértete en miembro Plus y disfruta de todas las funciones de Pocket Casts</string>
+    <string name="onboarding_plus_become_a_plus_member">Conviértete en miembro Plus y disfruta de todas las funciones de Pod Pocket</string>
     <string name="onboarding_plus_recurring_after_free_trial">Los pagos recurrentes comenzarán después de tu %1$s (%2$s)</string>
     <string name="onboarding_plus_feature_themes_icons_text">Muéstrate tal y como eres. Iconos y temas exclusivos solo para miembros Plus.</string>
     <string name="onboarding_plus_feature_themes_icons_title">Temas e iconos</string>
@@ -1279,7 +1279,7 @@ Language: es
     <string name="onboarding_recommendations_make_pocket_casts_yours">Haz tuya la aplicación Pod Pocket seleccionando tus pódcast favoritos o impórtalos desde otro reproductor de pódcast. Siempre puedes hacerlo más adelante.</string>
     <string name="onboarding_recommendations_find_favorite_podcasts">Encuentra tus pódcast favoritos</string>
     <string name="not_now">Ahora no</string>
-    <string name="onboarding_upgrade_everything_you_love_about_pocket_casts_plus">Todo lo que te encanta de Pocket Casts y mucho más</string>
+    <string name="onboarding_upgrade_everything_you_love_about_pocket_casts_plus">Todo lo que te encanta de Pod Pocket y mucho más</string>
     <string name="onboarding_plus_feature_cloud_storage_title">Almacenamiento en la nube de 20 GB</string>
     <string name="settings_open_player_automatically_summary">Si la opción está activada, el reproductor de pantalla completa se abrirá cuando empieces a reproducir un episodio de pódcast.</string>
     <string name="settings_open_player_automatically">Abrir reproductor automáticamente</string>
@@ -1458,7 +1458,7 @@ Language: es
     <string name="expanded">Ampliado</string>
     <string name="settings_about_website">Sitio web</string>
     <string name="settings_about_terms_of_serivce">Condiciones del servicio</string>
-    <string name="settings_about_share_with_friends_message">¡Hola! A continuación, encontrarás un enlace para descargar Pod Pocket. Esta aplicación me está gustando mucho y creo que a ti también te puede interesar. \nhttps://www.pocketcasts.com</string>
+    <string name="settings_about_share_with_friends_message">¡Hola! A continuación, encontrarás un enlace para descargar Pod Pocket. Esta aplicación me está gustando mucho y creo que a ti también te puede interesar. \nhttps://github.com/Garulf/pod-pocket-android</string>
     <string name="settings_about_share_with_friends">Compártela con tus amigos</string>
     <string name="off">Off</string>
     <string name="discover_popular_in">Popular en %s</string>

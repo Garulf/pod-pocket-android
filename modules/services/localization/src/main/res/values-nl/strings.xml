@@ -118,7 +118,7 @@ Language: nl
     <string name="tv_nothing_playing_subtitle">Speel een aflevering af en deze wordt hier weergegeven.</string>
     <string name="tv_nothing_playing_title">Er wordt niets afgespeeld</string>
     <string name="tv_episode_removed_from_up_next">Verwijderd uit Hierna</string>
-    <string name="tv_sign_in_title">Log in bij Pocket Casts</string>
+    <string name="tv_sign_in_title">Log in bij Pod Pocket</string>
     <string name="tv_create_account_modal_title">Je podcasts verdienen een thuis</string>
     <string name="tv_create_account_modal_subtitle">Maak een gratis account aan om podcasts te volgen, je Hierna op te bouwen en op elk apparaat verder te gaan waar je gebleven was.</string>
     <string name="tv_episode_marked_as_played">Markeren als afgespeeld</string>
@@ -275,7 +275,7 @@ Language: nl
     <string name="profile_last_refresh_at">Laatst vernieuwd: %s</string>
     <string name="profile_just_now">Net</string>
     <string name="referrals_claim_guest_pass_description_installment">Gratis voor %1$s, daarna %2$s per maand voor %3$d maanden. Totale betaling: %4$s gedurende 1 jaar.</string>
-    <string name="winback_claimed_offer_message_6">Bedankt dat je voor Pocket Casts kiest. Je abonnement van 12 maanden met korting gaat in na je huidige factuurperiode.</string>
+    <string name="winback_claimed_offer_message_6">Bedankt dat je voor Pod Pocket kiest. Je abonnement van 12 maanden met korting gaat in na je huidige factuurperiode.</string>
     <string name="winback_claimed_offer_message_5">50% korting op je volgende jaar met maandelijkse betalingen!</string>
     <string name="plus_yearly_installments">Jaarabonnement - betaal maandelijks</string>
     <string name="winback_offer_free_offer_installment_description">Sluit een jaarabonnement Pod Pocket Plus af voor de helft van de prijs met 12 maandelijkse betalingen van %1$s. Je betaalplan met korting begint nadat je huidige abonnement is afgelopen.</string>
@@ -336,7 +336,7 @@ Language: nl
     <string name="end_of_year_failed_to_load_message">Sorry, we konden het afspelen niet laden</string>
     <string name="end_of_year_stories_already_subscribed_to_plus">Met je Plus-extraatjes ontgrendel je extra statistieken en krachtige functies</string>
     <string name="end_of_year_stories_subscribe_to_plus">Abonneer je op Pod Pocket Plus voor uitgebreide statistieken, bladwijzers, mappen, hoofdstuk-selectie en meer manieren om je luistergewoonten te leren kennen</string>
-    <string name="end_of_year_stories_plus_title">Bedankt voor de ondersteuning van Pocket Casts!</string>
+    <string name="end_of_year_stories_plus_title">Bedankt voor de ondersteuning van Pod Pocket!</string>
     <string name="end_of_year_stories_theres_more">Wil je diep gaan?</string>
     <string name="end_of_year_story_longest_episode_stats">De langste aflevering was \'%1$s\' van \'%2$s\'</string>
     <string name="end_of_year_story_longest_episode_subtitle">Hopelijk heb je je eerst uitgestrekt!</string>
@@ -616,8 +616,8 @@ Language: nl
     <string name="recommended_by_creator">Aanbevolen shows van de maker</string>
     <string name="winback_cancel_subscription_continue_cancel_button_label">Doorgaan met annuleren</string>
     <string name="winback_cancel_subscription_accept_offer_button_label">Aanbieding accepteren</string>
-    <string name="winback_claimed_offer_message_2">Bedankt dat je voor Pocket Casts kiest. Je gratis maand wordt toegevoegd aan je huidige abonnement.</string>
-    <string name="winback_claimed_offer_message_4">Bedankt dat je voor Pocket Casts kiest. Je abonnement met een jaar lang korting gaat in na je huidige factuurperiode.</string>
+    <string name="winback_claimed_offer_message_2">Bedankt dat je voor Pod Pocket kiest. Je gratis maand wordt toegevoegd aan je huidige abonnement.</string>
+    <string name="winback_claimed_offer_message_4">Bedankt dat je voor Pod Pocket kiest. Je abonnement met een jaar lang korting gaat in na je huidige factuurperiode.</string>
     <string name="recommendations_loved_by_listeners">Geliefd bij luisteraars van</string>
     <string name="winback_offer_free_offer_yearly_description">Betaal nu %1$s om een jaar Pod Pocket Plus tegen de helft van de prijs vast te leggen. Je jaar met korting begint nadat je huidige abonnement is afgelopen.</string>
     <string name="winback_offer_free_offer_description">Geniet van een gratis maand Pod Pocket Plus! De aanbieding wordt toegevoegd aan je huidige abonnement.</string>
@@ -705,7 +705,7 @@ Language: nl
     <string name="suggested_folders_replace_folders_button">Mappen vervangen</string>
     <string name="suggested_folders_use_subtitle">We hebben je podcasts in mappen geordend. Sla ze nu op en pas ze later naar eigen smaak aan.</string>
     <string name="onboarding_plus_feature_up_next_shuffle_title">Hierna shuffelen</string>
-    <string name="suggested_folders_plus_prompt">Orden je podcasts met Pocket Casts Plus en meer</string>
+    <string name="suggested_folders_plus_prompt">Orden je podcasts met Pod Pocket Plus en meer</string>
     <string name="onboarding_import_from_url_failed">OPML-import mislukt</string>
     <string name="onboarding_import_from_url_error_message">Onjuiste URL</string>
     <string name="onboarding_import_from_url_importing_message">OPML-import bezig. Je kan teruggaan naar je onboardingproces.</string>
@@ -724,7 +724,7 @@ Language: nl
     <string name="settings_pixel_watch_title">Pixel Watch overslaan-knoppen</string>
     <string name="settings_pixel_watch_subtitle">Vervang de aangepaste overslaan-knoppen door standaardknoppen voor volgende/vorige aflevering. Deze werken hetzelfde als de overslaan-knoppen, maar zijn compatibel met meer apparaten.</string>
     <string name="winback_cancel_subscription_cancel_button_label">Ja, annuleer mijn abonnement</string>
-    <string name="winback_cancel_subscription_perk_files">Alle bestanden die zijn geüpload naar je Pocket Casts-account worden verwijderd (bestanden die zijn gedownload op je mobiele apparaten blijven behouden).</string>
+    <string name="winback_cancel_subscription_perk_files">Alle bestanden die zijn geüpload naar je Pod Pocket-account worden verwijderd (bestanden die zijn gedownload op je mobiele apparaten blijven behouden).</string>
     <string name="winback_cancel_subscription_perk_folders">Je mappen worden verwijderd en hun inhoud wordt teruggezet naar het scherm Podcasts.</string>
     <string name="winback_cancel_subscription_perk_plus">Na deze datum wordt toegang tot Pod Pocket Plus-functies vergrendeld.</string>
     <string name="winback_cancel_subscription_perk_active_without_date">Je huidige abonnement blijft actief tot de vervaldatum.</string>
@@ -733,7 +733,7 @@ Language: nl
     <string name="winback_changing_plan">Abonnement wordt gewijzigd</string>
     <string name="winback_too_many_subscritpions_button_label">Abonnementen beheren in de Play Store</string>
     <string name="winback_too_many_subscritpions_title">Meerdere abonnementen gevonden</string>
-    <string name="winback_too_many_subscritpions_note">Je hebt meer dan één actief Pocket Casts-abonnement. Beheer je abonnementen in de Pocket Casts om dubbele betalingen te voorkomen.</string>
+    <string name="winback_too_many_subscritpions_note">Je hebt meer dan één actief Pod Pocket-abonnement. Beheer je abonnementen in de Pod Pocket om dubbele betalingen te voorkomen.</string>
     <string name="winback_error_fetch_description">Er is iets fout gegaan bij het ophalen van je abonnementen.</string>
     <string name="winback_available_plans_billing_note">Je nieuwe abonnement wordt aan het einde van je huidige factuurperiode geactiveerd.</string>
     <string name="winback_available_plans_title">Beschikbare abonnementen</string>
@@ -745,7 +745,7 @@ Language: nl
     <string name="winback_claimed_offer_message_1">Geniet van een maand gratis toegang!</string>
     <string name="winback_offer_cancel_continue_button_label">Doorgaan met annuleren</string>
     <string name="winback_offer_help_description">Moeite met een van de functies of andere problemen?</string>
-    <string name="winback_offer_help_title">Hulp nodig met Pocket Casts?</string>
+    <string name="winback_offer_help_title">Hulp nodig met Pod Pocket?</string>
     <string name="winback_offer_differnt_plan_description">Vind het abonnement dat bij je past.</string>
     <string name="winback_offer_differnt_plan_title">Op zoek naar een ander abonnement?</string>
     <string name="winback_offer_free_offer_button_label">Aanbieding claimen</string>
@@ -769,11 +769,11 @@ Language: nl
     <string name="plus_subscription_finished">Abonnement afgerond</string>
     <string name="chapter_time_remaining_content_description">nog %s te gaan in het hoofdstuk</string>
     <string name="chapter_count_summary">%1$d van %2$d</string>
-    <string name="referrals_share_text">Hallo!\n\nHier is een %1$s gastenpas voor Pocket Casts Plus, mijn favoriete podcastspeler. Het zit vol met unieke functies die je nergens anders vindt, zoals bladwijzers, mappen en meer. Jij zal er vast ook dol op zijn!</string>
-    <string name="files_plus_prompt">Upload je bestanden met Pocket Casts Plus, en meer</string>
-    <string name="icons_plus_prompt">Krijg exclusief toegang tot app-iconen met Pocket Casts Plus, en meer</string>
-    <string name="themes_plus_prompt">Krijg exclusief toegang tot themas met Pocket Casts Plus, en meer</string>
-    <string name="folders_plus_prompt">Organiseer je podcasts met Pocket Casts Plus, en meer</string>
+    <string name="referrals_share_text">Hallo!\n\nHier is een %1$s gastenpas voor Pod Pocket Plus, mijn favoriete podcastspeler. Het zit vol met unieke functies die je nergens anders vindt, zoals bladwijzers, mappen en meer. Jij zal er vast ook dol op zijn!</string>
+    <string name="files_plus_prompt">Upload je bestanden met Pod Pocket Plus, en meer</string>
+    <string name="icons_plus_prompt">Krijg exclusief toegang tot app-iconen met Pod Pocket Plus, en meer</string>
+    <string name="themes_plus_prompt">Krijg exclusief toegang tot themas met Pod Pocket Plus, en meer</string>
+    <string name="folders_plus_prompt">Organiseer je podcasts met Pod Pocket Plus, en meer</string>
     <string name="end_of_year_story_top_podcast_title">Je beste podcast van %1$d</string>
     <string name="drag_down_to_dismiss_content_description">Sleep naar beneden om te negeren</string>
     <string name="maybe_later">Misschien later</string>
@@ -787,7 +787,7 @@ Language: nl
     <string name="podcasts_no_subscriptions">Geen podcasts gevonden</string>
     <string name="unsubscribe">Niet meer volgen</string>
     <string name="subscribe">Volgen</string>
-    <string name="up_next_shuffle_plus_prompt">Speel afleveringen op willekeurige volgorde af met Pocket Casts Plus, en meer</string>
+    <string name="up_next_shuffle_plus_prompt">Speel afleveringen op willekeurige volgorde af met Pod Pocket Plus, en meer</string>
     <string name="save_space_by_managing_downloaded_episodes">Bewaar %1$s – door gedownloade afleveringen te beheren.</string>
     <string name="pencil_clean_up_icon_content_description">Potlood opschonen</string>
     <string name="manage_downloads">Downloads beheren</string>
@@ -826,7 +826,7 @@ Language: nl
     <string name="profile_cloud_add_invalid_file">Het geselecteerde bestand kon niet geladen worden. Probeer het later opnieuw of kies een ander bestand.</string>
     <string name="error_generic_message">Er is iets fout gegaan. Probeer het later opnieuw.</string>
     <string name="player_sleep_timer_settings">Instellingen slaaptimer</string>
-    <string name="referrals_share_subject">%1$s Gastenpas voor Pocket Casts Plus!</string>
+    <string name="referrals_share_subject">%1$s Gastenpas voor Pod Pocket Plus!</string>
     <string name="referrals_invalid_offer_title">Deze aanbieding is niet geldig</string>
     <string name="referrals_invalid_offer_description">Deze gastenpas kan eenmalig worden ingewisseld en is beschikbaar voor iedereen zonder een actief Plus- of Patron-abonnement. Bedankt voor het luisteren!</string>
     <string name="referrals_activate_my_pass">Activeer mijn pas</string>
@@ -834,7 +834,7 @@ Language: nl
     <string name="referrals_claim_guess_pass_banner_card_subtitle">Ontgrendel de volledige luisterervaring</string>
     <string name="referrals_claim_guess_pass_banner_card_title">Claim je gastenpas van %1$svoor Plus</string>
     <string name="referrals_share_guest_pass">Gastenpassen delen</string>
-    <string name="referrals_send_guest_pass_title">Geef %1$s Pocket Casts Plus weg</string>
+    <string name="referrals_send_guest_pass_title">Geef %1$s Pod Pocket Plus weg</string>
     <string name="move_down">Omlaag verplaatsen</string>
     <string name="move_up">Omhoog verplaatsen</string>
     <string name="search_episodes_not_found_summary">We kunnen geen aflevering vinden voor die zoekopdracht. Probeer een ander trefwoord.</string>
@@ -1116,8 +1116,8 @@ Language: nl
     <string name="settings_app_icon_patron_round">Patron rond</string>
     <string name="settings_app_icon_patron_chrome">Patron chroom</string>
     <string name="profile_upgrade_to_patron">Upgrade naar Patron</string>
-    <string name="onboarding_plus_subscribe">Abonneer je op Pocket Casts Plus</string>
-    <string name="onboarding_patron_subscribe">Abonneer je op Pocket Casts Patron</string>
+    <string name="onboarding_plus_subscribe">Abonneer je op Pod Pocket Plus</string>
+    <string name="onboarding_patron_subscribe">Abonneer je op Pod Pocket Patron</string>
     <string name="upgrade_to">Upgrade naar %s</string>
     <string name="profile_patron_expires_in">Patron verloopt over %s</string>
     <string name="profile_account">Account</string>
@@ -1139,7 +1139,7 @@ Language: nl
     <string name="profile_logging_in">Inloggen …</string>
     <string name="episode_downloading">Downloaden</string>
     <string name="episode_in_up_next">In Hierna</string>
-    <string name="onboarding_plus_feature_gratitude_title">De eeuwige dank van iedereen bij Pocket Casts</string>
+    <string name="onboarding_plus_feature_gratitude_title">De eeuwige dank van iedereen bij Pod Pocket</string>
     <string name="onboarding_patron_feature_special_icons_title">Speciale Pod Pocket app-pictogrammen</string>
     <string name="onboarding_patron_feature_profile_badge_title">Profielbadge voor supporters</string>
     <string name="onboarding_patron_feature_everything_in_plus_title">Alles in plus</string>
@@ -1229,8 +1229,8 @@ Language: nl
     <string name="profile_cancel_confirm_stay_button_title">Ik wil blijven\'</string>
     <string name="profile_cancel_confirm_item_folders">Je mappen worden verwijderd en hun inhoud wordt teruggezet naar het scherm Podcasts.</string>
     <string name="profile_cancel_confirm_item_plus">Na deze datum wordt toegang tot Pod Pocket Plus-functies vergrendeld.</string>
-    <string name="profile_cancel_confirm_item_web_player">Je kunt Pocket Casts niet langer openen met je webbrowser of computer.</string>
-    <string name="profile_cancel_confirm_item_uploads">Alle bestanden die zijn geüpload naar je Pocket Casts-account worden verwijderd (bestanden die zijn gedownload op je mobiele apparaten blijven behouden).</string>
+    <string name="profile_cancel_confirm_item_web_player">Je kunt Pod Pocket niet langer openen met je webbrowser of computer.</string>
+    <string name="profile_cancel_confirm_item_uploads">Alle bestanden die zijn geüpload naar je Pod Pocket-account worden verwijderd (bestanden die zijn gedownload op je mobiele apparaten blijven behouden).</string>
     <string name="profile_cancel_confirm_sub_expiry_date_fallback">je vervaldatum</string>
     <string name="profile_cancel_confirm_sub_expiry">Je huidige abonnement blijft actief tot %1$s.</string>
     <string name="profile_cancel_confirm_subtitle">Hierdoor wordt je abonnement aangepast naar een gratis account.</string>
@@ -1262,7 +1262,7 @@ Language: nl
     <string name="onboarding_plus_terms_and_conditions">Algemene voorwaarden</string>
     <string name="onboarding_plus_privacy_policy">Privacybeleid</string>
     <string name="onboarding_plus_continuing_agrees_to">Door verder te gaan, ga je akkoord met onze %1$s en %2$s</string>
-    <string name="onboarding_plus_become_a_plus_member">Word Plus-lid en profiteer van alle Pocket Casts-functies</string>
+    <string name="onboarding_plus_become_a_plus_member">Word Plus-lid en profiteer van alle Pod Pocket-functies</string>
     <string name="onboarding_sign_up">Aanmelden</string>
     <string name="onboarding_create_account">Account aanmaken</string>
     <string name="onboarding_log_in">Log in</string>
@@ -1455,7 +1455,7 @@ Language: nl
     <string name="settings_about_work_with_us">Met ons samenwerken</string>
     <string name="settings_about_instagram">Instagram</string>
     <string name="settings_about_rate_us">Beoordeel ons</string>
-    <string name="settings_about_share_with_friends_message">Hallo! Alsjeblieft, een downloadlink voor de Pod Pocket-app. Ik vind hem geweldig en ik dacht, jij vast ook. \nhttps://www.pocketcasts.com</string>
+    <string name="settings_about_share_with_friends_message">Hallo! Alsjeblieft, een downloadlink voor de Pod Pocket-app. Ik vind hem geweldig en ik dacht, jij vast ook. \nhttps://github.com/Garulf/pod-pocket-android</string>
     <string name="settings_about_share_with_friends">Delen met vrienden</string>
     <string name="collapsed">Ingevouwen</string>
     <string name="expanded">Uitgeklapt</string>

@@ -29,7 +29,7 @@ repos:
         stages: [pre-push]
       - id: rebranded-strings
         name: strings say Pod Pocket
-        entry: python3 scripts/podpocket/rebrand_strings.py --check
+        entry: sh -c "python3 scripts/podpocket/rebrand_strings.py --check && python3 -B scripts/podpocket/test_rebrand_strings.py"
         language: system
         pass_filenames: false
         stages: [pre-push]

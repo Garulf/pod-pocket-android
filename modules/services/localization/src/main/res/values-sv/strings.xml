@@ -275,7 +275,7 @@ Language: sv_SE
     <string name="profile_last_refresh_at">Senaste uppdatering: %s</string>
     <string name="profile_just_now">Just nu</string>
     <string name="referrals_claim_guest_pass_description_installment">Gratis i %1$s, därefter %2$s/månad i %3$d månader. Totalt åtagande: %4$s under 1 år.</string>
-    <string name="winback_claimed_offer_message_6">Tack för att du väljer Pocket Casts. Din rabatterade 12 månader långa betalningsplan börjar efter din nuvarande faktureringsperiod.</string>
+    <string name="winback_claimed_offer_message_6">Tack för att du väljer Pod Pocket. Din rabatterade 12 månader långa betalningsplan börjar efter din nuvarande faktureringsperiod.</string>
     <string name="plus_yearly_installments">Årligt paket – betala månadsvis</string>
     <string name="winback_claimed_offer_message_5">50 % rabatt under ditt nästa år med månadsbetalningar!</string>
     <string name="winback_offer_free_offer_installment_description">Säkra ett år med Pod Pocket Plus till halva priset med 12 månadsbetalningar på %1$s. Din rabatterade betalningsplan börjar efter att ditt nuvarande prenumeration löper ut.</string>
@@ -336,7 +336,7 @@ Language: sv_SE
     <string name="end_of_year_failed_to_load_message">Det gick inte att ladda uppspelning</string>
     <string name="end_of_year_stories_already_subscribed_to_plus">Dina Plus-förmåner låser upp extra statistik- och power-funktioner</string>
     <string name="end_of_year_stories_subscribe_to_plus">Prenumerera på Pod Pocket Plus för utökad statistik, bokmärken, mappar, kapitelval och fler sätt att fördjupa dig i dina lyssningsvanor</string>
-    <string name="end_of_year_stories_plus_title">Tack för att du stödjer Pocket Casts!</string>
+    <string name="end_of_year_stories_plus_title">Tack för att du stödjer Pod Pocket!</string>
     <string name="end_of_year_stories_theres_more">Vad sägs om en djupdykning?</string>
     <string name="end_of_year_story_longest_episode_stats">Det längsta avsnittet var %1$s från %2$s</string>
     <string name="end_of_year_story_longest_episode_subtitle">Hoppas att du stretchade först!</string>
@@ -617,8 +617,8 @@ Language: sv_SE
     <string name="recommended_by_creator">Shower rekommenderade av skaparen</string>
     <string name="winback_cancel_subscription_continue_cancel_button_label">Fortsätt med annullering</string>
     <string name="winback_cancel_subscription_accept_offer_button_label">Acceptera erbjudandet</string>
-    <string name="winback_claimed_offer_message_4">Tack för att du väljer Pocket Casts. Din rabatterade år börjar efter din nuvarande faktureringsperiod.</string>
-    <string name="winback_claimed_offer_message_2">Tack för att du väljer Pocket Casts. Din gratismånad kommer att läggas till i din nuvarande prenumeration.</string>
+    <string name="winback_claimed_offer_message_4">Tack för att du väljer Pod Pocket. Din rabatterade år börjar efter din nuvarande faktureringsperiod.</string>
+    <string name="winback_claimed_offer_message_2">Tack för att du väljer Pod Pocket. Din gratismånad kommer att läggas till i din nuvarande prenumeration.</string>
     <string name="winback_offer_free_offer_yearly_description">Betala %1$s för att säkra ett år med Pod Pocket Plus till halva priset. Ditt rabatterade år börjar efter att ditt nuvarande paket löper ut.</string>
     <string name="winback_offer_free_offer_description">Få en månad med Pod Pocket Plus utan kostnad! Erbjudandet kommer att läggas till i din nuvarande prenumeration.</string>
     <string name="winback_offer_free_offer_yearly_title">Få 50 %% rabatt på ditt nästa år och spara %1$s</string>
@@ -635,7 +635,7 @@ Language: sv_SE
     <string name="account_benefit_sync_description">Synkronisera ditt lyssningsförlopp och dina shower på alla enheter.</string>
     <string name="account_benefit_sync_title">Synkronisera mellan enheter</string>
     <string name="account_encourage_benefits_title">Kontofördelar</string>
-    <string name="account_encourage_description">Skapa ett konto eller logga in för att ta del av Pocket Casts fullt ut.</string>
+    <string name="account_encourage_description">Skapa ett konto eller logga in för att ta del av Pod Pocket fullt ut.</string>
     <string name="account_encourage_title">Vi har noterat att du inte är inloggad</string>
     <string name="onboarding_get_started">Kom igång</string>
     <string name="encourage_account_history_banner_description">Skapa ett gratis konto för att synkronisera din lyssningshistorik överallt.</string>
@@ -688,7 +688,7 @@ Language: sv_SE
     <string name="medium_player_classic_widget_label">Uppspelningsreglage för podcast (klassiska)</string>
     <string name="transcript_generated_header">Denna transkription genereras automatiskt och är endast tillgänglig för Plus-prenumeranter.</string>
     <string name="transcript_generated_paywall_description">Prenumerera på Plus för att få åtkomst till den och andra Premium-funktioner som bokmärken och mappar.</string>
-    <string name="transcript_generated_paywall_title">Den här transkriptionen genereras automatiskt av Pocket Casts.</string>
+    <string name="transcript_generated_paywall_title">Den här transkriptionen genereras automatiskt av Pod Pocket.</string>
     <string name="onboarding_plus_feature_chapters_title">Välj kapitel i förväg</string>
     <string name="onboarding_plus_feature_bookmarks_title">Bokmärken</string>
     <string name="podcast_header_redesign_message">Tryck på podcastens rubrik för att minimera eller expandera dess beskrivning och detaljer</string>
@@ -706,7 +706,7 @@ Language: sv_SE
     <string name="suggested_folders_replace_folders_button">Ersätt mappar</string>
     <string name="suggested_folders_use_subtitle">Vi har organiserat dina podcasts i mappar. Spara dem nu och anpassa dem efter din stil senare.</string>
     <string name="onboarding_plus_feature_up_next_shuffle_title">Slumpmässig Nästa-uppspelning</string>
-    <string name="suggested_folders_plus_prompt">Organisera dina shower och mer därtill med Pocket Casts Plus</string>
+    <string name="suggested_folders_plus_prompt">Organisera dina shower och mer därtill med Pod Pocket Plus</string>
     <string name="onboarding_import_from_url_failed">OPML-importen misslyckades</string>
     <string name="onboarding_import_from_url_error_message">Ogiltig URL</string>
     <string name="onboarding_import_from_url_importing_message">OPML-import pågår Du kan gå tillbaka till din onboardingprocess.</string>
@@ -733,7 +733,7 @@ Language: sv_SE
     <string name="winback_cancel_subscription_header_description">Detta kommer att ändra ditt paket till ett gratiskonto.</string>
     <string name="winback_changing_plan">Byta paket</string>
     <string name="winback_too_many_subscritpions_button_label">Hantera prenumerationer i Play Store</string>
-    <string name="winback_too_many_subscritpions_note">Du har mer än en aktiv Pocket Casts-prenumeration. Hantera dina prenumerationer i Play Store för att undvika dubbla avgifter.</string>
+    <string name="winback_too_many_subscritpions_note">Du har mer än en aktiv Pod Pocket-prenumeration. Hantera dina prenumerationer i Play Store för att undvika dubbla avgifter.</string>
     <string name="winback_too_many_subscritpions_title">Flera prenumerationer hittades</string>
     <string name="winback_error_fetch_description">Något gick fel vid hämtningen av dina paket.</string>
     <string name="winback_available_plans_billing_note">Ditt nya paket kommer att aktiveras i slutet av din nuvarande faktureringsperiod.</string>
@@ -746,7 +746,7 @@ Language: sv_SE
     <string name="winback_claimed_offer_message_1">Njut av din gratismånad!</string>
     <string name="winback_offer_cancel_continue_button_label">Fortsätt till annullering</string>
     <string name="winback_offer_help_description">Har du stött på problem eller någon funktion som krånglar?</string>
-    <string name="winback_offer_help_title">Behöver du hjälp med Pocket Casts?</string>
+    <string name="winback_offer_help_title">Behöver du hjälp med Pod Pocket?</string>
     <string name="winback_offer_differnt_plan_description">Hitta rätt paket för dig.</string>
     <string name="winback_offer_differnt_plan_title">Letar du efter ett annat paket?</string>
     <string name="winback_offer_free_offer_button_label">Utnyttja erbjudande</string>
@@ -770,11 +770,11 @@ Language: sv_SE
     <string name="plus_subscription_finished">Prenumerationen har löpt ut</string>
     <string name="chapter_time_remaining_content_description">%s återstår av kapitlet</string>
     <string name="chapter_count_summary">%1$d av %2$d</string>
-    <string name="referrals_share_text">Hej!\n\nHär är ett %1$s gästpass för Pocket Casts Plus – min favoritpodcastspelare. Den är fullspäckad med unika funktioner som bokmärken, mappar och annat som du inte hittar någon annanstans. Jag tror att du också kommer att älska den!</string>
-    <string name="files_plus_prompt">Ladda upp dina filer och mer därtill med Pocket Casts Plus</string>
-    <string name="icons_plus_prompt">Få exklusiva appikoner och mer därtill med Pocket Casts Plus</string>
-    <string name="themes_plus_prompt">Få exklusiva teman och mer därtill med Pocket Casts Plus</string>
-    <string name="folders_plus_prompt">Organisera dina podcasts och mer därtill med Pocket Casts Plus</string>
+    <string name="referrals_share_text">Hej!\n\nHär är ett %1$s gästpass för Pod Pocket Plus – min favoritpodcastspelare. Den är fullspäckad med unika funktioner som bokmärken, mappar och annat som du inte hittar någon annanstans. Jag tror att du också kommer att älska den!</string>
+    <string name="files_plus_prompt">Ladda upp dina filer och mer därtill med Pod Pocket Plus</string>
+    <string name="icons_plus_prompt">Få exklusiva appikoner och mer därtill med Pod Pocket Plus</string>
+    <string name="themes_plus_prompt">Få exklusiva teman och mer därtill med Pod Pocket Plus</string>
+    <string name="folders_plus_prompt">Organisera dina podcasts och mer därtill med Pod Pocket Plus</string>
     <string name="end_of_year_story_top_podcast_title">Dina favoritpodcasts %1$d</string>
     <string name="drag_down_to_dismiss_content_description">Dra ner för att avfärda</string>
     <string name="maybe_later">Kanske senare</string>
@@ -788,7 +788,7 @@ Language: sv_SE
     <string name="podcasts_no_subscriptions">Inga podcasts hittades</string>
     <string name="unsubscribe">Sluta följa</string>
     <string name="subscribe">Följ</string>
-    <string name="up_next_shuffle_plus_prompt">Spela upp dina avsnitt slumpvis och mer därtill med Pocket Cast Plus</string>
+    <string name="up_next_shuffle_plus_prompt">Spela upp dina avsnitt slumpvis och mer därtill med Pod Pocket Plus</string>
     <string name="save_space_by_managing_downloaded_episodes">Spara %1$s – genom att hantera nedladdade avsnitt.</string>
     <string name="pencil_clean_up_icon_content_description">Pennikon för rensning</string>
     <string name="manage_downloads">Hantera nedladdningar</string>
@@ -827,7 +827,7 @@ Language: sv_SE
     <string name="profile_cloud_add_invalid_file">Det gick inte att läsa in den valda filen. Försök igen eller välj en annan fil.</string>
     <string name="error_generic_message">Något gick fel. Försök igen senare.</string>
     <string name="player_sleep_timer_settings">Inställningar för sovtimer</string>
-    <string name="referrals_share_subject">%1$s gästpass för Pocket Casts Plus!</string>
+    <string name="referrals_share_subject">%1$s gästpass för Pod Pocket Plus!</string>
     <string name="referrals_invalid_offer_title">Detta erbjudande är inte tillgängligt</string>
     <string name="referrals_invalid_offer_description">Detta gästpass kan endast lösas in en gång och är tillgängligt för användare utan en aktiv Plus- eller Patron-prenumeration. Tack för att du lyssnar.</string>
     <string name="referrals_activate_my_pass">Aktivera mitt pass</string>
@@ -835,7 +835,7 @@ Language: sv_SE
     <string name="referrals_claim_guess_pass_banner_card_subtitle">Lås upp den fullständiga lyssningsupplevelsen</string>
     <string name="referrals_claim_guess_pass_banner_card_title">Gör anspråk på ditt %1$s gästpass för Plus</string>
     <string name="referrals_share_guest_pass">Dela gästpass</string>
-    <string name="referrals_send_guest_pass_title">Ge bort %1$s med Pocket Casts Plus</string>
+    <string name="referrals_send_guest_pass_title">Ge bort %1$s med Pod Pocket Plus</string>
     <string name="move_down">Flytta ner</string>
     <string name="move_up">Flytta upp</string>
     <string name="search_episodes_not_found_title">Inga avsnitt hittades</string>
@@ -1007,8 +1007,8 @@ Language: sv_SE
     <string name="podcast_submit_rating_no_internet">Ingen internetanslutning hittades. Anslut till internet för att lämna ett betyg.</string>
     <string name="podcast_rate">Omdöme %s</string>
     <string name="submit">Skicka</string>
-    <string name="bookmarks_upsell_instructions_early_access">Få tidig åtkomst till den här funktionen med Pocket Casts Patron och spara tidsstämplar för dina favoritavsnitt. Snart tillgänglig för Plus-prenumeranter.</string>
-    <string name="bookmarks_upsell_instructions">Spara tidsstämplar för dina favoritavsnitt och lås upp många fler funktioner med Pocket Casts Plus.</string>
+    <string name="bookmarks_upsell_instructions_early_access">Få tidig åtkomst till den här funktionen med Pod Pocket Patron och spara tidsstämplar för dina favoritavsnitt. Snart tillgänglig för Plus-prenumeranter.</string>
+    <string name="bookmarks_upsell_instructions">Spara tidsstämplar för dina favoritavsnitt och lås upp många fler funktioner med Pod Pocket Plus.</string>
     <string name="error_loading_show_notes">Det gick inte att hitta programnotiser för detta avsnitt.</string>
     <string name="podcast_no_bookmarks_found">Inga bokmärken hittades</string>
     <string name="player_tab_notes">Detaljer</string>
@@ -1117,8 +1117,8 @@ Language: sv_SE
     <string name="settings_app_icon_patron_round">Patron Round</string>
     <string name="settings_app_icon_patron_chrome">Patron Chrome</string>
     <string name="profile_upgrade_to_patron">Uppgradera till Patron</string>
-    <string name="onboarding_plus_subscribe">Prenumerera på Pocket Casts Plus</string>
-    <string name="onboarding_patron_subscribe">Prenumerera på Pocket Casts Patron</string>
+    <string name="onboarding_plus_subscribe">Prenumerera på Pod Pocket Plus</string>
+    <string name="onboarding_patron_subscribe">Prenumerera på Pod Pocket Patron</string>
     <string name="upgrade_to">Uppgradera till %s</string>
     <string name="profile_patron_expires_in">Patron löper ut om %s</string>
     <string name="profile_account">Konto</string>
@@ -1228,10 +1228,10 @@ Language: sv_SE
     <string name="pocket_casts_query_filters">Pod Pocket – Sök spellistor</string>
     <string name="profile_cancel_confirm_cancel_button_title">Ja, avsluta min prenumeration\"</string>
     <string name="profile_cancel_confirm_stay_button_title">Jag vill faktiskt fortsätta\"</string>
-    <string name="profile_cancel_confirm_item_web_player">Du vill inte längre ha åtkomst till Pocket Casts via din webbläsare eller stationära dator.</string>
-    <string name="profile_cancel_confirm_item_uploads">Alla filer som har laddats upp till ditt Pocket Casts-konto kommer att tas bort (men nedladdade filer på dina mobila enheter kommer att vara kvar).</string>
+    <string name="profile_cancel_confirm_item_web_player">Du vill inte längre ha åtkomst till Pod Pocket via din webbläsare eller stationära dator.</string>
+    <string name="profile_cancel_confirm_item_uploads">Alla filer som har laddats upp till ditt Pod Pocket-konto kommer att tas bort (men nedladdade filer på dina mobila enheter kommer att vara kvar).</string>
     <string name="profile_cancel_confirm_item_folders">Dina mappar kommer att tas bort och deras innehåll kommer att flyttas tillbaka till skärmen Podcasts.</string>
-    <string name="profile_cancel_confirm_item_plus">Åtkomst till Pocket Casts Plus-funktioner kommer att låsas efter detta datum.</string>
+    <string name="profile_cancel_confirm_item_plus">Åtkomst till Pod Pocket Plus-funktioner kommer att låsas efter detta datum.</string>
     <string name="profile_cancel_confirm_sub_expiry_date_fallback">ditt utgångsdatum</string>
     <string name="profile_cancel_confirm_sub_expiry">Din nuvarande prenumeration förblir aktiv till %1$s.</string>
     <string name="profile_cancel_confirm_subtitle">Detta kommer att ändra ditt paket till ett gratiskonto.</string>
@@ -1263,7 +1263,7 @@ Language: sv_SE
     <string name="onboarding_plus_terms_and_conditions">Villkor</string>
     <string name="onboarding_plus_privacy_policy">Integritetspolicy</string>
     <string name="onboarding_plus_continuing_agrees_to">Genom att fortsätta samtycker du till våra %1$s och vår %2$s.</string>
-    <string name="onboarding_plus_become_a_plus_member">Bli Plus-medlem och lås upp alla Pocket Casts-funktioner</string>
+    <string name="onboarding_plus_become_a_plus_member">Bli Plus-medlem och lås upp alla Pod Pocket-funktioner</string>
     <string name="onboarding_sign_up">Registrera dig</string>
     <string name="onboarding_create_account">Skapa konto</string>
     <string name="onboarding_log_in">Logga in</string>
@@ -1279,7 +1279,7 @@ Language: sv_SE
     <string name="onboarding_recommendations_make_pocket_casts_yours">Gör Pod Pocket till ditt genom att välja dina favoritpodcasts eller importera dem från en annan podcastspelare. Du kan alltid göra detta senare.</string>
     <string name="onboarding_recommendations_find_favorite_podcasts">Hitta dina favoritpodcasts</string>
     <string name="not_now">Inte nu</string>
-    <string name="onboarding_upgrade_everything_you_love_about_pocket_casts_plus">Allt du älskar med Pocket Casts och mer därtill</string>
+    <string name="onboarding_upgrade_everything_you_love_about_pocket_casts_plus">Allt du älskar med Pod Pocket och mer därtill</string>
     <string name="onboarding_plus_feature_cloud_storage_title">20 GB molnlagring</string>
     <string name="settings_open_player_automatically_summary">Om alternativet är aktiverat öppnas spelaren i fullskärmsläge när du börjar spela upp ett podcastavsnitt.</string>
     <string name="settings_open_player_automatically">Öppna spelaren automatiskt</string>
@@ -1456,7 +1456,7 @@ Language: sv_SE
     <string name="settings_about_work_with_us">Jobba med oss</string>
     <string name="settings_about_instagram">Instagram</string>
     <string name="settings_about_rate_us">Betygsätt oss</string>
-    <string name="settings_about_share_with_friends_message">Hej! Här är en länk för att ladda ner Pod Pocket-appen. Jag tycker att den är jättebra och tänkte att du också skulle gilla den. \nhttps://www.pocketcasts.com</string>
+    <string name="settings_about_share_with_friends_message">Hej! Här är en länk för att ladda ner Pod Pocket-appen. Jag tycker att den är jättebra och tänkte att du också skulle gilla den. \nhttps://github.com/Garulf/pod-pocket-android</string>
     <string name="settings_about_share_with_friends">Dela med vänner</string>
     <string name="collapsed">Minimerad</string>
     <string name="expanded">Expanderad</string>

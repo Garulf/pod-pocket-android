@@ -104,8 +104,8 @@ Language: en_GB
     <string name="settings_app_icon_patron_round">Patron Round</string>
     <string name="settings_app_icon_patron_chrome">Patron Chrome</string>
     <string name="profile_upgrade_to_patron">Upgrade to Patron</string>
-    <string name="onboarding_plus_subscribe">Subscribe to Pocket Casts Plus</string>
-    <string name="onboarding_patron_subscribe">Subscribe to Pocket Casts Patron</string>
+    <string name="onboarding_plus_subscribe">Subscribe to Pod Pocket Plus</string>
+    <string name="onboarding_patron_subscribe">Subscribe to Pod Pocket Patron</string>
     <string name="upgrade_to">Upgrade to %s</string>
     <string name="profile_patron_expires_in">Patron expires in %s</string>
     <string name="profile_account">Account</string>
@@ -210,10 +210,10 @@ Language: en_GB
     <string name="onboarding_plus_can_be_canceled_at_any_time">Can be cancelled at any time.</string>
     <string name="profile_cancel_confirm_cancel_button_title">Yes, cancel my subscription</string>
     <string name="profile_cancel_confirm_stay_button_title">Actually, I want to stay</string>
-    <string name="profile_cancel_confirm_item_web_player">You will no longer be able to access Pocket Casts using your web browser, or desktop computer.</string>
-    <string name="profile_cancel_confirm_item_uploads">All files uploaded to your Pocket Casts account will be deleted (but downloaded files on your mobile devices will remain).</string>
+    <string name="profile_cancel_confirm_item_web_player">You will no longer be able to access Pod Pocket using your web browser, or desktop computer.</string>
+    <string name="profile_cancel_confirm_item_uploads">All files uploaded to your Pod Pocket account will be deleted (but downloaded files on your mobile devices will remain).</string>
     <string name="profile_cancel_confirm_item_folders">Your folders will be removed and their contents will move back to the Podcasts screen.</string>
-    <string name="profile_cancel_confirm_item_plus">Access to Pocket Casts Plus features will be locked after this date.</string>
+    <string name="profile_cancel_confirm_item_plus">Access to Pod Pocket Plus features will be locked after this date.</string>
     <string name="profile_cancel_confirm_sub_expiry_date_fallback">your expiration date</string>
     <string name="profile_cancel_confirm_sub_expiry">Your current subscription will remain active until %1$s.</string>
     <string name="profile_cancel_confirm_subtitle">This will change your plan to a free account.</string>
@@ -245,7 +245,7 @@ Language: en_GB
     <string name="onboarding_plus_terms_and_conditions">Terms and Conditions</string>
     <string name="onboarding_plus_privacy_policy">Privacy Policy</string>
     <string name="onboarding_plus_continuing_agrees_to">By continuing, you agree to our %1$s and %2$s.</string>
-    <string name="onboarding_plus_become_a_plus_member">Become a Plus member and unlock all Pocket Casts features</string>
+    <string name="onboarding_plus_become_a_plus_member">Become a Plus member and unlock all Pod Pocket features</string>
     <string name="onboarding_sign_up">Sign up</string>
     <string name="onboarding_create_account">Create Account</string>
     <string name="onboarding_log_in">Log in</string>
@@ -256,7 +256,7 @@ Language: en_GB
     <string name="onboarding_plus_feature_themes_icons_title">Themes &amp; Icons</string>
     <string name="onboarding_plus_feature_cloud_storage_text">Upload your files to cloud storage and have them available everywhere.</string>
     <string name="onboarding_plus_feature_desktop_apps_text">Listen in more places with our Windows, macOS, and Web apps.</string>
-    <string name="onboarding_upgrade_everything_you_love_about_pocket_casts_plus">Everything you love about Pocket Casts, plus more</string>
+    <string name="onboarding_upgrade_everything_you_love_about_pocket_casts_plus">Everything you love about Pod Pocket, plus more</string>
     <string name="onboarding_recommendations_import">Import</string>
     <string name="onboarding_recommendations_make_pocket_casts_yours">Make Pod Pocket yours by selecting your favourite podcasts or import them from another podcast player. You can always do this later.</string>
     <string name="onboarding_recommendations_find_favorite_podcasts">Find your favourite podcasts</string>
@@ -425,7 +425,7 @@ Language: en_GB
     <string name="settings_about_work_with_us">Work with us</string>
     <string name="settings_about_instagram">Instagram</string>
     <string name="settings_about_rate_us">Rate us</string>
-    <string name="settings_about_share_with_friends_message">Hi! Here\'s a link to download the Pod Pocket app. I\'m really enjoying it and thought you might too. \nhttps://www.pocketcasts.com</string>
+    <string name="settings_about_share_with_friends_message">Hi! Here\'s a link to download the Pod Pocket app. I\'m really enjoying it and thought you might too. \nhttps://github.com/Garulf/pod-pocket-android</string>
     <string name="settings_about_share_with_friends">Share with friends</string>
     <string name="collapsed">Collapsed</string>
     <string name="expanded">Expanded</string>

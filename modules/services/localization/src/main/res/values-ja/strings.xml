@@ -118,7 +118,7 @@ Language: ja_JP
     <string name="tv_nothing_playing_subtitle">エピソードを再生すると、ここに表示されます。</string>
     <string name="tv_nothing_playing_title">再生中のエピソードがありません</string>
     <string name="tv_episode_removed_from_up_next">次のエピソードから削除しました</string>
-    <string name="tv_sign_in_title">Pocket Casts にログイン</string>
+    <string name="tv_sign_in_title">Pod Pocket にログイン</string>
     <string name="tv_create_account_modal_title">ポッドキャストにはホームが必要です</string>
     <string name="tv_create_account_modal_subtitle">無料アカウントを作成すると、あらゆる端末でポッドキャストをフォローしたり、次のエピソードを設定したり、中断した場所から開始したりできます。</string>
     <string name="tv_episode_marked_as_played">再生済みとしてマークしました</string>
@@ -188,7 +188,7 @@ Language: ja_JP
     <string name="tv_onboarding_syncing">ポッドキャストを同期しています\u2026</string>
     <string name="tv_onboarding_browse_without_account">アカウントなしで閲覧</string>
     <string name="tv_onboarding_create_free_account">無料アカウントを作成</string>
-    <string name="tv_onboarding_welcome_tv">Pocket Casts TV へようこそ</string>
+    <string name="tv_onboarding_welcome_tv">Pod Pocket TV へようこそ</string>
     <string name="tv_onboarding_welcome">Pod Pocket へようこそ</string>
     <string name="sort_longest_to_shortest">長い順</string>
     <string name="sort_shortest_to_longest">短い順</string>
@@ -734,7 +734,7 @@ Language: ja_JP
     <string name="winback_changing_plan">プランの変更</string>
     <string name="winback_too_many_subscritpions_button_label">Play Store でサブスクリプションを管理</string>
     <string name="winback_too_many_subscritpions_title">複数のサブスクリプションが見つかりました</string>
-    <string name="winback_too_many_subscritpions_note">アクティブな Pocket Casts サブスクリプションが複数あります。  Play Store でサブスクリプションを管理して、重複請求を回避してください。</string>
+    <string name="winback_too_many_subscritpions_note">アクティブな Pod Pocket サブスクリプションが複数あります。  Play Store でサブスクリプションを管理して、重複請求を回避してください。</string>
     <string name="winback_error_fetch_description">申し訳ありません、プランの取得中にエラーが発生しました。</string>
     <string name="winback_available_plans_billing_note">新しいプランは現在の請求期間の終了時に有効化されます。</string>
     <string name="winback_available_plans_title">利用可能なプラン</string>
@@ -770,11 +770,11 @@ Language: ja_JP
     <string name="plus_subscription_finished">サブスクリプションが終了しました</string>
     <string name="chapter_time_remaining_content_description">チャプターの残り%s</string>
     <string name="chapter_count_summary">%1$d/%2$d</string>
-    <string name="referrals_share_text">こんにちは。\n\nこちらは、私のお気に入りのポッドキャストプレイヤー、Pocket Casts Plus を利用できる%1$sのゲストパスです。 ブックマークやフォルダーなど、他にはないユニークな機能が満載です。 きっと気に入ってもらえると思います。</string>
-    <string name="files_plus_prompt">Pocket Casts Plus でファイルのアップロードなどを利用しましょう</string>
-    <string name="icons_plus_prompt">Pocket Casts Plus で専用アプリアイコンの取得などを利用しましょう</string>
-    <string name="themes_plus_prompt">Pocket Casts Plus で専用テーマの取得などを利用しましょう</string>
-    <string name="folders_plus_prompt">Pocket Casts Plus でポッドキャストの整理などを利用しましょう</string>
+    <string name="referrals_share_text">こんにちは。\n\nこちらは、私のお気に入りのポッドキャストプレイヤー、Pod Pocket Plus を利用できる%1$sのゲストパスです。 ブックマークやフォルダーなど、他にはないユニークな機能が満載です。 きっと気に入ってもらえると思います。</string>
+    <string name="files_plus_prompt">Pod Pocket Plus でファイルのアップロードなどを利用しましょう</string>
+    <string name="icons_plus_prompt">Pod Pocket Plus で専用アプリアイコンの取得などを利用しましょう</string>
+    <string name="themes_plus_prompt">Pod Pocket Plus で専用テーマの取得などを利用しましょう</string>
+    <string name="folders_plus_prompt">Pod Pocket Plus でポッドキャストの整理などを利用しましょう</string>
     <string name="end_of_year_story_top_podcast_title">%1$d の人気ポッドキャスト</string>
     <string name="drag_down_to_dismiss_content_description">下にドラッグして閉じる</string>
     <string name="maybe_later">後で</string>
@@ -827,7 +827,7 @@ Language: ja_JP
     <string name="profile_cloud_add_invalid_file">選択したファイルを読み込めません。 もう一度試すか、別のファイルを選択してください。</string>
     <string name="error_generic_message">問題が発生しました。 後でもう一度お試しください。</string>
     <string name="player_sleep_timer_settings">スリープタイマー設定</string>
-    <string name="referrals_share_subject">Pocket Casts Plus の%1$sのゲストパス !</string>
+    <string name="referrals_share_subject">Pod Pocket Plus の%1$sのゲストパス !</string>
     <string name="referrals_invalid_offer_title">このオファーは利用できません</string>
     <string name="referrals_invalid_offer_description">このゲストパスは Plus または Patron のサブスクリプションがアクティブでないユーザーが対象で、1回に限りご利用いただけます。 お聴きいただきありがとうございます !</string>
     <string name="referrals_activate_my_pass">パスを有効化</string>
@@ -835,7 +835,7 @@ Language: ja_JP
     <string name="referrals_claim_guess_pass_banner_card_subtitle">リスニング体験をすべてご利用いただけます</string>
     <string name="referrals_claim_guess_pass_banner_card_title">Plus の%1$sのゲストパスを取得しましょう</string>
     <string name="referrals_share_guest_pass">ゲストパスを共有</string>
-    <string name="referrals_send_guest_pass_title">Pocket Casts Plus を%1$sプレゼント</string>
+    <string name="referrals_send_guest_pass_title">Pod Pocket Plus を%1$sプレゼント</string>
     <string name="move_down">下に移動</string>
     <string name="move_up">上に移動</string>
     <string name="search_episodes_not_found_summary">その検索に該当するエピソードは見つかりませんでした。 別のキーワードを試してください。</string>
@@ -1456,7 +1456,7 @@ Language: ja_JP
     <string name="settings_about_work_with_us">求人情報</string>
     <string name="settings_about_instagram">Instagram</string>
     <string name="settings_about_rate_us">評価してください</string>
-    <string name="settings_about_share_with_friends_message">注目! このリンクから Pod Pocket アプリをダウンロードできます。とても楽しく、どなたにも気に入ってもらえると思います。\nhttps://www.pocketcasts.com</string>
+    <string name="settings_about_share_with_friends_message">注目! このリンクから Pod Pocket アプリをダウンロードできます。とても楽しく、どなたにも気に入ってもらえると思います。\nhttps://github.com/Garulf/pod-pocket-android</string>
     <string name="settings_about_share_with_friends">友達と共有する</string>
     <string name="collapsed">折りたたみ表示</string>
     <string name="expanded">展開表示</string>
