@@ -13,3 +13,11 @@ repos:
     rev: v8.30.1
     hooks:
       - id: gitleaks
+  - repo: local
+    hooks:
+      - id: selfhosted-unit-tests
+        name: selfhosted unit tests
+        entry: ./gradlew --no-daemon --max-workers=2 "-Dorg.gradle.jvmargs=-Xmx3g -XX:MaxMetaspaceSize=1g" -Pkotlin.compiler.execution.strategy=in-process :modules:services:selfhosted:testDebugUnitTest
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
