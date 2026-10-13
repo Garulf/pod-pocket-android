@@ -159,7 +159,6 @@ import au.com.shiftyjelly.pocketcasts.profile.ProfileFragment
 import au.com.shiftyjelly.pocketcasts.profile.SubCancelledFragment
 import au.com.shiftyjelly.pocketcasts.profile.TrialFinishedFragment
 import au.com.shiftyjelly.pocketcasts.profile.cloud.CloudFileBottomSheetFragment
-import au.com.shiftyjelly.pocketcasts.profile.cloud.CloudFilesFragment
 import au.com.shiftyjelly.pocketcasts.profile.sonos.SonosAppLinkActivity
 import au.com.shiftyjelly.pocketcasts.repositories.appreview.AppReviewManager
 import au.com.shiftyjelly.pocketcasts.repositories.di.NotificationPermissionChecker
@@ -1935,11 +1934,7 @@ class MainActivity :
         theme.setupThemeForConfig(this, newConfig)
     }
 
-    override fun openCloudFiles() {
-        if (supportFragmentManager.fragments.find { it is CloudFilesFragment } == null) {
-            addFragment(CloudFilesFragment())
-        }
-    }
+    override fun openCloudFiles() = Unit
 
     override fun openPodcastPage(uuid: String, sourceView: String?) {
         closePlayer()
