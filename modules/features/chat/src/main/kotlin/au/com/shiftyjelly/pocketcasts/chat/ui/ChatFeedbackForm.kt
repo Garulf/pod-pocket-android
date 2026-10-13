@@ -137,13 +137,13 @@ internal fun ChatFeedbackForm(
         }
         Button(
             onClick = onSubmit,
-            enabled = canSubmit || isSubmitting,
+            enabled = canSubmit,
             shape = RoundedCornerShape(12.dp),
             elevation = null,
             colors = ButtonDefaults.buttonColors(
                 backgroundColor = theme.primaryText,
                 contentColor = theme.background,
-                disabledBackgroundColor = theme.primaryText.copy(alpha = 0.4f),
+                disabledBackgroundColor = if (isSubmitting) theme.primaryText else theme.primaryText.copy(alpha = 0.4f),
                 disabledContentColor = theme.background,
             ),
             modifier = Modifier
@@ -152,10 +152,13 @@ internal fun ChatFeedbackForm(
                 .heightIn(min = 56.dp),
         ) {
             if (isSubmitting) {
+                val sending = stringResource(LR.string.chat_feedback_sending)
                 CircularProgressIndicator(
                     color = theme.background,
                     strokeWidth = 2.dp,
-                    modifier = Modifier.size(24.dp),
+                    modifier = Modifier
+                        .size(24.dp)
+                        .semantics { contentDescription = sending },
                 )
             } else {
                 Text(
@@ -199,6 +202,7 @@ private fun ReasonRow(
         RadioButton(
             selected = isSelected,
             onClick = null,
+            enabled = isEnabled,
             colors = RadioButtonDefaults.colors(
                 selectedColor = theme.quoteTimestamp,
                 unselectedColor = theme.primaryText,
