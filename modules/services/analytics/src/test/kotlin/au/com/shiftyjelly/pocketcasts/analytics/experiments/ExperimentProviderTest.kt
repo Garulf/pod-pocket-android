@@ -46,30 +46,13 @@ class ExperimentProviderTest {
     }
 
     @Test
-    fun `should initialize with uuid`() {
+    fun `never asks ExPlat for experiments`() {
         FeatureFlag.setEnabled(Feature.EXPLAT_EXPERIMENT, true)
-
-        val uuid = "test-uuid"
-        whenever(accountStatusInfo.getUserIds()).thenReturn(UserIds(accountId = uuid, anonId = "invalid"))
+        whenever(accountStatusInfo.getUserIds()).thenReturn(UserIds(accountId = "test-uuid", anonId = "invalid"))
 
         experimentProvider.initialize()
 
-        verify(repository).initialize(uuid, null)
-        verify(accountStatusInfo).getUserIds()
-    }
-
-    @Test
-    fun `should initialize with anonID`() {
-        FeatureFlag.setEnabled(Feature.EXPLAT_EXPERIMENT, true)
-
-        val uuid = "test-anonID"
-
-        whenever(accountStatusInfo.getUserIds()).thenReturn(UserIds(accountId = null, anonId = uuid))
-
-        experimentProvider.initialize()
-
-        verify(repository).initialize(uuid, null)
-        verify(accountStatusInfo).getUserIds()
+        verify(repository, never()).initialize(anyString(), eq(null))
     }
 
     @Test
@@ -119,7 +102,7 @@ class ExperimentProviderTest {
         experimentProvider.refreshExperiments()
 
         verify(repository).clear()
-        verify(repository).initialize(uuid, null)
+        verify(repository, never()).initialize(anyString(), eq(null))
     }
 }
 
