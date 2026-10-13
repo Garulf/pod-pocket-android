@@ -21,3 +21,9 @@ repos:
         language: system
         pass_filenames: false
         stages: [pre-push]
+      - id: disabled-features
+        name: cloud-only features stay off
+        entry: python3 scripts/podpocket/disable_features.py --check
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
