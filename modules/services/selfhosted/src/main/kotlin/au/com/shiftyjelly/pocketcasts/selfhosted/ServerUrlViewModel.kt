@@ -4,10 +4,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlin.coroutines.cancellation.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import okhttp3.HttpUrl
 
 @HiltViewModel
 class ServerUrlViewModel @Inject constructor(
@@ -16,9 +19,10 @@ class ServerUrlViewModel @Inject constructor(
 ) : ViewModel() {
     private val _state = MutableStateFlow(ServerUrlState(text = store.serverUrl?.toString().orEmpty()))
     val state: StateFlow<ServerUrlState> = _state
+    private var checkJob: Job? = null
 
     fun updateText(text: String) {
-        ServerUrls.parse(text)?.let(store::setServerUrl)
+        checkJob?.cancel()
         _state.update { ServerUrlState(text = text) }
     }
 
@@ -40,8 +44,8 @@ class ServerUrlViewModel @Inject constructor(
             return
         }
         _state.update { it.copy(status = ServerStatus.Checking) }
-        viewModelScope.launch {
-            when (val result = checker.check(url)) {
+        checkJob = viewModelScope.launch {
+            when (val result = runCheck(url)) {
                 ConnectionResult.Reachable -> {
                     store.setServerUrl(url)
                     _state.update { it.copy(status = ServerStatus.Reachable(url.host)) }
@@ -52,6 +56,16 @@ class ServerUrlViewModel @Inject constructor(
                     _state.update { it.copy(status = ServerStatus.Unreachable(result.reason)) }
                 }
             }
+        }
+    }
+
+    private suspend fun runCheck(url: HttpUrl): ConnectionResult {
+        return try {
+            checker.check(url)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            ConnectionResult.Unreachable(e.message ?: e.javaClass.simpleName)
         }
     }
 }
