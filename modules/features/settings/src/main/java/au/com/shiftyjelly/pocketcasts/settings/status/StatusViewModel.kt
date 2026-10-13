@@ -65,14 +65,6 @@ class StatusViewModel @Inject constructor(
                 ),
             ),
         ),
-        Service(
-            title = LR.string.settings_status_service_hosts,
-            summary = LR.string.settings_status_service_hosts_summary,
-            help = LR.string.settings_status_service_hosts_help,
-            check = Urls(
-                listOf("https://dts.podtrac.com/redirect.mp3/static.pocketcasts.com/assets/feeds/status/episode1.mp3"),
-            ),
-        ),
     )
 
     // Backing property to avoid state updates from other classes
