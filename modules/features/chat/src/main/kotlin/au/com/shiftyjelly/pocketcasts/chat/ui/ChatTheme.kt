@@ -28,6 +28,7 @@ internal data class ChatTheme(
     val chipBorder: Color,
     val quoteTimestamp: Color,
     val rating: Color,
+    val errorText: Color,
 ) {
     companion object {
         fun default(colors: ThemeColors) = ChatTheme(
@@ -50,6 +51,7 @@ internal data class ChatTheme(
             chipBorder = colors.primaryUi05,
             quoteTimestamp = colors.primaryInteractive01,
             rating = colors.primaryIcon02,
+            errorText = colors.support05,
         )
 
         fun player(colors: PlayerColors) = ChatTheme(
@@ -72,6 +74,7 @@ internal data class ChatTheme(
             chipBorder = colors.contrast05,
             quoteTimestamp = QuoteTimestampBlue,
             rating = colors.contrast05,
+            errorText = ErrorRed,
         )
     }
 }
@@ -91,3 +94,4 @@ internal fun rememberChatTheme(): ChatTheme {
 }
 
 private val QuoteTimestampBlue = Color(0xFF2A67F9)
+private val ErrorRed = Color(0xFFF43E37)
