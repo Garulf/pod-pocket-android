@@ -19,6 +19,7 @@ dependencies {
     api(libs.okhttp)
 
     implementation(libs.coroutines.core)
+    implementation(libs.moshi)
     implementation("androidx.lifecycle:lifecycle-viewmodel:${libs.versions.lifecycle.get()}")
 
     testImplementation(libs.androidx.test.core)
