@@ -120,26 +120,8 @@ class MainActivityViewModelTest {
     }
 
     @Test
-    fun `given a new user, then what's new should not be displayed`() = runTest {
-        initViewModel(isNewUser = true)
-
-        viewModel.state.test {
-            assertFalse(awaitItem().shouldShowWhatsNew)
-        }
-    }
-
-    @Test
-    fun `given an user and is previous version, then what's should not be displayed`() = runTest {
-        initViewModel(shouldSetPreviousVersion = true)
-
-        viewModel.state.test {
-            assertFalse(awaitItem().shouldShowWhatsNew)
-        }
-    }
-
-    @Test
-    fun `given an user and is current version, then what's should not be displayed`() = runTest {
-        initViewModel(shouldSetPreviousVersion = false)
+    fun `what's new is not shown on start`() = runTest {
+        initViewModel()
 
         viewModel.state.test {
             assertFalse(awaitItem().shouldShowWhatsNew)
@@ -263,21 +245,7 @@ class MainActivityViewModelTest {
         }
     }
 
-    private fun initViewModel(
-        isNewUser: Boolean = false,
-        shouldSetPreviousVersion: Boolean = false,
-    ) {
-        if (isNewUser) {
-            whenever(settings.getMigratedVersionCode()).thenReturn(0)
-        } else {
-            whenever(settings.getMigratedVersionCode()).thenReturn(1)
-        }
-        if (shouldSetPreviousVersion) {
-            whenever(settings.getWhatsNewVersionCode()).thenReturn(2) // this is less than the current what's new version code and so will trigger what's new
-        } else {
-            whenever(settings.getWhatsNewVersionCode()).thenReturn(Settings.WHATS_NEW_VERSION_CODE)
-        }
-
+    private fun initViewModel() {
         whenever(userManager.getSignInState()).thenReturn(
             Flowable.just(
                 SignInState.SignedIn(email = "", subscription = null),
