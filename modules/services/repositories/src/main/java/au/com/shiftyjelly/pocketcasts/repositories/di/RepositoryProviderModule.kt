@@ -62,7 +62,10 @@ class RepositoryProviderModule {
         return if (context.packageName == "au.com.shiftyjelly.pocketcasts") {
             PaymentDataSource.billing(context, listeners)
         } else {
-            PaymentDataSource.fake()
+            PaymentDataSource.fake().apply {
+                loadedProducts = emptyList()
+                loadedPurchases = emptyList()
+            }
         }
     }
 

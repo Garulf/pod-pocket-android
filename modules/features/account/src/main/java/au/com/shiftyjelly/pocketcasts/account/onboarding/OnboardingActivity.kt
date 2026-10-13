@@ -15,6 +15,7 @@ import androidx.compose.runtime.getValue
 import androidx.core.content.IntentCompat
 import androidx.core.view.WindowCompat
 import au.com.shiftyjelly.pocketcasts.account.onboarding.OnboardingActivityContract.OnboardingFinish
+import au.com.shiftyjelly.pocketcasts.account.onboarding.upgrade.OnboardingFlowRoutes
 import au.com.shiftyjelly.pocketcasts.account.viewmodel.OnboardingActivityViewModel
 import au.com.shiftyjelly.pocketcasts.account.viewmodel.OnboardingUpgradeFeaturesViewModel
 import au.com.shiftyjelly.pocketcasts.repositories.user.UserManager
@@ -51,6 +52,10 @@ class OnboardingActivity : AppCompatActivity() {
     @SuppressLint("SourceLockedOrientationActivity")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (OnboardingFlowRoutes.startDestination(onboardingFlow) == OnboardingFlowRoutes.PlusUpgrade.ROUTE) {
+            finish()
+            return
+        }
         // Make content edge-to-edge
         WindowCompat.setDecorFitsSystemWindows(window, false)
         if (Build.VERSION.SDK_INT != Build.VERSION_CODES.O) {

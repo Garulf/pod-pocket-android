@@ -264,7 +264,6 @@ class PocketCastsApplication :
             notificationManager.setupReEngagementNotifications()
             notificationManager.setupTrendingAndRecommendationsNotifications()
             notificationManager.setupNewFeaturesNotifications()
-            notificationManager.setupOffersNotifications()
             appLifecycleObserver.setup()
             PlaybackServiceToggle.ensureCorrectServiceEnabled(this@PocketCastsApplication)
 

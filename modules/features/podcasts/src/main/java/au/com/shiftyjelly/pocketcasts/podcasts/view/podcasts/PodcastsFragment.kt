@@ -282,7 +282,7 @@ class PodcastsFragment :
                         navigationIcon = navigationIcon,
                     )
 
-                    toolbar.menu.findItem(R.id.folders_locked)?.isVisible = !isSignedInAsPlusOrPatron
+                    toolbar.menu.findItem(R.id.folders_locked)?.isVisible = false
                     toolbar.menu.findItem(R.id.create_folder)?.isVisible = rootFolder && isSignedInAsPlusOrPatron
                     toolbar.menu.findItem(R.id.search_podcasts)?.isVisible = rootFolder
 
