@@ -132,4 +132,4 @@ jobs:
           gh release create "$GITHUB_REF_NAME" "pod-pocket-${{ steps.version.outputs.name }}-debug.apk"
           --prerelease
           --title "Pod Pocket ${{ steps.version.outputs.name }} (debug build)"
-          --notes "Unsigned debug build of Pod Pocket ${{ steps.version.outputs.name }}. It installs side by side with a release build as net.garulf.podpocket.debug."
+          --notes "Debug build of Pod Pocket (signed with the public debug key) ${{ steps.version.outputs.name }}. It installs side by side with a release build as net.garulf.podpocket.debug."
