@@ -363,9 +363,9 @@ Language: de
     <string name="app_rating_yes_label">Ja!</string>
     <string name="app_rating_no_label">Nicht wirklich</string>
     <string name="app_rating_body">Hallo! Wir würden gerne wissen, ob dir unsere App gefällt.</string>
-    <string name="app_rating_title">Gefällt dir Pocket\u00A0Casts?</string>
+    <string name="app_rating_title">Gefällt dir Pod\u00A0Pocket?</string>
     <string name="end_of_year_story_epilogue_subtitle">Teile deine Wiedergabeliste mit Freunden und zeige Podcastern, die dich das ganze Jahr über begleitet haben, etwas Anerkennung</string>
-    <string name="end_of_year_story_epilogue_title">Danke, dass du dein Jahr mit Pocket\u00A0Casts verbracht hast</string>
+    <string name="end_of_year_story_epilogue_title">Danke, dass du dein Jahr mit Pod\u00A0Pocket verbracht hast</string>
     <string name="end_of_year_stories_year_completion_rate_subtitle">Von %2$d begonnenen Folgen hast du %1$d abgeschlossen.\nDu bist also konsequenter als die meisten Fitnessstudio-Mitglieder.</string>
     <string name="search_suggestions_no_results_message">Versuche es mit einer neuen Suche oder füge eine Podcast-Feed-URL hinzu</string>
     <string name="search_suggestions_no_results_title">Keine Ergebnisse</string>
@@ -437,10 +437,10 @@ Language: de
     <string name="onboarding_interests_title">Erzähle uns von deinen Lieblingsthemen</string>
     <string name="onboarding_create_account_sign_up_google">Mit Google registrieren</string>
     <string name="onboarding_create_account_sign_up_email">Mit E-Mail-Adresse registrieren</string>
-    <string name="onboarding_create_account_title">Pocket\u00A0Casts-Konto erstellen</string>
+    <string name="onboarding_create_account_title">Pod\u00A0Pocket-Konto erstellen</string>
     <string name="onboarding_login_or">ODER</string>
     <string name="onboarding_login_continue_with_email">Weiter mit E-Mail-Adresse</string>
-    <string name="onboarding_create_account_message">Deine Podcasts, immer synchron. Schütze deine Bibliothek und genieße Pocket\u00A0Casts im Web und auf dem Desktop.</string>
+    <string name="onboarding_create_account_message">Deine Podcasts, immer synchron. Schütze deine Bibliothek und genieße Pod\u00A0Pocket im Web und auf dem Desktop.</string>
     <string name="playlist_artwork_description">Artwork der Playlist</string>
     <string name="onboarding_intro_get_started">Los geht’s</string>
     <string name="onboarding_intro_carousel_pc_user">Pod Pocket-Benutzer</string>

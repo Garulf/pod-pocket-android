@@ -363,9 +363,9 @@ Language: ru
     <string name="app_rating_yes_label">Да!</string>
     <string name="app_rating_no_label">Пожалуй, нет</string>
     <string name="app_rating_body">Здравствуйте! Мы хотели бы узнать, нравится ли вам наше\u00A0приложение.</string>
-    <string name="app_rating_title">Вам нравится Pocket\u00A0Casts?</string>
+    <string name="app_rating_title">Вам нравится Pod\u00A0Pocket?</string>
     <string name="end_of_year_story_epilogue_subtitle">Поделитесь своей статистикой с друзьями и покажите подкастерам, с которыми вы провели весь этот год, как вы их любите</string>
-    <string name="end_of_year_story_epilogue_title">Спасибо, что провели весь год с Pocket\u00A0Casts</string>
+    <string name="end_of_year_story_epilogue_title">Спасибо, что провели весь год с Pod\u00A0Pocket</string>
     <string name="end_of_year_stories_year_completion_rate_subtitle">Из %2$d начатых выпусков вы завершили %1$d.\nКуда регулярнее, чем большинство абонементов в спортзал!</string>
     <string name="search_suggestions_no_results_title">Нет результатов</string>
     <string name="search_suggestions_no_results_message">Попробуйте уточнить поиск, введя URL-адрес ленты подкаста</string>
@@ -437,8 +437,8 @@ Language: ru
     <string name="onboarding_interests_title">Расскажите нам о своих любимых темах</string>
     <string name="onboarding_create_account_sign_up_google">Зарегистрироваться через Google</string>
     <string name="onboarding_create_account_sign_up_email">Зарегистрироваться по адресу эл. почты</string>
-    <string name="onboarding_create_account_message">Ваши подкасты всегда будут синхронизированы. Защитите свою библиотеку и пользуйтесь Pocket\u00A0Casts в Интернете и на ПК.</string>
-    <string name="onboarding_create_account_title">Создайте учётную запись Pocket\u00A0Casts</string>
+    <string name="onboarding_create_account_message">Ваши подкасты всегда будут синхронизированы. Защитите свою библиотеку и пользуйтесь Pod\u00A0Pocket в Интернете и на ПК.</string>
+    <string name="onboarding_create_account_title">Создайте учётную запись Pod\u00A0Pocket</string>
     <string name="onboarding_login_or">ИЛИ</string>
     <string name="onboarding_login_continue_with_email">Чтобы продолжить, введите адрес эл. почты.</string>
     <string name="playlist_artwork_description">Оформление плейлиста</string>

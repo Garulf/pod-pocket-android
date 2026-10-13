@@ -363,9 +363,9 @@ Language: ja_JP
     <string name="app_rating_yes_label">はい。</string>
     <string name="app_rating_no_label">そこまででない</string>
     <string name="app_rating_body">こんにちは。 \u00A0 アプリをお楽しみいただいているかどうかお知らせください。</string>
-    <string name="app_rating_title">Pocket\u00A0Casts を楽しんでいますか ?</string>
+    <string name="app_rating_title">Pod\u00A0Pocket を楽しんでいますか ?</string>
     <string name="end_of_year_story_epilogue_subtitle">プレイバックを友達と共有しましょう。1年間あなたを盛り上げてくれたポッドキャスターたちに感謝の気持ちを伝えましょう</string>
-    <string name="end_of_year_story_epilogue_title">1年間 Pocket\u00A0Casts をご愛顧いただきありがとうございます</string>
+    <string name="end_of_year_story_epilogue_title">1年間 Pod\u00A0Pocket をご愛顧いただきありがとうございます</string>
     <string name="end_of_year_stories_year_completion_rate_subtitle">開始した%2$d件のエピソードのうち、%1$d件を完了しました。\nほとんどのジム会員よりもフォロースルーが強力です。</string>
     <string name="search_suggestions_no_results_message">新しい検索を試すか、ポッドキャストフィードの URL を追加してください</string>
     <string name="search_suggestions_no_results_title">結果はありません</string>
@@ -437,8 +437,8 @@ Language: ja_JP
     <string name="onboarding_interests_title">お気に入りのトピックについて教えてください</string>
     <string name="onboarding_create_account_sign_up_google">Google で登録</string>
     <string name="onboarding_create_account_sign_up_email">メールアドレスで登録</string>
-    <string name="onboarding_create_account_message">ポッドキャストは常に同期されます。 ライブラリを安全に保ち、ウェブとデスクトップで Pocket\u00A0Casts をお楽しみください。</string>
-    <string name="onboarding_create_account_title">Pocket\u00A0Casts アカウントを作成</string>
+    <string name="onboarding_create_account_message">ポッドキャストは常に同期されます。 ライブラリを安全に保ち、ウェブとデスクトップで Pod\u00A0Pocket をお楽しみください。</string>
+    <string name="onboarding_create_account_title">Pod\u00A0Pocket アカウントを作成</string>
     <string name="onboarding_login_or">または</string>
     <string name="onboarding_login_continue_with_email">メールで続ける</string>
     <string name="playlist_artwork_description">プレイリストのアートワーク</string>

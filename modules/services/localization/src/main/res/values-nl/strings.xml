@@ -363,9 +363,9 @@ Language: nl
     <string name="app_rating_yes_label">Ja!</string>
     <string name="app_rating_no_label">Niet echt</string>
     <string name="app_rating_body">Hallo! We willen graag weten of je onze \u00A0app leuk vindt.</string>
-    <string name="app_rating_title">Vind je Pocket\u00A0Casts leuk?</string>
+    <string name="app_rating_title">Vind je Pod\u00A0Pocket leuk?</string>
     <string name="end_of_year_story_epilogue_subtitle">Deel je Playback met vrienden en toon wat liefde aan de podcasters die je het hele jaar gezelschap hielden</string>
-    <string name="end_of_year_story_epilogue_title">Bedankt dat je je jaar bij Pocket\u00A0Casts hebt doorgebracht</string>
+    <string name="end_of_year_story_epilogue_title">Bedankt dat je je jaar bij Pod\u00A0Pocket hebt doorgebracht</string>
     <string name="end_of_year_stories_year_completion_rate_subtitle">Van alle %2$d afleveringen die zijn gestart, zijn er %1$d klaar.\nEen sterkere followt‑hrough dan de meeste sportschoollidmaatschappen.</string>
     <string name="search_suggestions_no_results_message">Probeer een nieuwe zoekopdracht of voeg een URL van een podcast-feed toe</string>
     <string name="search_suggestions_no_results_title">Geen resultaten</string>
@@ -436,8 +436,8 @@ Language: nl
     <string name="onboarding_interests_description">Geweldige podcasts, zorgvuldig geselecteerd door echte mensen, komen jouw kant op!</string>
     <string name="onboarding_interests_title">Vertel ons over jouw favoriete onderwerpen</string>
     <string name="onboarding_create_account_sign_up_google">Registreren via Google</string>
-    <string name="onboarding_create_account_message">Je podcasts, altijd gesynchroniseerd. Houd je bibliotheek veilig en geniet van Pocket\u00A0Casts op internet en desktop.</string>
-    <string name="onboarding_create_account_title">Maak je Pocket\u00A0Casts-account aan</string>
+    <string name="onboarding_create_account_message">Je podcasts, altijd gesynchroniseerd. Houd je bibliotheek veilig en geniet van Pod\u00A0Pocket op internet en desktop.</string>
+    <string name="onboarding_create_account_title">Maak je Pod\u00A0Pocket-account aan</string>
     <string name="onboarding_login_or">OF</string>
     <string name="onboarding_login_continue_with_email">Ga door met e-mail</string>
     <string name="onboarding_create_account_sign_up_email">Registreren via e-mail</string>

@@ -363,9 +363,9 @@ Language: zh_TW
     <string name="app_rating_yes_label">可以！</string>
     <string name="app_rating_no_label">不太想</string>
     <string name="app_rating_body">你好！ 歡迎分享你的應用程式滿意度。</string>
-    <string name="app_rating_title">Pocket\u00A0Casts 使用起來還滿意嗎？</string>
+    <string name="app_rating_title">Pod\u00A0Pocket 使用起來還滿意嗎？</string>
     <string name="end_of_year_story_epilogue_subtitle">與好友分享年度播放回顧，向陪伴你一整年的 Podcast 主講人表達心意</string>
-    <string name="end_of_year_story_epilogue_title">感謝你這一年來持續使用 Pocket\u00A0Casts</string>
+    <string name="end_of_year_story_epilogue_title">感謝你這一年來持續使用 Pod\u00A0Pocket</string>
     <string name="end_of_year_stories_year_completion_rate_subtitle">你一共聽了 %2$d 個單集，並完成了 %1$d 集。\n堅持不懈，比大多數健身房會員資格還強。</string>
     <string name="search_suggestions_no_results_message">嘗試新的搜尋，或新增 Podcast 摘要 URL</string>
     <string name="search_suggestions_no_results_title">沒有結果</string>
@@ -438,8 +438,8 @@ Language: zh_TW
     <string name="onboarding_login_or">或者</string>
     <string name="onboarding_create_account_sign_up_google">使用 Google 帳號註冊</string>
     <string name="onboarding_create_account_sign_up_email">使用電子郵件地址註冊</string>
-    <string name="onboarding_create_account_message">讓 Podcast 永遠保持同步。 保護你的媒體庫，在網頁和桌上型電腦安全收聽 Pocket\u00A0Casts。</string>
-    <string name="onboarding_create_account_title">建立自己的 Pocket\u00A0Casts 帳號</string>
+    <string name="onboarding_create_account_message">讓 Podcast 永遠保持同步。 保護你的媒體庫，在網頁和桌上型電腦安全收聽 Pod\u00A0Pocket。</string>
+    <string name="onboarding_create_account_title">建立自己的 Pod\u00A0Pocket 帳號</string>
     <string name="onboarding_login_continue_with_email">繼續使用電子郵件地址登入</string>
     <string name="playlist_artwork_description">播放清單的封面圖片</string>
     <string name="onboarding_intro_get_started">開始使用</string>

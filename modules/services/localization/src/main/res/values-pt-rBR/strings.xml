@@ -363,9 +363,9 @@ Language: pt_BR
     <string name="app_rating_yes_label">Sim!</string>
     <string name="app_rating_no_label">Não muito</string>
     <string name="app_rating_body">Olá! Adoraríamos saber se você está aproveitando nosso\u00A0app.</string>
-    <string name="app_rating_title">Está curtindo o Pocket\u00A0Casts?</string>
+    <string name="app_rating_title">Está curtindo o Pod\u00A0Pocket?</string>
     <string name="end_of_year_story_epilogue_subtitle">Compartilhe sua retrospectiva com amigos e mostre seu amor pelos podcasters que te acompanharam o ano todo</string>
-    <string name="end_of_year_story_epilogue_title">Obrigado por passar o ano com o Pocket\u00A0Casts</string>
+    <string name="end_of_year_story_epilogue_title">Obrigado por passar o ano com o Pod\u00A0Pocket</string>
     <string name="end_of_year_stories_year_completion_rate_subtitle">De %2$d episódios iniciados, você concluiu %1$d.\nVocê é mais persistente do que a maioria das pessoas que entra para a academia.</string>
     <string name="search_suggestions_no_results_message">Tente uma nova pesquisa ou adicione a URL de um feed de podcast</string>
     <string name="search_suggestions_no_results_title">Nenhum resultado</string>
@@ -437,8 +437,8 @@ Language: pt_BR
     <string name="onboarding_interests_title">Conte quais são seus tópicos favoritos</string>
     <string name="onboarding_create_account_sign_up_google">Inscreva-se com o Google</string>
     <string name="onboarding_create_account_sign_up_email">Inscreva-se com e-mail</string>
-    <string name="onboarding_create_account_message">Seus podcasts sempre sincronizados. Mantenha sua biblioteca segura e aproveite o Pocket\u00A0Casts na Web e no aplicativo para computador.</string>
-    <string name="onboarding_create_account_title">Crie sua conta do Pocket\u00A0Casts</string>
+    <string name="onboarding_create_account_message">Seus podcasts sempre sincronizados. Mantenha sua biblioteca segura e aproveite o Pod\u00A0Pocket na Web e no aplicativo para computador.</string>
+    <string name="onboarding_create_account_title">Crie sua conta do Pod\u00A0Pocket</string>
     <string name="onboarding_login_or">OU</string>
     <string name="onboarding_login_continue_with_email">Continue com e-mail</string>
     <string name="playlist_artwork_description">Arte da playlist</string>

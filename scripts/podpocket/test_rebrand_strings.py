@@ -17,6 +17,13 @@ class RebrandTest(unittest.TestCase):
     def test_numeric_entity_stays_numeric_entity(self):
         self.assertEqual("Pod&#160;Pocket", rebrand("Pocket&#160;Casts"))
 
+    def test_android_escape_stays_android_escape(self):
+        self.assertEqual("Pod\\u00A0Pocket", rebrand("Pocket\\u00A0Casts"))
+        self.assertEqual("Pod\\u00a0Pocket", rebrand("Pocket\\u00a0Casts"))
+
+    def test_android_escape_possessive(self):
+        self.assertEqual("Pod\\u00A0Pocket\\'s forums", rebrand("Pocket\\u00A0Casts\\' forums"))
+
     def test_named_entity_stays_named_entity(self):
         self.assertEqual("Pod&nbsp;Pocket", rebrand("Pocket&nbsp;Casts"))
 
@@ -51,6 +58,9 @@ class RebrandTest(unittest.TestCase):
     def test_typo_in_chinese(self):
         self.assertEqual("Pod Pocket Plus 订阅", rebrand("Pocket casting Plus 订阅"))
 
+    def test_greek_typo_with_plural_s(self):
+        self.assertEqual("στο Pod Pocket από", rebrand("στο Pockets Casts από"))
+
     def test_norwegian_possessive_has_no_apostrophe(self):
         self.assertEqual("Pod Pockets forumer", rebrand("Pocket Casts\\' forumer"))
 
@@ -71,6 +81,8 @@ class RebrandTest(unittest.TestCase):
             "\\'Pocket Casts\\' toestaan",
             "Pocket Casts\\' forumer",
             "Pocket casting Plus",
+            "Pocket\\u00A0Casts\\' forums",
+            "Pockets Casts",
         ]
         for sample in samples:
             once = rebrand(sample)

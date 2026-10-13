@@ -678,7 +678,7 @@ Language: el_GR
     <string name="clear_up_next">Εκκαθάριση Επόμενου</string>
     <string name="podcast_id_description">Ένα μοναδικό ID που αντιπροσωπεύει το podcast. Μπορεί να χρησιμοποιηθεί στην ενέργεια «Ερώτημα Επεισοδίων Podcast».</string>
     <string name="profile_cancel_confirm_item_folders">Οι φάκελοι σου θα αφαιρεθούν και το περιεχόμενό τους θα μετακινηθούν πίσω στην οθόνη Podcasts.</string>
-    <string name="profile_cancel_confirm_item_web_player">Δεν θα μπορείς πλέον να έχετε πρόσβαση στο Pockets Casts από το πρόγραμμα περιήγησής ή τον υπολογιστή σου.</string>
+    <string name="profile_cancel_confirm_item_web_player">Δεν θα μπορείς πλέον να έχετε πρόσβαση στο Pod Pocket από το πρόγραμμα περιήγησής ή τον υπολογιστή σου.</string>
     <string name="profile_cancel_confirm_cancel_button_title">Ναι, ακύρωσε τη συνδρομή μου</string>
     <string name="profile_cancel_confirm_stay_button_title">Στην πραγματικότητα, θέλω να μείνω</string>
     <string name="profile_cancel_confirm_item_plus">Η πρόσβαση στα χαρακτηριστικά του Pod Pocket Plus θα κλειδώσει μετά από αυτή την ημερομηνία.</string>

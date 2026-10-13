@@ -437,8 +437,8 @@ Language: it
     <string name="onboarding_interests_title">Parlaci dei tuoi argomenti preferiti</string>
     <string name="onboarding_create_account_sign_up_google">Iscriviti con Google</string>
     <string name="onboarding_create_account_sign_up_email">Iscriviti con l\'e-mail</string>
-    <string name="onboarding_create_account_message">I tuoi podcast, sempre sincronizzati. Tieni la libreria al sicuro e goditi Pocket\u00A0Casts su web e desktop.</string>
-    <string name="onboarding_create_account_title">Crea un account Pocket\u00A0Casts</string>
+    <string name="onboarding_create_account_message">I tuoi podcast, sempre sincronizzati. Tieni la libreria al sicuro e goditi Pod\u00A0Pocket su web e desktop.</string>
+    <string name="onboarding_create_account_title">Crea un account Pod\u00A0Pocket</string>
     <string name="onboarding_login_or">OPPURE</string>
     <string name="onboarding_login_continue_with_email">Continua con l\'e-mail</string>
     <string name="playlist_artwork_description">Immagine della playlist</string>

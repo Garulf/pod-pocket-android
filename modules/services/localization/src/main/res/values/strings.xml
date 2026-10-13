@@ -2276,7 +2276,7 @@
     <!-- Text that appear when someone share the longest episode they listened to story to Twitter. %1$d is the year and %2$s is the URL to the episode. -->
     <string name="end_of_year_story_longest_episode_share_text">The longest episode I listened to in %1$d %2$s</string>
     <!-- Title for the epilogue story. %1$d is the yer. -->
-    <string name="end_of_year_story_epilogue_title">Thanks for spending your year with Pocket\u00A0Casts</string>
+    <string name="end_of_year_story_epilogue_title">Thanks for spending your year with Pod\u00A0Pocket</string>
     <!-- Subtitle for the epilogue story -->
     <string name="end_of_year_story_epilogue_subtitle">Share your Playback with friends and show some love to the podcasters who kept you company all&#160;year</string>
     <!-- Title of the top categories story. -->
@@ -2947,8 +2947,8 @@
     <string name="onboarding_intro_get_started">Get Started</string>
     <string name="onboarding_login_continue_with_email">Continue with email</string>
     <string name="onboarding_login_or">OR</string>
-    <string name="onboarding_create_account_title">Create your Pocket\u00A0Casts account</string>
-    <string name="onboarding_create_account_message">Your podcasts, always in sync. Keep your library safe, and enjoy Pocket\u00A0Casts on web and desktop.</string>
+    <string name="onboarding_create_account_title">Create your Pod\u00A0Pocket account</string>
+    <string name="onboarding_create_account_message">Your podcasts, always in sync. Keep your library safe, and enjoy Pod\u00A0Pocket on web and desktop.</string>
     <string name="onboarding_create_account_sign_up_email">Sign up with email</string>
     <string name="onboarding_create_account_sign_up_google">Sign up with Google</string>
     <string name="onboarding_interests_title">Tell us about your favourite topics</string>
@@ -2968,7 +2968,7 @@
     <string name="eoy_playback_intro_title">Your year in podcasts,\nwrapped and ready to relive</string>
 
     <!-- App rating prompt -->
-    <string name="app_rating_title">Enjoying Pocket\u00A0Casts?</string>
+    <string name="app_rating_title">Enjoying Pod\u00A0Pocket?</string>
     <string name="app_rating_body">Hi there! We’d love to know if you’re enjoying our\u00A0app.</string>
     <!-- A label under the sad face emoji. A user will be redirected to help pages after tapping it. -->
     <string name="app_rating_no_label">Not really</string>

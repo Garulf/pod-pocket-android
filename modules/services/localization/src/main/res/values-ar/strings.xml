@@ -363,9 +363,9 @@ Language: ar
     <string name="app_rating_yes_label">نعم!</string>
     <string name="app_rating_no_label">ليس تمامًا</string>
     <string name="app_rating_body">مرحبًا! نود أن نعرف ما إذا كنت تستمتع بتطبيق\u00A0appالخاص بنا.</string>
-    <string name="app_rating_title">هل تستمتع بـ Pocket\u00A0Casts؟</string>
+    <string name="app_rating_title">هل تستمتع بـ Pod\u00A0Pocket؟</string>
     <string name="end_of_year_story_epilogue_subtitle">شارك تجربة الاستماع الخاصة بك مع الأصدقاء وأظهر بعض الدعم لصنّاع البودكاست الذين رافقوك طوال العام</string>
-    <string name="end_of_year_story_epilogue_title">نشكرك على قضاء عامك مع Pocket\u00A0Casts</string>
+    <string name="end_of_year_story_epilogue_title">نشكرك على قضاء عامك مع Pod\u00A0Pocket</string>
     <string name="end_of_year_stories_year_completion_rate_subtitle">من بين ⁦%2$d⁩ الحلقات التي بدأت في مشاهدتها، أنهيت⁦%1$d⁩.\nمتابعة أقوى‑من معظم اشتراكات الصالات الرياضية.</string>
     <string name="search_suggestions_no_results_message">جرب بحثًا جديدًا، أو أضِف عنوان تلقيم URL البث الصوتي</string>
     <string name="search_suggestions_no_results_title">لا توجد نتائج</string>
@@ -437,8 +437,8 @@ Language: ar
     <string name="onboarding_interests_title">أخبرنا عن موضوعاتك المفضلة</string>
     <string name="onboarding_create_account_sign_up_google">تسجيل الدخول باستخدام Google</string>
     <string name="onboarding_create_account_sign_up_email">تسجيل الدخول باستخدام البريد الإلكتروني</string>
-    <string name="onboarding_create_account_message">حلقات البودكاست الخاصة بك، متزامنة دومًا. حافظ على أمان مكتبتك، واستمتع بـ Pocket\u00A0Casts على الويب وسطح المكتب.</string>
-    <string name="onboarding_create_account_title">إنشاء حسابك على Pocket\u00A0Casts</string>
+    <string name="onboarding_create_account_message">حلقات البودكاست الخاصة بك، متزامنة دومًا. حافظ على أمان مكتبتك، واستمتع بـ Pod\u00A0Pocket على الويب وسطح المكتب.</string>
+    <string name="onboarding_create_account_title">إنشاء حسابك على Pod\u00A0Pocket</string>
     <string name="onboarding_login_or">أو</string>
     <string name="onboarding_login_continue_with_email">المتابعة باستخدام البريد الإلكتروني</string>
     <string name="playlist_artwork_description">أعمال قائمة التشغيل الفنية</string>

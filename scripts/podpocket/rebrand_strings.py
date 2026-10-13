@@ -12,12 +12,13 @@ import re
 import sys
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
-SEPARATOR = r"(?P<sep> |\u00a0|&#160;|&#[xX][aA]0;|&nbsp;)"
+SEPARATOR = r"(?P<sep> |\u00a0|\\u00[aA]0|&#160;|&#[xX][aA]0;|&nbsp;)"
 POSSESSIVE = re.compile(r"(?<!['‘’])Pocket" + SEPARATOR + r"Casts(?P<quote>\\?['’])(?!s)")
 BRAND = re.compile(r"Pocket" + SEPARATOR + r"Casts?(?![A-Za-z])")
 SHARE_MESSAGE = re.compile(r'(name="settings_about_share_with_friends_message">[^<]*?)https://www\.pocketcasts\.com')
 TARGETED_FIXES = [
     (re.compile(r"Pocket casting Plus"), "Pod Pocket Plus"),
+    (re.compile(r"Pockets Casts"), "Pod Pocket"),
     (re.compile(r"(Pod Pocket)\\'s( forumer)"), r"\1s\2"),
 ]
 SHARE_URL = "https://github.com/Garulf/pod-pocket-android"

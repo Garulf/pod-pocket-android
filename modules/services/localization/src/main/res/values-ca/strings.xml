@@ -359,9 +359,9 @@ Language: ca
     <string name="app_rating_yes_label">Sí!</string>
     <string name="app_rating_no_label">No gaire</string>
     <string name="app_rating_body">Hola! Ens encantaria saber si estàs gaudint de la nostra\u00A0app.</string>
-    <string name="app_rating_title">Gaudeixes de Pocket\u00A0Casts?</string>
+    <string name="app_rating_title">Gaudeixes de Pod\u00A0Pocket?</string>
     <string name="end_of_year_story_epilogue_subtitle">Comparteix la teva reproducció amb els amics i mostra afecte als podcasters que t’han fet companyia durant tot l’any</string>
-    <string name="end_of_year_story_epilogue_title">Gràcies per passar el teu any amb Pocket\u00A0Casts</string>
+    <string name="end_of_year_story_epilogue_title">Gràcies per passar el teu any amb Pod\u00A0Pocket</string>
     <string name="end_of_year_stories_year_completion_rate_subtitle">De %2$d episodis començats, n\'has acabat %1$d.\nUn seguiment més fort que la majoria de les subscripcions al gimnàs.</string>
     <string name="search_suggestions_no_results_message">Prova una nova cerca, o afegeix una URL de feed de pòdcast</string>
     <string name="search_suggestions_no_results_title">Cap resultat</string>
@@ -435,8 +435,8 @@ Language: ca
     <string name="onboarding_create_account_sign_up_email">Registra\'t amb un correu electrònic</string>
     <string name="onboarding_login_or">O</string>
     <string name="onboarding_login_continue_with_email">Continua amb el correu electrònic</string>
-    <string name="onboarding_create_account_title">Crea el teu compte de Pocket\u00A0Casts</string>
-    <string name="onboarding_create_account_message">Els teus pòdcasts, sempre sincronitzats. Mantén la teva biblioteca segura i gaudeix de Pocket\u00A0Casts a la web i a l\'escriptori.</string>
+    <string name="onboarding_create_account_title">Crea el teu compte de Pod\u00A0Pocket</string>
+    <string name="onboarding_create_account_message">Els teus pòdcasts, sempre sincronitzats. Mantén la teva biblioteca segura i gaudeix de Pod\u00A0Pocket a la web i a l\'escriptori.</string>
     <string name="playlist_artwork_description">Caràtula de la llista de reproducció</string>
     <string name="onboarding_intro_get_started">Començar</string>
     <string name="onboarding_intro_carousel_pc_user">Usuari de Pod Pocket</string>
