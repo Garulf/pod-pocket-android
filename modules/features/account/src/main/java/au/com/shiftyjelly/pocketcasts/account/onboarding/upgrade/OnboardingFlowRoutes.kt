@@ -10,9 +10,9 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import au.com.shiftyjelly.pocketcasts.account.R
 import au.com.shiftyjelly.pocketcasts.account.onboarding.AccountBenefitsPage
 import au.com.shiftyjelly.pocketcasts.account.onboarding.OnboardingCreateAccountPage
-import au.com.shiftyjelly.pocketcasts.account.R
 import au.com.shiftyjelly.pocketcasts.account.onboarding.OnboardingForgotPasswordPage
 import au.com.shiftyjelly.pocketcasts.account.onboarding.OnboardingGetStartedPage
 import au.com.shiftyjelly.pocketcasts.account.onboarding.OnboardingLoginOrSignUpPage
@@ -34,7 +34,6 @@ import au.com.shiftyjelly.pocketcasts.settings.onboarding.OnboardingUpgradeSourc
 import au.com.shiftyjelly.pocketcasts.ui.theme.Theme
 import au.com.shiftyjelly.pocketcasts.utils.extensions.requireBoolean
 import au.com.shiftyjelly.pocketcasts.utils.extensions.requireSerializable
-import au.com.shiftyjelly.pocketcasts.localization.R as LR
 
 object OnboardingFlowRoutes {
     const val CREATE_FREE_ACCOUNT = "create_free_account"
