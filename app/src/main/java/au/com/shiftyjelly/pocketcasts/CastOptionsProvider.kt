@@ -1,8 +1,8 @@
 package au.com.shiftyjelly.pocketcasts
 
 import android.content.Context
-import au.com.shiftyjelly.pocketcasts.preferences.Settings
 import au.com.shiftyjelly.pocketcasts.ui.MainActivity
+import com.google.android.gms.cast.CastMediaControlIntent
 import com.google.android.gms.cast.framework.CastOptions
 import com.google.android.gms.cast.framework.OptionsProvider
 import com.google.android.gms.cast.framework.SessionProvider
@@ -30,7 +30,7 @@ class CastOptionsProvider : OptionsProvider {
             .setExpandedControllerActivityClassName(MainActivity::class.java.name)
             .build()
         return CastOptions.Builder()
-            .setReceiverApplicationId(Settings.CHROME_CAST_APP_ID)
+            .setReceiverApplicationId(CastMediaControlIntent.DEFAULT_MEDIA_RECEIVER_APPLICATION_ID)
             .setCastMediaOptions(mediaOptions)
             .build()
     }
