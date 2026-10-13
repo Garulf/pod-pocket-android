@@ -455,8 +455,6 @@ class PodcastAdapter(
         // expand the podcast description and details if the user hasn't subscribed
         if (this.podcast.uuid != podcast.uuid) {
             headerExpanded = !podcast.isSubscribed
-            ratingsViewModel.loadRatings(podcast.uuid)
-            ratingsViewModel.refreshPodcastRatings(podcast.uuid)
         }
         this.podcast = podcast
         val isHtmlDescription = podcast.podcastHtmlDescription.isNotEmpty()

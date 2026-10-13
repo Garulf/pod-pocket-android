@@ -82,7 +82,6 @@ class MainActivityViewModel
 
     init {
         viewModelScope.launch {
-            showWhatsNewIfNeeded()
             if (!state.value.shouldShowWhatsNew) {
                 updateStoriesModalShowState(settings.getEndOfYearShowModal())
             }

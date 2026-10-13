@@ -102,7 +102,7 @@ class StatsFragment : BaseFragment() {
                     activity?.onBackPressedDispatcher?.onBackPressed()
                 },
                 onRetryClick = { viewModel.loadStats() },
-                launchReviewDialog = { viewModel.launchAppReviewDialog(it) },
+                launchReviewDialog = { },
                 onShowHeatmap = { eventHorizon.track(HeatmapShownEvent) },
                 onListeningActivityInfoClick = { showListeningActivityInfoDialog() },
                 bottomInset = bottomInset.value.pxToDp(LocalContext.current).dp,

@@ -129,11 +129,11 @@ class MainActivityViewModelTest {
     }
 
     @Test
-    fun `given an user and is previous version, then what's should be displayed`() = runTest {
+    fun `given an user and is previous version, then what's should not be displayed`() = runTest {
         initViewModel(shouldSetPreviousVersion = true)
 
         viewModel.state.test {
-            assertTrue(awaitItem().shouldShowWhatsNew)
+            assertFalse(awaitItem().shouldShowWhatsNew)
         }
     }
 
