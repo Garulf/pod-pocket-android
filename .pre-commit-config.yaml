@@ -27,3 +27,9 @@ repos:
         language: system
         pass_filenames: false
         stages: [pre-push]
+      - id: rebranded-strings
+        name: strings say Pod Pocket
+        entry: python3 scripts/podpocket/rebrand_strings.py --check
+        language: system
+        pass_filenames: false
+        stages: [pre-push]

@@ -304,7 +304,7 @@
                 <category android:name="android.intent.category.DEFAULT"/>
             </intent-filter>
 
-            <intent-filter android:label="Pocket Casts">
+            <intent-filter android:label="Pod Pocket">
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
