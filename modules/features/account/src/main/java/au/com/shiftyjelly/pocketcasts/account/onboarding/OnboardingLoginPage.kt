@@ -35,6 +35,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import au.com.shiftyjelly.pocketcasts.account.R
 import au.com.shiftyjelly.pocketcasts.account.onboarding.components.ContinueWithGoogleButton
 import au.com.shiftyjelly.pocketcasts.account.viewmodel.GoogleSignInState
 import au.com.shiftyjelly.pocketcasts.account.viewmodel.OnboardingLogInViewModel
@@ -53,6 +54,7 @@ import au.com.shiftyjelly.pocketcasts.compose.components.TextP50
 import au.com.shiftyjelly.pocketcasts.compose.preview.ThemePreviewParameterProvider
 import au.com.shiftyjelly.pocketcasts.compose.theme
 import au.com.shiftyjelly.pocketcasts.models.type.Subscription
+import au.com.shiftyjelly.pocketcasts.selfhosted.ServerUrlViewModel
 import au.com.shiftyjelly.pocketcasts.settings.onboarding.OnboardingFlow
 import au.com.shiftyjelly.pocketcasts.ui.theme.Theme
 import au.com.shiftyjelly.pocketcasts.views.helper.UiUtil
@@ -64,11 +66,12 @@ internal fun OnboardingLoginPage(
     flow: OnboardingFlow,
     onBackPress: () -> Unit,
     onLoginComplete: (Subscription?) -> Unit,
-    onForgotPasswordClick: () -> Unit,
+    onContinueWithoutAccount: () -> Unit,
     onUpdateSystemBars: (SystemBarsStyles) -> Unit,
     onContinueWithGoogleComplete: (GoogleSignInState, Subscription?) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: OnboardingLogInViewModel = hiltViewModel(),
+    serverUrlViewModel: ServerUrlViewModel = hiltViewModel(),
 ) {
     val pocketCastsTheme = MaterialTheme.theme
     val state by viewModel.state.collectAsState()
@@ -96,6 +99,10 @@ internal fun OnboardingLoginPage(
         onLoginComplete(subscription)
     }
 
+    val logIn = {
+        serverUrlViewModel.checkConnection { viewModel.logIn(onLoginComplete) }
+    }
+
     Column(
         modifier = modifier
             .windowInsetsPadding(WindowInsets.statusBars)
@@ -116,16 +123,23 @@ internal fun OnboardingLoginPage(
                 .fillMaxHeight()
                 .verticalScroll(rememberScrollState()),
         ) {
+            SelfHostedServerField(
+                viewModel = serverUrlViewModel,
+                enabled = state.enableSubmissionFields,
+                modifier = Modifier.padding(top = 16.dp),
+            )
+
             EmailAndPasswordFields(
                 email = state.email,
                 password = state.password,
                 showEmailError = state.showEmailError,
                 showPasswordError = state.showPasswordError,
                 enabled = state.enableSubmissionFields,
-                onConfirm = { viewModel.logIn(onLoginComplete) },
+                onConfirm = logIn,
                 onUpdateEmail = viewModel::updateEmail,
                 onUpdatePassword = viewModel::updatePassword,
                 isCreatingAccount = false,
+                emailPlaceholder = stringResource(R.string.pod_pocket_username_or_email),
                 modifier = Modifier.padding(vertical = 16.dp),
             )
 
@@ -136,17 +150,6 @@ internal fun OnboardingLoginPage(
                 )
             }
 
-            TextP50(
-                text = stringResource(LR.string.profile_forgot_your_password),
-                color = MaterialTheme.theme.colors.primaryInteractive01,
-                fontWeight = FontWeight.W500,
-                modifier = Modifier
-                    .clickable {
-                        viewModel.onForgotPasswordTapped(flow)
-                        onForgotPasswordClick()
-                    },
-            )
-
             Spacer(modifier = Modifier.height(16.dp))
 
             RowButton(
@@ -154,10 +157,18 @@ internal fun OnboardingLoginPage(
                 enabled = state.enableSubmissionFields,
                 onClick = {
                     viewModel.onSignInButtonTapped(flow)
-                    viewModel.logIn(onLoginComplete)
+                    logIn()
                 },
                 includePadding = false,
             )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            ContinueWithoutAccountButton(
+                viewModel = serverUrlViewModel,
+                onContinue = onContinueWithoutAccount,
+            )
+
             if (viewModel.showContinueWithGoogleButton && !(flow is OnboardingFlow.Upsell || flow is OnboardingFlow.UpsellSuggestedFolder)) {
                 Spacer(modifier = Modifier.height(16.dp))
                 Row(

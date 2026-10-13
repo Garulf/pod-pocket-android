@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="pod_pocket_server_url_hint">Server URL, for example https://pod.example.com</string>
+    <string name="pod_pocket_server_url_invalid">Enter the address of your Pod Pocket server, for example https://pod.example.com or http://192.168.1.10:8000</string>
+    <string name="pod_pocket_server_checking">Checking the server…</string>
+    <string name="pod_pocket_server_reachable">Connected to %1$s</string>
+    <string name="pod_pocket_server_unreachable">Could not reach the server (%1$s). Check the address and try again.</string>
+    <string name="pod_pocket_username_or_email">Username or email</string>
+    <string name="pod_pocket_continue_without_account">Continue without an account</string>
+</resources>
