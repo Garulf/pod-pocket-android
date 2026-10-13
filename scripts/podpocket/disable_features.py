@@ -53,6 +53,7 @@ DISABLED_FEATURES = [
 ]
 
 FIELDS = ("defaultValue", "hasFirebaseRemoteFlag", "hasDevToggle")
+DEBUG_ONLY_MARKER = "isDebugOrPrototypeBuild"
 
 
 def disable(source: str, name: str) -> str:
@@ -67,12 +68,31 @@ def disable(source: str, name: str) -> str:
     return source[: entry.start("body")] + body + source[entry.end("body") :]
 
 
+def debug_only_features(source: str) -> list[str]:
+    offenders = []
+    for entry in re.finditer(r"^    (?P<name>[A-Z0-9_]+)\(\n(?P<body>.*?)^    \),$", source, re.MULTILINE | re.DOTALL):
+        if entry.group("name") in DISABLED_FEATURES:
+            continue
+        default = re.search(r"^\s+defaultValue = (?P<value>.*),$", entry.group("body"), re.MULTILINE)
+        if default is not None and DEBUG_ONLY_MARKER in default.group("value"):
+            offenders.append(entry.group("name"))
+    return offenders
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check", action="store_true", help="fail instead of editing when Feature.kt needs changes")
     args = parser.parse_args()
 
     original = FEATURE_FILE.read_text(encoding="utf-8")
+    offenders = debug_only_features(original)
+    if offenders:
+        print(
+            f"{', '.join(offenders)} default to {DEBUG_ONLY_MARKER} but are not in DISABLED_FEATURES; "
+            "disable them or confirm they need no cloud",
+            file=sys.stderr,
+        )
+        return 1
     updated = original
     for name in DISABLED_FEATURES:
         updated = disable(updated, name)
