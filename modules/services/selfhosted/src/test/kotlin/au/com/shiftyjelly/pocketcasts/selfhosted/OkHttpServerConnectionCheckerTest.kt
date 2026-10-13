@@ -8,6 +8,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import okhttp3.Call
 import okhttp3.EventListener
+import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
@@ -52,6 +53,13 @@ class OkHttpServerConnectionCheckerTest {
         server.enqueue(MockResponse().setResponseCode(404))
 
         assertEquals(ConnectionResult.Unreachable("HTTP 404"), checker.check(server.url("/")))
+    }
+
+    @Test
+    fun `does not resolve a telemetry host`() = runTest {
+        val result = checker.check("http://pixel.wp.com".toHttpUrl())
+
+        assertEquals(ConnectionResult.Unreachable(blockedHostMessage("pixel.wp.com")), result)
     }
 
     @Test

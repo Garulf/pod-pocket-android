@@ -9,7 +9,7 @@ class SelfHostedBlockingDns(
 ) : Dns {
     override fun lookup(hostname: String): List<InetAddress> {
         if (HostRoutes.routeFor(hostname) != HostRoute.PassThrough) {
-            throw UnknownHostException("Requests to $hostname are disabled in Pod Pocket")
+            throw UnknownHostException(blockedHostMessage(hostname))
         }
         return delegate.lookup(hostname)
     }

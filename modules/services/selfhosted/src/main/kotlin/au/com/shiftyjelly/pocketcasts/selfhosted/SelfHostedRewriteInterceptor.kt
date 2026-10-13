@@ -30,6 +30,8 @@ internal fun rewriteToServer(original: HttpUrl, server: HttpUrl, prefix: String)
         .build()
 }
 
-class BlockedHostException(host: String) : IOException("Requests to $host are disabled in Pod Pocket")
+class BlockedHostException(host: String) : IOException(blockedHostMessage(host))
+
+internal fun blockedHostMessage(host: String) = "Requests to $host are disabled in Pod Pocket"
 
 class ServerNotConfiguredException : IOException("No Pod Pocket server URL is set")

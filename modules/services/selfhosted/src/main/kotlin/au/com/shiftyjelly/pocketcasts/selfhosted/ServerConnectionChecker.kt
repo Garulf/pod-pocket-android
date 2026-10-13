@@ -27,6 +27,7 @@ class OkHttpServerConnectionChecker(
     client: OkHttpClient,
 ) : ServerConnectionChecker {
     private val client = client.newBuilder()
+        .dns(SelfHostedBlockingDns())
         .followRedirects(false)
         .followSslRedirects(false)
         .addNetworkInterceptor(SelfHostedBlockNetworkInterceptor())
