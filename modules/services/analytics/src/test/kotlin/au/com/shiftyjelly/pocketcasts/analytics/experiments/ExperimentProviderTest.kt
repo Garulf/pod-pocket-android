@@ -24,6 +24,7 @@ import org.mockito.Mockito.mock
 import org.mockito.Mockito.never
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -52,7 +53,7 @@ class ExperimentProviderTest {
 
         experimentProvider.initialize()
 
-        verify(repository, never()).initialize(anyString(), eq(null))
+        verifyNoMoreInteractions(repository)
     }
 
     @Test
