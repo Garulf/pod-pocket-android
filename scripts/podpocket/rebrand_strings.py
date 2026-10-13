@@ -24,16 +24,15 @@ TARGETED_FIXES = [
 SHARE_URL = "https://github.com/Garulf/pod-pocket-android"
 
 TARGET_GLOBS = [
-    "modules/services/localization/src/main/res/values*/strings.xml",
-    "app/src/main/res/values/titles.xml",
-    "automotive/src/main/res/values/titles.xml",
-    "wear/src/main/res/values/titles.xml",
+    "**/src/*/res/values*/*.xml",
     "app/src/main/AndroidManifest.xml",
 ]
 
 
 def target_files() -> list[pathlib.Path]:
-    files = sorted({path for pattern in TARGET_GLOBS for path in ROOT.glob(pattern)})
+    files = sorted(
+        {path for pattern in TARGET_GLOBS for path in ROOT.glob(pattern) if "build" not in path.relative_to(ROOT).parts}
+    )
     if not files:
         raise SystemExit("no string resources found; run from a Pod Pocket checkout")
     return files
