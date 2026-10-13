@@ -35,11 +35,11 @@ android {
 
     buildTypes {
         named("debug") {
-            manifestPlaceholders["appIcon"] = "@mipmap/ic_launcher_radioactive"
+            manifestPlaceholders["appIcon"] = "@mipmap/ic_launcher"
         }
 
         named("debugProd") {
-            manifestPlaceholders["appIcon"] = "@mipmap/ic_launcher_3"
+            manifestPlaceholders["appIcon"] = "@mipmap/ic_launcher"
         }
 
         maybeCreate("prototype").apply {
