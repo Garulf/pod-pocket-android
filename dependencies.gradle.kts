@@ -6,7 +6,11 @@ val versionCodeDifferenceBetweenAppAndTv = 50000 + versionCodeDifferenceBetweenA
 
 val secretProperties = loadPropertiesFromFile(file("secret.properties"))
 val versionProperties = loadPropertiesFromFile(file("version.properties"))
-val podPocketRevision = loadPropertiesFromFile(file("pod-pocket.properties")).getProperty("revision").toInt()
+val podPocketRevision = requireNotNull(loadPropertiesFromFile(file("pod-pocket.properties")).getProperty("revision")?.toIntOrNull()) {
+    "pod-pocket.properties must exist and define an integer 'revision'"
+}.also { revision ->
+    require(revision in 1..99) { "revision in pod-pocket.properties must be between 1 and 99, was $revision" }
+}
 
 fun loadPropertiesFromFile(file: File): Properties {
     val properties = Properties()
