@@ -38,6 +38,8 @@ class SelfHostedRewriteInterceptorTest {
             "https://web-feeds-api.pocketcasts.com/feeds" to "https://pod.example.com/web-feeds/feeds",
             "https://pca.st/episode/abc" to "https://pod.example.com/short/episode/abc",
             "https://pcast.pocketcasts.net/episode/abc" to "https://pod.example.com/short/episode/abc",
+            "https://cache.pocketcasts.net/mobile/podcast/full/abc" to "https://pod.example.com/cache/mobile/podcast/full/abc",
+            "https://api.pocketcasts.com./user/login_pocket_casts" to "https://pod.example.com/api/user/login_pocket_casts",
         )
 
         cases.forEach { (original, expected) ->
@@ -106,6 +108,9 @@ class SelfHostedRewriteInterceptorTest {
             "https://public-api.wordpress.com/rest/v1.1/tracks/record",
             "https://public-api.wordpress.com/wpcom/v2/experiments/0.1.0/assignments/pocketcasts",
             "https://pixel.wp.com/t.gif",
+            "https://stats.wp.com/e-202641.js",
+            "https://en.gravatar.com/avatar/abc",
+            "https://x.api.pocketcasts.com/user/login_pocket_casts",
             "https://o12345.ingest.sentry.io/api/1/envelope/",
             "https://www.gravatar.com/avatar/abc",
             "https://automattic.com/privacy/",
@@ -130,6 +135,9 @@ class SelfHostedRewriteInterceptorTest {
             "https://notpocketcasts.com/feed",
             "https://pocketcasts.com.example.org/feed",
             "https://cdn.wordpress.example.org/episode.mp3",
+            "https://files.wordpress.com/2026/01/episode.mp3",
+            "https://example.wordpress.com/feed",
+            "https://i0.wp.com/example.com/artwork.jpg",
         )
 
         untouched.forEach { url ->

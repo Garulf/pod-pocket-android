@@ -16,6 +16,10 @@ class ServerUrlsTest {
             "https://example.com/podpocket/" to "https://example.com/podpocket",
             "https://example.com//podpocket//" to "https://example.com/podpocket",
             "https://user:secret@example.com/?x=1#top" to "https://example.com/",
+            "pocketcasts.com.example.org" to "https://pocketcasts.com.example.org/",
+            "https://[::1]:8000" to "https://[::1]:8000/",
+            "pod.example.com/podpocket/" to "https://pod.example.com/podpocket",
+            "pod.example.com/podpocket?next=https://x" to "https://pod.example.com/podpocket",
         )
 
         cases.forEach { (input, expected) ->
@@ -34,6 +38,8 @@ class ServerUrlsTest {
             "https://api.pocketcasts.com",
             "static.pocketcasts.net",
             "public-api.wordpress.com",
+            "http:/pod.example.com",
+            "x.api.pocketcasts.com",
         )
 
         rejected.forEach { input ->

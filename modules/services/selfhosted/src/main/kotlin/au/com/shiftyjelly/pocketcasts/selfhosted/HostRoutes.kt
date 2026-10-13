@@ -28,11 +28,15 @@ object HostRoutes {
     private const val SHORT_LINK_DOMAIN = "pca.st"
 
     private val telemetryDomains = listOf(
-        "wordpress.com",
-        "wp.com",
         "automattic.com",
         "gravatar.com",
         "sentry.io",
+    )
+
+    private val telemetryHosts = setOf(
+        "public-api.wordpress.com",
+        "pixel.wp.com",
+        "stats.wp.com",
     )
 
     fun routeFor(host: String): HostRoute {
@@ -46,7 +50,7 @@ object HostRoutes {
             val prefix = prefixBySubdomain[subdomain] ?: return HostRoute.Block
             return HostRoute.Rewrite(prefix)
         }
-        if (telemetryDomains.any { normalized.isWithin(it) }) {
+        if (normalized in telemetryHosts || telemetryDomains.any { normalized.isWithin(it) }) {
             return HostRoute.Block
         }
         return HostRoute.PassThrough
