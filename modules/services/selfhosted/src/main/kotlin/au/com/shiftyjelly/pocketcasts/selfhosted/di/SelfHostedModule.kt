@@ -3,6 +3,7 @@ package au.com.shiftyjelly.pocketcasts.selfhosted.di
 import android.content.Context
 import au.com.shiftyjelly.pocketcasts.selfhosted.OkHttpServerConnectionChecker
 import au.com.shiftyjelly.pocketcasts.selfhosted.SelfHostedBlockNetworkInterceptor
+import au.com.shiftyjelly.pocketcasts.selfhosted.SelfHostedBlockingDns
 import au.com.shiftyjelly.pocketcasts.selfhosted.SelfHostedRewriteInterceptor
 import au.com.shiftyjelly.pocketcasts.selfhosted.ServerConnectionChecker
 import au.com.shiftyjelly.pocketcasts.selfhosted.ServerUrlStore
@@ -36,6 +37,12 @@ object SelfHostedModule {
     @Singleton
     fun provideBlockNetworkInterceptor(): SelfHostedBlockNetworkInterceptor {
         return SelfHostedBlockNetworkInterceptor()
+    }
+
+    @Provides
+    @Singleton
+    fun provideBlockingDns(): SelfHostedBlockingDns {
+        return SelfHostedBlockingDns()
     }
 
     @Provides
