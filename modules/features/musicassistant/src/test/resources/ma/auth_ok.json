@@ -1,0 +1,19 @@
+{
+  "message_id": "2",
+  "partial": false,
+  "result": {
+    "authenticated": true,
+    "user": {
+      "avatar_url": null,
+      "created_at": "2026-09-01T00:00:00+00:00",
+      "display_name": "Alice",
+      "enabled": true,
+      "player_filter": [],
+      "preferences": {},
+      "provider_filter": [],
+      "role": "user",
+      "user_id": "u-1f2e",
+      "username": "alice"
+    }
+  }
+}

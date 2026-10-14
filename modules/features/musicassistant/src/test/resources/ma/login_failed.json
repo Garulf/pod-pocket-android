@@ -1,0 +1,8 @@
+{
+  "message_id": "1",
+  "partial": false,
+  "result": {
+    "error": "Invalid username or password",
+    "success": false
+  }
+}

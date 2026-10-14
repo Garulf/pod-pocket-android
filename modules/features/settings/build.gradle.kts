@@ -41,6 +41,7 @@ dependencies {
     api(projects.modules.services.ui)
     api(projects.modules.services.utils)
     api(projects.modules.services.views)
+    implementation(projects.modules.features.musicassistant)
 
     implementation(platform(libs.compose.bom))
     implementation(platform(libs.firebase.bom))

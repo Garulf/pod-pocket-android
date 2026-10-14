@@ -58,6 +58,7 @@ import au.com.shiftyjelly.pocketcasts.repositories.playlist.PlaylistManager
 import au.com.shiftyjelly.pocketcasts.ui.helper.FragmentHostListener
 import au.com.shiftyjelly.pocketcasts.utils.extensions.dpToPx
 import au.com.shiftyjelly.pocketcasts.utils.extensions.requireParcelable
+import au.com.shiftyjelly.pocketcasts.views.extensions.addMusicAssistantRoutes
 import au.com.shiftyjelly.pocketcasts.views.extensions.hideKeyboardOnScroll
 import au.com.shiftyjelly.pocketcasts.views.extensions.smoothScrollToTop
 import au.com.shiftyjelly.pocketcasts.views.fragments.BaseFragment
@@ -154,6 +155,7 @@ class PlaylistFragment :
 
     private fun PlaylistFragmentBinding.setupChromeCast() {
         CastButtonFactory.setUpMediaRouteButton(requireContext(), chromeCastButton)
+        chromeCastButton.addMusicAssistantRoutes()
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.chromeCastSignal
                 .flowWithLifecycle(viewLifecycleOwner.lifecycle)
@@ -163,6 +165,7 @@ class PlaylistFragment :
 
     private fun PlaylistFragmentBinding.setupSettings() {
         CastButtonFactory.setUpMediaRouteButton(requireContext(), chromeCastButton)
+        chromeCastButton.addMusicAssistantRoutes()
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.showSettingsSignal
                 .flowWithLifecycle(viewLifecycleOwner.lifecycle)

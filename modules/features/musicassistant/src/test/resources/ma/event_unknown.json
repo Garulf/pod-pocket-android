@@ -1,0 +1,7 @@
+{
+  "data": {
+    "x": 1
+  },
+  "event": "media_item_played",
+  "object_id": "gpodder--Xk3dTq9a://podcast_episode/https://pod.example.com/feeds/show.xml https://pod.example.com/feeds/ep-a"
+}

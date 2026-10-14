@@ -23,6 +23,8 @@ import au.com.shiftyjelly.pocketcasts.compose.components.SettingRow
 import au.com.shiftyjelly.pocketcasts.compose.preview.ThemePreviewParameterProvider
 import au.com.shiftyjelly.pocketcasts.compose.theme
 import au.com.shiftyjelly.pocketcasts.models.type.SignInState
+import au.com.shiftyjelly.pocketcasts.musicassistant.settings.MusicAssistantSettingsFragment
+import au.com.shiftyjelly.pocketcasts.musicassistant.settings.MusicAssistantSettingsRow
 import au.com.shiftyjelly.pocketcasts.settings.about.AboutFragment
 import au.com.shiftyjelly.pocketcasts.settings.developer.DeveloperFragment
 import au.com.shiftyjelly.pocketcasts.settings.history.HistoryFragment
@@ -76,6 +78,9 @@ fun SettingsFragmentPage(
 
             item {
                 GeneralRow(onClick = { openFragment(PlaybackSettingsFragment()) })
+            }
+            item {
+                MusicAssistantSettingsRow(modifier = Modifier.rowModifier { openFragment(MusicAssistantSettingsFragment()) })
             }
             item {
                 NotificationRow(onClick = { openFragment(NotificationsSettingsFragment()) })

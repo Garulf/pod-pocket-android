@@ -1,0 +1,39 @@
+{
+  "message_id": "6",
+  "partial": false,
+  "result": [
+    {
+      "available": true,
+      "domain": "gpodder",
+      "instance_id": "gpodder--Xk3dTq9a",
+      "is_streaming_provider": false,
+      "lookup_key": "gpodder--Xk3dTq9a",
+      "name": "gPodder (Pod Pocket)",
+      "supported_features": [
+        "library_podcasts",
+        "browse"
+      ],
+      "type": "music"
+    },
+    {
+      "available": true,
+      "domain": "builtin",
+      "instance_id": "builtin",
+      "is_streaming_provider": false,
+      "lookup_key": "builtin",
+      "name": "Music Assistant",
+      "supported_features": [],
+      "type": "music"
+    },
+    {
+      "available": true,
+      "domain": "sonos",
+      "instance_id": "sonos--a1b2c3d4",
+      "is_streaming_provider": null,
+      "lookup_key": "sonos--a1b2c3d4",
+      "name": "Sonos",
+      "supported_features": [],
+      "type": "player"
+    }
+  ]
+}

@@ -48,6 +48,7 @@ fun Menu.setupChromeCastButton(context: Context?, onClick: () -> Unit) {
     try {
         val menuItem = findChromeCastItem() ?: return
         CastButtonFactory.setUpMediaRouteButton(context, this, menuItem.itemId)
+        (menuItem.actionView as? MediaRouteButton)?.addMusicAssistantRoutes()
         menuItem.actionView?.setOnClickListener { onClick() }
     } catch (e: Throwable) {
         Timber.e(e)

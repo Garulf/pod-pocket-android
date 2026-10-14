@@ -45,6 +45,7 @@ import au.com.shiftyjelly.pocketcasts.player.viewmodel.ShelfSharedViewModel.Shel
 import au.com.shiftyjelly.pocketcasts.preferences.model.ShelfItem
 import au.com.shiftyjelly.pocketcasts.settings.onboarding.OnboardingUpgradeSource
 import au.com.shiftyjelly.pocketcasts.ui.theme.Theme
+import au.com.shiftyjelly.pocketcasts.views.extensions.addMusicAssistantRoutes
 import au.com.shiftyjelly.pocketcasts.views.extensions.updateColor
 import com.airbnb.lottie.LottieProperty
 import com.airbnb.lottie.SimpleColorFilter
@@ -467,6 +468,7 @@ fun CastButton(
                 updateColor(playerColors.contrast03.toArgb())
                 setOnClickListener { onClick() }
                 CastButtonFactory.setUpMediaRouteButton(context, this)
+                addMusicAssistantRoutes()
             }
         },
     )

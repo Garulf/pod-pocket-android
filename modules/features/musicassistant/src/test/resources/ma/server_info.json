@@ -1,0 +1,15 @@
+{
+  "base_url": "http://192.168.1.20:8095",
+  "external_url": null,
+  "has_remote_access": false,
+  "homeassistant_addon": false,
+  "internal_url": "http://192.168.1.20:8095",
+  "min_supported_schema_version": 28,
+  "name": "Music Assistant",
+  "onboard_done": true,
+  "schema_version": 87,
+  "server_id": "1f2e3d4c5b6a",
+  "server_version": "2.11.0",
+  "status": "running",
+  "unsupported_install": false
+}

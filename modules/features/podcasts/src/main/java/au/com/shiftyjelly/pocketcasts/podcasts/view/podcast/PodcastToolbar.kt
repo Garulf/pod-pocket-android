@@ -45,6 +45,7 @@ import au.com.shiftyjelly.pocketcasts.compose.AppTheme
 import au.com.shiftyjelly.pocketcasts.compose.preview.ThemePreviewParameterProvider
 import au.com.shiftyjelly.pocketcasts.compose.theme
 import au.com.shiftyjelly.pocketcasts.ui.theme.Theme
+import au.com.shiftyjelly.pocketcasts.views.extensions.addMusicAssistantRoutes
 import com.google.android.gms.cast.framework.CastButtonFactory
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -167,6 +168,7 @@ private fun MediaRouteButton(
             androidx.mediarouter.app.MediaRouteButton(context).apply {
                 visibility = View.GONE
                 CastButtonFactory.setUpMediaRouteButton(context, this)
+                addMusicAssistantRoutes()
             }
         },
         update = { view ->
