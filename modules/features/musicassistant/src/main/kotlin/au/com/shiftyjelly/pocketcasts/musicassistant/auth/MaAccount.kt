@@ -7,12 +7,19 @@ data class MaAccount(
     val serverUrl: HttpUrl,
     val token: String,
     val gpodderInstanceId: String?,
+    val gpodderOwner: String? = null,
 ) {
-    override fun toString() = "MaAccount(serverUrl=$serverUrl, token=<redacted>, gpodderInstanceId=$gpodderInstanceId)"
+    fun gpodderInstanceFor(podPocketUser: String?): String? = gpodderInstanceId?.takeIf { gpodderOwner == podPocketUser }
+
+    override fun toString() = "MaAccount(serverUrl=$serverUrl, token=<redacted>, gpodderInstanceId=$gpodderInstanceId, gpodderOwner=<redacted>)"
 }
 
 interface MaAccountStore {
     val account: StateFlow<MaAccount?>
 
     fun save(account: MaAccount?)
+}
+
+fun interface PodPocketUser {
+    fun key(): String?
 }

@@ -28,6 +28,7 @@ class SharedPreferencesMaAccountStore(
             editor.putString(KEY_SERVER_URL, account.serverUrl.toString())
             editor.putString(KEY_TOKEN, account.token)
             account.gpodderInstanceId?.let { editor.putString(KEY_GPODDER_INSTANCE, it) }
+            account.gpodderOwner?.let { editor.putString(KEY_GPODDER_OWNER, it) }
         }
         editor.apply()
         state.value = account
@@ -46,7 +47,7 @@ class SharedPreferencesMaAccountStore(
     private fun readStored(): MaAccount? {
         val serverUrl = preferences.getString(KEY_SERVER_URL, null)?.toHttpUrlOrNull() ?: return null
         val token = preferences.getString(KEY_TOKEN, null) ?: return null
-        return MaAccount(serverUrl, token, preferences.getString(KEY_GPODDER_INSTANCE, null))
+        return MaAccount(serverUrl, token, preferences.getString(KEY_GPODDER_INSTANCE, null), preferences.getString(KEY_GPODDER_OWNER, null))
     }
 
     companion object {
@@ -54,5 +55,6 @@ class SharedPreferencesMaAccountStore(
         const val KEY_SERVER_URL = "server_url"
         const val KEY_TOKEN = "token"
         const val KEY_GPODDER_INSTANCE = "gpodder_instance_id"
+        const val KEY_GPODDER_OWNER = "gpodder_owner"
     }
 }

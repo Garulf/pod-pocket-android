@@ -7,6 +7,8 @@ import au.com.shiftyjelly.pocketcasts.musicassistant.auth.MaAccountStore
 import au.com.shiftyjelly.pocketcasts.musicassistant.auth.MaSignInResult
 import au.com.shiftyjelly.pocketcasts.musicassistant.auth.MaSigner
 import au.com.shiftyjelly.pocketcasts.musicassistant.auth.MaTokenRevoker
+import au.com.shiftyjelly.pocketcasts.musicassistant.auth.PodPocketUser
+import au.com.shiftyjelly.pocketcasts.musicassistant.auth.gpodderProvidersIn
 import au.com.shiftyjelly.pocketcasts.musicassistant.client.MaServerUrls
 import au.com.shiftyjelly.pocketcasts.musicassistant.client.MaSession
 import au.com.shiftyjelly.pocketcasts.musicassistant.client.MaSessionState
@@ -22,7 +24,9 @@ import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
@@ -40,8 +44,9 @@ data class SignInForm(
     val busy: Boolean = false,
     val error: SignInError? = null,
     val providerChoices: List<MaProvider> = emptyList(),
+    val noProviders: Boolean = false,
 ) {
-    override fun toString() = "SignInForm(serverUrl=$serverUrl, username=$username, password=<redacted>, busy=$busy, error=$error, providerChoices=$providerChoices)"
+    override fun toString() = "SignInForm(serverUrl=$serverUrl, username=$username, password=<redacted>, busy=$busy, error=$error, providerChoices=$providerChoices, noProviders=$noProviders)"
 }
 
 sealed interface SignInError {
@@ -70,6 +75,7 @@ class MusicAssistantSettingsViewModel internal constructor(
     private val session: Lazy<MaSession>,
     private val revoker: MaTokenRevoker,
     private val io: CoroutineDispatcher,
+    private val user: PodPocketUser = PodPocketUser { null },
 ) : ViewModel() {
     @Inject
     constructor(
@@ -77,9 +83,10 @@ class MusicAssistantSettingsViewModel internal constructor(
         signer: MaSigner,
         session: Lazy<MaSession>,
         revoker: MaTokenRevoker,
-    ) : this(accounts, signer, session, revoker, Dispatchers.IO)
+        user: PodPocketUser,
+    ) : this(accounts, signer, session, revoker, Dispatchers.IO, user)
 
-    private class Services(val accounts: MaAccountStore, val session: MaSession)
+    private class Services(val accounts: MaAccountStore, val session: MaSession, val user: String?)
 
     private sealed interface Load {
         data object Opening : Load
@@ -132,16 +139,20 @@ class MusicAssistantSettingsViewModel internal constructor(
         }
         form.update { it.copy(busy = true, error = null) }
         viewModelScope.launch {
-            val store = services()?.accounts
-            if (store == null) {
+            val services = services()
+            if (services == null) {
                 failSignIn(SignInError.Failed)
                 return@launch
             }
+            val store = services.accounts
             when (val result = attempt(server, current)) {
                 is MaSignInResult.SignedIn -> {
-                    val account = MaAccount(server, result.token, result.gpodderProviders.singleOrNull()?.instanceId)
+                    val account = MaAccount(server, result.token, result.gpodderProviders.singleOrNull()?.instanceId, services.user)
                     if (withContext(NonCancellable) { save(store, account) }) {
-                        form.value = SignInForm(providerChoices = result.gpodderProviders.takeIf { it.size > 1 }.orEmpty())
+                        form.value = SignInForm(
+                            providerChoices = result.gpodderProviders.takeIf { it.size > 1 }.orEmpty(),
+                            noProviders = result.gpodderProviders.isEmpty(),
+                        )
                     } else {
                         failSignIn(SignInError.Failed)
                     }
@@ -161,9 +172,10 @@ class MusicAssistantSettingsViewModel internal constructor(
             return
         }
         viewModelScope.launch {
-            val store = services()?.accounts ?: return@launch
+            val services = services() ?: return@launch
+            val store = services.accounts
             val account = store.account.value ?: return@launch
-            if (save(store, account.copy(gpodderInstanceId = instanceId))) {
+            if (save(store, account.copy(gpodderInstanceId = instanceId, gpodderOwner = services.user))) {
                 form.update { it.copy(providerChoices = emptyList()) }
             }
         }
@@ -195,15 +207,41 @@ class MusicAssistantSettingsViewModel internal constructor(
     private fun open() {
         load.value = Load.Opening
         viewModelScope.launch {
-            load.value = try {
-                withContext(io) { Load.Ready(Services(accounts.get(), session.get())) }
+            val loaded = try {
+                withContext(io) { Load.Ready(Services(accounts.get(), session.get(), user.key())) }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
                 Timber.e("Music Assistant settings could not open: ${e.javaClass.simpleName}")
                 Load.Failed
             }
+            load.value = loaded
+            if (loaded is Load.Ready) {
+                offerProvidersWhileNoneIsChosen(loaded.services)
+            }
         }
+    }
+
+    private suspend fun offerProvidersWhileNoneIsChosen(services: Services) {
+        combine(services.accounts.account, services.session.state) { account, connection ->
+            account?.takeIf { it.gpodderInstanceFor(services.user) == null && connection is MaSessionState.Connected }
+        }.distinctUntilChanged().collectLatest { unchosen ->
+            if (unchosen != null && form.value.providerChoices.isEmpty()) {
+                offerProviders(services.session)
+            }
+        }
+    }
+
+    private suspend fun offerProviders(session: MaSession) {
+        val providers = try {
+            withContext(io) { gpodderProvidersIn(session.call("providers")) }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Timber.w("Music Assistant providers could not be listed: ${e.javaClass.simpleName}")
+            return
+        }
+        form.update { it.copy(providerChoices = providers, noProviders = providers.isEmpty()) }
     }
 
     private suspend fun services(): Services? = (load.first { it !is Load.Opening } as? Load.Ready)?.services

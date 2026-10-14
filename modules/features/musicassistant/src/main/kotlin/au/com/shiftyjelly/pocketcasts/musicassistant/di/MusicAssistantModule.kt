@@ -8,6 +8,7 @@ import au.com.shiftyjelly.pocketcasts.musicassistant.auth.MaLogout
 import au.com.shiftyjelly.pocketcasts.musicassistant.auth.MaSignIn
 import au.com.shiftyjelly.pocketcasts.musicassistant.auth.MaSigner
 import au.com.shiftyjelly.pocketcasts.musicassistant.auth.MaTokenRevoker
+import au.com.shiftyjelly.pocketcasts.musicassistant.auth.PodPocketUser
 import au.com.shiftyjelly.pocketcasts.musicassistant.auth.SharedPreferencesMaAccountStore
 import au.com.shiftyjelly.pocketcasts.musicassistant.auth.encryptedPreferences
 import au.com.shiftyjelly.pocketcasts.musicassistant.auth.freshEncryptedPreferences
@@ -25,6 +26,8 @@ import au.com.shiftyjelly.pocketcasts.musicassistant.output.ToastOutputNotices
 import au.com.shiftyjelly.pocketcasts.musicassistant.player.RemotePlaybackStore
 import au.com.shiftyjelly.pocketcasts.musicassistant.player.SharedPreferencesRemotePlaybackStore
 import au.com.shiftyjelly.pocketcasts.preferences.Settings
+import au.com.shiftyjelly.pocketcasts.repositories.sync.SyncManager
+import au.com.shiftyjelly.pocketcasts.selfhosted.ServerUrlStore
 import au.com.shiftyjelly.pocketcasts.servers.di.NoCacheTokened
 import dagger.Lazy
 import dagger.Module
@@ -79,8 +82,13 @@ object MusicAssistantModule {
 
     @Provides
     @Singleton
-    fun provideResolver(session: MaSession, sources: EpisodeSourceLookup, accounts: MaAccountStore): MaMediaResolver {
-        return MaMediaResolver(session, sources, { accounts.account.value?.gpodderInstanceId })
+    fun provideResolver(session: MaSession, sources: EpisodeSourceLookup, accounts: MaAccountStore, user: PodPocketUser): MaMediaResolver {
+        return MaMediaResolver(session, sources, { accounts.account.value?.gpodderInstanceFor(user.key()) })
+    }
+
+    @Provides
+    fun providePodPocketUser(sync: Lazy<SyncManager>, servers: Lazy<ServerUrlStore>): PodPocketUser {
+        return PodPocketUser { sync.get().getEmail()?.let { email -> "${servers.get().serverUrl}|$email" } }
     }
 
     @Provides

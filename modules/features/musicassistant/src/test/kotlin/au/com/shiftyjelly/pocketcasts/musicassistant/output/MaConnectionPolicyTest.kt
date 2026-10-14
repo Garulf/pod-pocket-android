@@ -49,9 +49,21 @@ class MaConnectionPolicyTest {
         foreground.value = true
 
         account.value = MaAccount("http://ma.local:8095/".toHttpUrl(), "token", null)
+        account.value = MaAccount("http://ma.local:8095/".toHttpUrl(), "other-token", null)
+        account.value = MaAccount("http://other.local:8095/".toHttpUrl(), "other-token", null)
+
+        assertEquals(listOf("start", "restart", "restart", "restart"), calls)
+    }
+
+    @Test
+    fun `keeps the connection when only the gPodder provider changes`() = runTest(UnconfinedTestDispatcher()) {
+        MaConnectionPolicy(session, foreground, active, account).launchIn(backgroundScope)
+        foreground.value = true
+        account.value = MaAccount("http://ma.local:8095/".toHttpUrl(), "token", null)
+
         account.value = MaAccount("http://ma.local:8095/".toHttpUrl(), "token", "gpodder--abc")
 
-        assertEquals(listOf("start", "restart", "restart"), calls)
+        assertEquals(listOf("start", "restart"), calls)
     }
 
     @Test

@@ -81,7 +81,7 @@ internal fun MusicAssistantSettingsPage(
                     indent = false,
                 )
             }
-            if (account.gpodderInstanceId == null && state.form.providerChoices.isEmpty()) {
+            if (state.form.noProviders && state.form.providerChoices.isEmpty()) {
                 item { TextP40(text = stringResource(R.string.pod_pocket_ma_no_provider), modifier = Modifier.padding(vertical = 8.dp)) }
             }
             if (state.form.providerChoices.isNotEmpty()) {

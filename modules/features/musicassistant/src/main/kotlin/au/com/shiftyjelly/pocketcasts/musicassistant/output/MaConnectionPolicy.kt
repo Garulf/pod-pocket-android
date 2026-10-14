@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
+import okhttp3.HttpUrl
 
 class MaConnectionPolicy(
     private val session: MaSessionControl,
@@ -16,8 +17,8 @@ class MaConnectionPolicy(
 ) {
     fun launchIn(scope: CoroutineScope) = scope.launch {
         var started = false
-        var connectedAccount: MaAccount? = null
-        combine(appInForeground, outputActive, account) { foreground, active, current -> (foreground || active) to current }
+        var connectedLogin: MaLogin? = null
+        combine(appInForeground, outputActive, account) { foreground, active, current -> (foreground || active) to current?.let(::MaLogin) }
             .distinctUntilChanged()
             .collect { (wanted, current) ->
                 when {
@@ -31,9 +32,15 @@ class MaConnectionPolicy(
                         started = true
                     }
 
-                    current != connectedAccount -> session.restart()
+                    current != connectedLogin -> session.restart()
                 }
-                connectedAccount = current
+                connectedLogin = current
             }
     }
+}
+
+private data class MaLogin(val serverUrl: HttpUrl, val token: String) {
+    constructor(account: MaAccount) : this(account.serverUrl, account.token)
+
+    override fun toString() = "MaLogin(serverUrl=$serverUrl, token=<redacted>)"
 }

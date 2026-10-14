@@ -90,8 +90,7 @@ class MaSignIn(
 
     private suspend fun gpodderProviders(connection: MaConnection): List<MaProvider> {
         return try {
-            MaJson.decodeList<MaProvider>(connection.call("providers"))
-                .filter { it.type == MUSIC_PROVIDER && it.domain == GPODDER_DOMAIN }
+            gpodderProvidersIn(connection.call("providers"))
         } catch (e: MaCommandException) {
             emptyList()
         } catch (e: JsonDataException) {
@@ -122,9 +121,14 @@ class MaSignIn(
 
     companion object {
         const val GPODDER_DOMAIN = "gpodder"
-        private const val MUSIC_PROVIDER = "music"
+        internal const val MUSIC_PROVIDER = "music"
         private const val DID_NOT_ANSWER = "Music Assistant did not answer"
         private const val NOT_MUSIC_ASSISTANT = "Not a Music Assistant server"
         private const val MAX_CAUSE_DEPTH = 8
     }
+}
+
+internal fun gpodderProvidersIn(providersReply: Any?): List<MaProvider> {
+    return MaJson.decodeList<MaProvider>(providersReply)
+        .filter { it.type == MaSignIn.MUSIC_PROVIDER && it.domain == MaSignIn.GPODDER_DOMAIN }
 }

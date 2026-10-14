@@ -48,6 +48,14 @@ class SharedPreferencesMaAccountStoreTest {
     }
 
     @Test
+    fun `keeps the Pod Pocket user the provider was chosen for`() {
+        val chosen = account.copy(gpodderOwner = "https://pods.example.com/|alice@example.com")
+        SharedPreferencesMaAccountStore(preferences).save(chosen)
+
+        assertEquals(chosen, SharedPreferencesMaAccountStore(preferences).account.value)
+    }
+
+    @Test
     fun `forgets the account on sign out`() {
         val store = SharedPreferencesMaAccountStore(preferences)
         store.save(account)

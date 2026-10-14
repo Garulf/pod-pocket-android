@@ -28,6 +28,7 @@ dependencies {
     implementation(platform(libs.compose.bom))
     implementation(projects.modules.services.compose)
     implementation(projects.modules.services.images)
+    implementation(projects.modules.services.selfhosted)
     implementation(projects.modules.services.ui)
     implementation(projects.modules.services.views)
     implementation(libs.androidx.mediarouter)
@@ -46,5 +47,4 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.okHttp.mockwebserver)
     testImplementation(libs.robolectric)
-    testImplementation(projects.modules.services.selfhosted)
 }
