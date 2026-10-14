@@ -19,6 +19,10 @@ interface UpNextEpisodes {
  * use withTimeout. Up Next is changed with direct suspend calls that finish before [finish] returns,
  * and before archiving is started, because archiving can reach PlaybackManager.removeEpisode.
  * Fire-and-forget launches are fine.
+ *
+ * Callers bound [finish] with a 10 second timeout. The bound is cooperative: it takes effect when the
+ * implementation checks for cancellation between episodes, and does not interrupt a blocking database
+ * call that is already running.
  */
 fun interface EpisodeFinisher {
     suspend fun finish(episodeUuids: List<String>)

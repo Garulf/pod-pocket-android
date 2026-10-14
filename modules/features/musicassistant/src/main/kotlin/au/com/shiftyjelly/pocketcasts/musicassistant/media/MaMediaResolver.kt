@@ -71,7 +71,7 @@ class MaMediaResolver(
             listing.await()
         } catch (e: Exception) {
             currentCoroutineContext().ensureActive()
-            Timber.w(e, "Could not list the episodes of ${key.feedUrl}")
+            Timber.w(e, "Could not list the episodes of a feed on ${key.instanceId}")
             null
         }
     }
