@@ -41,6 +41,7 @@ import au.com.shiftyjelly.pocketcasts.player.viewmodel.ShelfViewModel
 import au.com.shiftyjelly.pocketcasts.preferences.model.ShelfItem
 import au.com.shiftyjelly.pocketcasts.settings.onboarding.OnboardingUpgradeSource
 import au.com.shiftyjelly.pocketcasts.ui.theme.Theme
+import au.com.shiftyjelly.pocketcasts.views.extensions.addMusicAssistantRoutes
 import com.google.android.gms.cast.framework.CastButtonFactory
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -227,6 +228,7 @@ private fun MediaRouteButton(
             MediaRouteButton(context).apply {
                 visibility = View.GONE
                 CastButtonFactory.setUpMediaRouteButton(context, this)
+                addMusicAssistantRoutes()
             }
         },
         update = { view ->
