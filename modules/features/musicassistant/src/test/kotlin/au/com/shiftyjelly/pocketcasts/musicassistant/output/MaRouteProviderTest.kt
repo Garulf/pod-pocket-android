@@ -1,7 +1,11 @@
 package au.com.shiftyjelly.pocketcasts.musicassistant.output
 
+import android.content.Context
 import androidx.mediarouter.media.MediaRouter
+import androidx.test.core.app.ApplicationProvider
 import au.com.shiftyjelly.pocketcasts.musicassistant.protocol.MaPlayer
+import au.com.shiftyjelly.pocketcasts.musicassistant.R
+import au.com.shiftyjelly.pocketcasts.views.extensions.MUSIC_ASSISTANT_PLAYER_NAME_EXTRA
 import au.com.shiftyjelly.pocketcasts.views.extensions.MUSIC_ASSISTANT_ROUTE_CATEGORY
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -17,10 +21,11 @@ class MaRouteProviderTest {
 
     @Test
     fun `publishes a speaker as a remote route the output button can show`() {
-        val route = MaRouteProvider.routeDescriptor(kitchen, ready = true, description = "Music Assistant")
+        val route = MaRouteProvider.routeDescriptor(kitchen, ready = true, description = "Music Assistant", name = "Kitchen (Music Assistant)")
 
         assertEquals("music-assistant:media_player.kitchen", route.id)
-        assertEquals("Kitchen", route.name)
+        assertEquals("Kitchen (Music Assistant)", route.name)
+        assertEquals("Kitchen", route.extras?.getString(MUSIC_ASSISTANT_PLAYER_NAME_EXTRA))
         assertEquals("Music Assistant", route.description)
         assertTrue(route.isEnabled)
         assertTrue(route.controlFilters.single().hasCategory(MUSIC_ASSISTANT_ROUTE_CATEGORY))
@@ -32,15 +37,22 @@ class MaRouteProviderTest {
 
     @Test
     fun `greys out speakers while disconnected or unavailable`() {
-        assertFalse(MaRouteProvider.routeDescriptor(kitchen, ready = false, description = "Reconnecting").isEnabled)
-        assertFalse(MaRouteProvider.routeDescriptor(kitchen.copy(available = false), ready = true, description = "").isEnabled)
+        assertFalse(MaRouteProvider.routeDescriptor(kitchen, ready = false, description = "Reconnecting", name = "Kitchen").isEnabled)
+        assertFalse(MaRouteProvider.routeDescriptor(kitchen.copy(available = false), ready = true, description = "", name = "Kitchen").isEnabled)
     }
 
     @Test
     fun `fixes the volume of speakers that cannot change it`() {
-        val route = MaRouteProvider.routeDescriptor(kitchen.copy(supportedFeatures = emptyList()), ready = true, description = "")
+        val route = MaRouteProvider.routeDescriptor(kitchen.copy(supportedFeatures = emptyList()), ready = true, description = "", name = "Kitchen")
 
         assertEquals(MediaRouter.RouteInfo.PLAYBACK_VOLUME_FIXED, route.volumeHandling)
+    }
+
+    @Test
+    fun `labels the speaker name with Music Assistant`() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+
+        assertEquals("Kitchen (Music Assistant)", context.getString(R.string.pod_pocket_ma_route_name, kitchen.name))
     }
 
     @Test
