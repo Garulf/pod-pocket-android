@@ -132,9 +132,9 @@ class FakeMaServer : Closeable {
             val name = message["command"] as String
             @Suppress("UNCHECKED_CAST")
             val args = message["args"] as? Map<String, Any?> ?: emptyMap()
-            lastMessageIds[name] = message["message_id"] as String
-            commands += Command(name, args)
             val messageId = message["message_id"] as String
+            lastMessageIds[name] = messageId
+            commands += Command(name, args)
             val editedReply = editedReplies[name]
             if (editedReply != null) {
                 webSocket.send(withMessageId(edited(editedReply.first, editedReply.second), messageId))

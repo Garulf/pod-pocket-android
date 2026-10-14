@@ -18,6 +18,8 @@ import au.com.shiftyjelly.pocketcasts.repositories.playback.Player
 import au.com.shiftyjelly.pocketcasts.repositories.playback.PlayerEvent
 import java.util.Date
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.CyclicBarrier
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -47,7 +49,7 @@ class MusicAssistantPlayerTest {
         scope = scope,
         accounts = InMemoryAccountStore(account(server.url)),
         connections = { MaConnection(OkHttpClient()) },
-        wallClock = { NOW },
+        wallClock = { wallNow },
         monotonicClock = { 0.0 },
     )
     private val sources = mapOf(EPISODE_A to EpisodeSource(EPISODE_A, FEED, guid = null, enclosureUrl = URL_A))
@@ -58,6 +60,12 @@ class MusicAssistantPlayerTest {
     private val unheard = AtomicInteger()
     private var listening = true
     private var nowMs = 0L
+
+    @Volatile
+    private var wallNow = NOW
+
+    @Volatile
+    private var clockHook: () -> Unit = {}
     private var fellBack = false
     private val episodeA = PodcastEpisode(uuid = EPISODE_A, publishedDate = Date(), downloadUrl = URL_A, duration = 1800.0)
 
@@ -454,15 +462,27 @@ class MusicAssistantPlayerTest {
     }
 
     @Test
-    fun `announces an attached session once however many callers ask at the same time`() = runBlocking<Unit> {
+    fun `announces an attached session once when two callers ask at the same moment`() = runBlocking<Unit> {
         val player = attachedWithUnheardAnnouncement()
+        nowMs += 2_000
+        val bothAsking = CyclicBarrier(2)
+        clockHook = { runCatching { bothAsking.await(300, TimeUnit.MILLISECONDS) } }
 
-        repeat(8) {
-            nowMs += 2_000
-            List(8) { async(Dispatchers.Default) { player.getCurrentPositionMs() } }.awaitAll()
-        }
+        List(2) { async(Dispatchers.Default) { player.getCurrentPositionMs() } }.awaitAll()
 
-        assertEquals(8, events.size)
+        assertEquals(1, events.size)
+    }
+
+    @Test
+    fun `shows the handoff position until the speaker reports one`() = runBlocking<Unit> {
+        val player = player()
+        player.setEpisode(episodeA)
+        player.play(754_900)
+
+        server.push("event_queue_updated_playing")
+        eventually { events.lastOrNull() == PlayerEvent.PlayerPlaying }
+
+        assertEquals(754_900, player.getCurrentPositionMs())
     }
 
     @Test
@@ -582,7 +602,10 @@ class MusicAssistantPlayerTest {
         onPlayerEvent = { _: Player, event: PlayerEvent -> record(event) },
         attachTo = attachTo,
         onPlaybackFailed = { fellBack = true },
-        monotonicMs = { nowMs },
+        monotonicMs = {
+            clockHook()
+            nowMs
+        },
     )
 
     private fun record(event: PlayerEvent) {
@@ -596,13 +619,16 @@ class MusicAssistantPlayerTest {
     private suspend fun handedOff(): MusicAssistantPlayer {
         val player = player()
         player.setEpisode(episodeA)
+        wallNow = NOW - CLOCK_OFFSET
         player.play(754_900)
+        wallNow = NOW
         events.clear()
         return player
     }
 
     private companion object {
         const val NOW = 1_792_000_000.0
+        const val CLOCK_OFFSET = 2.5
         const val KITCHEN = "media_player.kitchen"
         const val GPODDER = "gpodder--Xk3dTq9a"
         const val FEED = "https://pod.example.com/feeds/show.xml"

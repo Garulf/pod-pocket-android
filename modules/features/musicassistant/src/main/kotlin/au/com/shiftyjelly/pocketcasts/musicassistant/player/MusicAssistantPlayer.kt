@@ -24,6 +24,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import timber.log.Timber
 
 class MusicAssistantPlayer(
     private val remote: MaRemote,
@@ -56,6 +57,7 @@ class MusicAssistantPlayer(
 
     private val announcements = Any()
     private var announcementCount = 0
+    private var capLogged = false
     private var lastAnnouncedAtMs: Long? = null
 
     @Volatile
@@ -301,6 +303,7 @@ class MusicAssistantPlayer(
             lastPositionMs = positionMs
             playbackStore.save(RemotePlayback(queueId, first.queueItemId, media.episodeUuid))
             remote.call("player_queues/play_index", mapOf("queue_id" to queueId, "index" to 0, "seek_position" to startSeconds(positionMs)))
+            rebase(positionMs)
             applySpeed(first)
             Load.Loaded
         } catch (e: MaCommandException) {
@@ -379,10 +382,16 @@ class MusicAssistantPlayer(
     }
 
     private fun claimAnnouncement(throttled: Boolean): Boolean = synchronized(announcements) {
-        val now = monotonicMs()
         val last = lastAnnouncedAtMs
+        val now = monotonicMs()
         val tooSoon = throttled && last != null && now - last < REANNOUNCE_INTERVAL_MS
-        if (tooSoon || announcementCount >= MAX_ATTACH_ANNOUNCEMENTS) {
+        if (announcementCount >= MAX_ATTACH_ANNOUNCEMENTS) {
+            if (!capLogged) {
+                capLogged = true
+                Timber.w("Music Assistant playback on $playerName was not adopted after $MAX_ATTACH_ANNOUNCEMENTS announcements")
+            }
+            false
+        } else if (tooSoon) {
             false
         } else {
             announcementCount++
