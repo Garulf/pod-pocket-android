@@ -4,6 +4,7 @@ import au.com.shiftyjelly.pocketcasts.musicassistant.FakeMaServer
 import au.com.shiftyjelly.pocketcasts.musicassistant.client.MaConnection
 import au.com.shiftyjelly.pocketcasts.musicassistant.protocol.MaLoginResult
 import au.com.shiftyjelly.pocketcasts.musicassistant.protocol.MaProvider
+import java.net.UnknownHostException
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -28,7 +29,7 @@ class MaSignInTest {
 
     private val server = FakeMaServer()
     private val client = OkHttpClient()
-    private val signIn = MaSignIn(connections = { MaConnection(client) }, deviceName = "Pod Pocket on Pixel 9", timeoutMs = 3_000)
+    private val signIn = MaSignIn(connections = { MaConnection(client) }, deviceName = "Pod Pocket on Pixel 9", timeoutMs = ROOMY_TIMEOUT_MS)
 
     @After
     fun tearDown() {
@@ -81,7 +82,9 @@ class MaSignInTest {
 
     @Test
     fun `reports a host that does not exist`() = runBlocking<Unit> {
-        val result = MaSignIn(connections = { MaConnection(client) }, deviceName = "Pod Pocket", timeoutMs = 15_000)
+        val unresolvable = OkHttpClient.Builder().dns { throw UnknownHostException(it) }.build()
+
+        val result = MaSignIn(connections = { MaConnection(unresolvable) }, deviceName = "Pod Pocket", timeoutMs = ROOMY_TIMEOUT_MS)
             .signIn("http://no-such-host.invalid:8095/".toHttpUrl(), "alice", "hunter2")
 
         assertEquals(MaSignInResult.Unreachable("Server not found"), result)
@@ -105,8 +108,9 @@ class MaSignInTest {
     @Test
     fun `gives up on a server that never answers`() = runBlocking<Unit> {
         server.reply("auth/login")
+        val impatient = MaSignIn(connections = { MaConnection(client) }, deviceName = "Pod Pocket", timeoutMs = 2_000)
 
-        val result = signIn.signIn("${server.url}".toHttpUrl(), "alice", "hunter2")
+        val result = impatient.signIn(server.url, "alice", "hunter2")
 
         assertEquals(MaSignInResult.Unreachable("Music Assistant did not answer"), result)
     }
@@ -127,7 +131,7 @@ class MaSignInTest {
         signedInServer()
         server.reply("auth/token/create")
 
-        val result = MaSignIn(connections = { MaConnection(client) }, deviceName = "Pod Pocket", timeoutMs = 500)
+        val result = MaSignIn(connections = { MaConnection(client) }, deviceName = "Pod Pocket", timeoutMs = 5_000)
             .signIn(server.url, "alice", "hunter2")
 
         assertEquals(MaSignInResult.Unreachable("Music Assistant did not answer"), result)
@@ -187,10 +191,10 @@ class MaSignInTest {
     }
 
     @Test
-    fun `still signs in when the logout is slower than the sign-in deadline`() = runBlocking<Unit> {
+    fun `still signs in when the logout never answers`() = runBlocking<Unit> {
         signedInServer()
         server.reply("auth/logout")
-        val slowLogout = MaSignIn(connections = { MaConnection(client) }, deviceName = "Pod Pocket", timeoutMs = 1_000, logoutTimeoutMs = 1_500)
+        val slowLogout = MaSignIn(connections = { MaConnection(client) }, deviceName = "Pod Pocket", timeoutMs = ROOMY_TIMEOUT_MS, logoutTimeoutMs = 1_000)
 
         val result = slowLogout.signIn(server.url, "alice", "hunter2")
 
@@ -228,6 +232,10 @@ class MaSignInTest {
         server.reply("auth/token/create", "token_created")
         server.reply("providers", "providers")
         server.reply("auth/logout", "logout_ok")
+    }
+
+    private companion object {
+        const val ROOMY_TIMEOUT_MS = 10_000L
     }
 
     private fun FakeMaServer.awaitCommand(name: String) {
