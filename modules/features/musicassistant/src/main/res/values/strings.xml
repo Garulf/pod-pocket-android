@@ -8,6 +8,7 @@
     <string name="pod_pocket_ma_sign_in">Sign in</string>
     <string name="pod_pocket_ma_signing_in">Signing in…</string>
     <string name="pod_pocket_ma_sign_out">Sign out of Music Assistant</string>
+    <string name="pod_pocket_ma_signing_out">Signing out…</string>
     <string name="pod_pocket_ma_invalid_address">Enter the address of your Music Assistant server.</string>
     <string name="pod_pocket_ma_rejected">Music Assistant refused the sign-in: %1$s</string>
     <string name="pod_pocket_ma_unreachable">Could not reach Music Assistant: %1$s</string>

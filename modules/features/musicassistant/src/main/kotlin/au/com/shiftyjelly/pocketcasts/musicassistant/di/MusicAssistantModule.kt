@@ -4,8 +4,10 @@ import android.content.Context
 import android.os.Build
 import au.com.shiftyjelly.pocketcasts.coroutines.di.ApplicationScope
 import au.com.shiftyjelly.pocketcasts.musicassistant.auth.MaAccountStore
+import au.com.shiftyjelly.pocketcasts.musicassistant.auth.MaLogout
 import au.com.shiftyjelly.pocketcasts.musicassistant.auth.MaSignIn
 import au.com.shiftyjelly.pocketcasts.musicassistant.auth.MaSigner
+import au.com.shiftyjelly.pocketcasts.musicassistant.auth.MaTokenRevoker
 import au.com.shiftyjelly.pocketcasts.musicassistant.auth.SharedPreferencesMaAccountStore
 import au.com.shiftyjelly.pocketcasts.musicassistant.auth.encryptedPreferences
 import au.com.shiftyjelly.pocketcasts.musicassistant.auth.freshEncryptedPreferences
@@ -85,6 +87,9 @@ object MusicAssistantModule {
     fun provideSigner(connections: MaConnectionFactory): MaSigner {
         return MaSignIn(connections, deviceName = "Pod Pocket on ${Build.MODEL}")
     }
+
+    @Provides
+    fun provideTokenRevoker(connections: MaConnectionFactory): MaTokenRevoker = MaLogout(connections)
 
     @Provides
     @Singleton
