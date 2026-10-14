@@ -4,8 +4,10 @@ import android.app.Application
 import android.os.Looper
 import androidx.mediarouter.media.MediaRouter
 import androidx.test.core.app.ApplicationProvider
+import au.com.shiftyjelly.pocketcasts.musicassistant.FakeUpNext
 import au.com.shiftyjelly.pocketcasts.musicassistant.InMemoryAccountStore
 import au.com.shiftyjelly.pocketcasts.musicassistant.InMemoryPlaybackStore
+import au.com.shiftyjelly.pocketcasts.musicassistant.RecordingFinisher
 import au.com.shiftyjelly.pocketcasts.musicassistant.client.MaConnection
 import au.com.shiftyjelly.pocketcasts.musicassistant.client.MaSession
 import au.com.shiftyjelly.pocketcasts.musicassistant.media.MaMediaResolver
@@ -84,6 +86,8 @@ class MusicAssistantInitializerTest {
                 session = session,
                 resolver = MaMediaResolver(session, { emptyMap() }, { null }),
                 playbackStore = InMemoryPlaybackStore(),
+                upNext = FakeUpNext(),
+                finisher = RecordingFinisher(),
                 scope = scope,
                 notify = { },
             ).also { builtOutput = it }

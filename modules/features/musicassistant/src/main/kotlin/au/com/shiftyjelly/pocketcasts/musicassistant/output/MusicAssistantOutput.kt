@@ -3,6 +3,8 @@ package au.com.shiftyjelly.pocketcasts.musicassistant.output
 import au.com.shiftyjelly.pocketcasts.musicassistant.client.MaSession
 import au.com.shiftyjelly.pocketcasts.musicassistant.client.MaSessionState
 import au.com.shiftyjelly.pocketcasts.musicassistant.media.MaMediaResolver
+import au.com.shiftyjelly.pocketcasts.musicassistant.mirror.EpisodeFinisher
+import au.com.shiftyjelly.pocketcasts.musicassistant.mirror.UpNextEpisodes
 import au.com.shiftyjelly.pocketcasts.musicassistant.player.MusicAssistantPlayer
 import au.com.shiftyjelly.pocketcasts.musicassistant.player.RemotePlayback
 import au.com.shiftyjelly.pocketcasts.musicassistant.player.RemotePlaybackStore
@@ -10,21 +12,32 @@ import au.com.shiftyjelly.pocketcasts.repositories.chromecast.CastManager
 import au.com.shiftyjelly.pocketcasts.repositories.playback.Player
 import au.com.shiftyjelly.pocketcasts.repositories.playback.PlayerEvent
 import au.com.shiftyjelly.pocketcasts.repositories.playback.RemoteOutput
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
+import timber.log.Timber
 
 class MusicAssistantOutput(
     private val session: MaSession,
     private val resolver: MaMediaResolver,
     private val playbackStore: RemotePlaybackStore,
+    private val upNext: UpNextEpisodes,
+    private val finisher: EpisodeFinisher,
     private val scope: CoroutineScope,
     private val heldPlayerGraceMs: Long = HELD_PLAYER_GRACE_MS,
     private val signals: RemoteSessionSignals = RemoteSessionSignals(),
+    podPocketSignedIn: Flow<Boolean> = emptyFlow(),
     private val notify: (OutputNotice) -> Unit,
 ) : RemoteOutput {
     private val _activePlayerId = MutableStateFlow<String?>(null)
@@ -59,6 +72,9 @@ class MusicAssistantOutput(
                 previous = state
             }
         }
+        scope.launch {
+            podPocketSignedIn.distinctUntilChanged().drop(1).filter { signedIn -> !signedIn }.collect { forgetStoredPlayback() }
+        }
     }
 
     override fun setSessionListener(listener: CastManager.SessionListener?) {
@@ -72,14 +88,19 @@ class MusicAssistantOutput(
 
     override fun createPlayer(onPlayerEvent: (Player, PlayerEvent) -> Unit): Player {
         val playerId = checkNotNull(_activePlayerId.value) { "No Music Assistant player is selected" }
-        val attach = pendingAttach?.takeIf { it.queueId == playerId }
-        pendingAttach = null
+        val attach = synchronized(attachLock) {
+            val pending = pendingAttach?.takeIf { it.queueId == playerId }
+            pendingAttach = null
+            pending?.let(::reconcile)?.also { finishLater(it.played) }?.playback
+        }
         val name = playerName(playerId)
         lateinit var created: MusicAssistantPlayer
         created = MusicAssistantPlayer(
             remote = session,
             resolver = resolver,
             playbackStore = playbackStore,
+            upNext = upNext,
+            finisher = finisher,
             queueId = playerId,
             playerName = name,
             scope = scope,
@@ -211,29 +232,111 @@ class MusicAssistantOutput(
             is MaSessionState.Connected -> attachIfPlaying()
             is MaSessionState.Reconnecting -> if (_activePlayerId.value != null && previous is MaSessionState.Connected) notify(OutputNotice.Reconnecting)
             MaSessionState.SignInRequired -> if (previous != MaSessionState.SignInRequired) notify(OutputNotice.SignInRequired)
+            MaSessionState.NotConfigured -> forgetStoredPlayback()
             else -> Unit
         }
     }
 
     internal fun attachIfPlaying() {
-        val stored = synchronized(attachLock) {
+        val reconciled = synchronized(attachLock) {
             if (_activePlayerId.value != null || heldPlayer != null) {
                 return
             }
-            val stored = playbackStore.load() ?: return
-            val queue = session.queues.value[stored.queueId]
-            if (queue == null || queue.ended || queue.currentItem?.queueItemId != stored.queueItemId) {
-                playbackStore.save(null)
+            val reconciled = playbackStore.load()?.let(::reconcile) ?: run {
+                pendingAttach = null
                 return
             }
-            if (pendingAttach == stored) {
+            if (pendingAttach == reconciled.playback) {
                 return
             }
-            pendingAttach = stored
-            stored
+            pendingAttach = reconciled.playback
+            reconciled
         }
-        routes?.selectPlayer(stored.queueId) ?: onRouteSelected(stored.queueId)
+        val attach = reconciled.playback
+        if (reconciled.played.isEmpty()) {
+            selectPlayer(attach.queueId)
+            return
+        }
+        scope.launch {
+            finish(reconciled.played)
+            val stillWanted = synchronized(attachLock) {
+                pendingAttach === attach && _activePlayerId.value == null && heldPlayer == null
+            }
+            if (stillWanted) {
+                selectPlayer(attach.queueId)
+            }
+        }
     }
+
+    private fun forgetStoredPlayback() {
+        synchronized(attachLock) {
+            pendingAttach = null
+            playbackStore.save(null)
+        }
+    }
+
+    private fun reconcile(stored: RemotePlayback): Reconciled? {
+        val queue = session.queues.value[stored.queueId]
+        val current = stored.items.indexOfFirst { it.queueItemId == queue?.currentItem?.queueItemId }
+        if (stored.stopOwed) {
+            playbackStore.save(null)
+            if (queue != null && current >= 0 && !queue.ended) {
+                stopLater(stored.queueId)
+            }
+            return null
+        }
+        if (queue == null || current < 0) {
+            playbackStore.save(null)
+            return null
+        }
+        if (queue.ended) {
+            playbackStore.save(null)
+            finishLater(stored.items.take(current + 1).map { it.episodeUuid })
+            return null
+        }
+        if (current == 0) {
+            return Reconciled(stored, played = emptyList())
+        }
+        val trimmed = stored.copy(items = stored.items.drop(current))
+        playbackStore.save(trimmed)
+        return Reconciled(trimmed, played = stored.items.take(current).map { it.episodeUuid })
+    }
+
+    private fun stopLater(queueId: String) {
+        scope.launch {
+            try {
+                session.call("player_queues/stop", mapOf("queue_id" to queueId))
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Timber.w("Could not stop the speaker this phone left playing: ${e.javaClass.simpleName}")
+            }
+        }
+    }
+
+    private fun finishLater(episodeUuids: List<String>) {
+        if (episodeUuids.isNotEmpty()) {
+            scope.launch { finish(episodeUuids) }
+        }
+    }
+
+    private suspend fun finish(episodeUuids: List<String>) {
+        try {
+            if (withTimeoutOrNull(FINISH_TIMEOUT_MS) { finisher.finish(episodeUuids) } == null) {
+                Timber.w("${finisher::class.java.name} did not finish the episodes Music Assistant played while the app was away within $FINISH_TIMEOUT_MS ms")
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Timber.w(e, "Could not finish the episodes Music Assistant played while the app was away")
+        }
+    }
+
+    private fun selectPlayer(playerId: String) {
+        routes?.selectPlayer(playerId) ?: onRouteSelected(playerId)
+    }
+
+    private class Reconciled(val playback: RemotePlayback, val played: List<String>)
 
     private fun playerName(playerId: String): String = session.players.value[playerId]?.name ?: playerId
 
@@ -241,5 +344,6 @@ class MusicAssistantOutput(
         const val MAX_ATTACH_NUDGES = 3
         const val ATTACH_NUDGE_DELAY_MS = 2_500L
         const val HELD_PLAYER_GRACE_MS = 3 * 60_000L
+        const val FINISH_TIMEOUT_MS = 10_000L
     }
 }

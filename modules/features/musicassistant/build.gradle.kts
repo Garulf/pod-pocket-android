@@ -35,6 +35,7 @@ dependencies {
     implementation(libs.compose.material)
     implementation(libs.compose.ui)
     implementation(libs.coroutines.core)
+    implementation(libs.coroutines.rx2)
     implementation(libs.fragment.ktx)
     implementation(libs.lifecycle.process)
     implementation(libs.lifecycle.runtime.compose)
@@ -45,6 +46,8 @@ dependencies {
     testImplementation(libs.androidx.test.core)
     testImplementation(libs.coroutines.test)
     testImplementation(libs.junit)
+    testImplementation(libs.mockito.core)
+    testImplementation(libs.mockito.kotlin)
     testImplementation(libs.okHttp.mockwebserver)
     testImplementation(libs.robolectric)
 }

@@ -20,6 +20,7 @@ import au.com.shiftyjelly.pocketcasts.views.extensions.MUSIC_ASSISTANT_PLAYER_NA
 import au.com.shiftyjelly.pocketcasts.views.extensions.MUSIC_ASSISTANT_ROUTE_CATEGORY
 import java.io.IOException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -179,7 +180,7 @@ class MaRouteProvider(
     }
 
     private fun sendVolume(command: String, args: Map<String, Any?>) {
-        scope.launch {
+        scope.launch(start = CoroutineStart.UNDISPATCHED) {
             try {
                 session.call(command, args)
             } catch (e: MaCommandException) {

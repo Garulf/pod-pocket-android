@@ -18,6 +18,10 @@ import au.com.shiftyjelly.pocketcasts.musicassistant.client.MaSession
 import au.com.shiftyjelly.pocketcasts.musicassistant.media.EpisodeSourceLookup
 import au.com.shiftyjelly.pocketcasts.musicassistant.media.MaMediaResolver
 import au.com.shiftyjelly.pocketcasts.musicassistant.media.ServerEpisodeSourceLookup
+import au.com.shiftyjelly.pocketcasts.musicassistant.mirror.EpisodeFinisher
+import au.com.shiftyjelly.pocketcasts.musicassistant.mirror.UpNextEpisodeFinisher
+import au.com.shiftyjelly.pocketcasts.musicassistant.mirror.UpNextEpisodes
+import au.com.shiftyjelly.pocketcasts.musicassistant.mirror.UpNextQueueEpisodes
 import au.com.shiftyjelly.pocketcasts.musicassistant.output.MusicAssistantOutput
 import au.com.shiftyjelly.pocketcasts.musicassistant.output.MusicAssistantRemoteOutput
 import au.com.shiftyjelly.pocketcasts.musicassistant.output.MusicAssistantStarter
@@ -27,6 +31,10 @@ import au.com.shiftyjelly.pocketcasts.musicassistant.player.RemotePlaybackStore
 import au.com.shiftyjelly.pocketcasts.musicassistant.player.SharedPreferencesRemotePlaybackStore
 import au.com.shiftyjelly.pocketcasts.preferences.Settings
 import au.com.shiftyjelly.pocketcasts.repositories.playback.PlaybackManager
+import au.com.shiftyjelly.pocketcasts.repositories.playback.SleepTimer
+import au.com.shiftyjelly.pocketcasts.repositories.playback.UpNextQueue
+import au.com.shiftyjelly.pocketcasts.repositories.podcast.EpisodeManager
+import au.com.shiftyjelly.pocketcasts.repositories.podcast.PodcastManager
 import au.com.shiftyjelly.pocketcasts.repositories.sync.SyncManager
 import au.com.shiftyjelly.pocketcasts.selfhosted.ServerUrlStore
 import au.com.shiftyjelly.pocketcasts.servers.di.NoCacheTokened
@@ -37,8 +45,12 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import java.util.concurrent.TimeUnit
+import javax.inject.Provider
 import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.rx2.asFlow
 import okhttp3.Call
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.OkHttpClient
@@ -106,11 +118,28 @@ object MusicAssistantModule {
 
     @Provides
     @Singleton
+    fun provideUpNextEpisodes(upNextQueue: UpNextQueue, sleepTimer: SleepTimer, settings: Settings): UpNextEpisodes {
+        return UpNextQueueEpisodes(upNextQueue, sleepTimer.stateFlow, settings.upNextShuffle.flow)
+    }
+
+    @Provides
+    fun provideFinisher(
+        episodeManager: EpisodeManager,
+        podcastManager: PodcastManager,
+        upNextQueue: UpNextQueue,
+        playbackManager: Provider<PlaybackManager>,
+    ): EpisodeFinisher = UpNextEpisodeFinisher(episodeManager, podcastManager, upNextQueue, playbackManager)
+
+    @Provides
+    @Singleton
     fun provideOutput(
         session: MaSession,
         resolver: MaMediaResolver,
         playbackStore: RemotePlaybackStore,
+        upNext: UpNextEpisodes,
+        finisher: EpisodeFinisher,
         signals: RemoteSessionSignals,
+        sync: Lazy<SyncManager>,
         @ApplicationScope scope: CoroutineScope,
         @ApplicationContext context: Context,
     ): MusicAssistantOutput {
@@ -118,8 +147,11 @@ object MusicAssistantModule {
             session = session,
             resolver = resolver,
             playbackStore = playbackStore,
+            upNext = upNext,
+            finisher = finisher,
             scope = scope,
             signals = signals,
+            podPocketSignedIn = flow { emitAll(sync.get().isLoggedInObservable.asFlow()) },
             notify = ToastOutputNotices(context)::show,
         )
     }
