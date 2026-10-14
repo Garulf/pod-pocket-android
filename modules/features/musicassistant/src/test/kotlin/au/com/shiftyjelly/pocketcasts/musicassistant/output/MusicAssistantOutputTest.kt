@@ -13,6 +13,7 @@ import au.com.shiftyjelly.pocketcasts.musicassistant.client.MaSession
 import au.com.shiftyjelly.pocketcasts.musicassistant.client.MaSessionState
 import au.com.shiftyjelly.pocketcasts.musicassistant.eventually
 import au.com.shiftyjelly.pocketcasts.musicassistant.media.MaMediaResolver
+import au.com.shiftyjelly.pocketcasts.musicassistant.mirror.EpisodeFinisher
 import au.com.shiftyjelly.pocketcasts.musicassistant.mirror.MirroredItem
 import au.com.shiftyjelly.pocketcasts.musicassistant.player.MusicAssistantPlayer
 import au.com.shiftyjelly.pocketcasts.musicassistant.player.RemotePlayback
@@ -24,6 +25,7 @@ import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.concurrent.thread
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -51,7 +53,7 @@ class MusicAssistantOutputTest {
     private val notices = CopyOnWriteArrayList<OutputNotice>()
     private val signals = CopyOnWriteArrayList<String>()
     private val routes = RecordingRoutes()
-    private val finisher = RecordingFinisher()
+    private val finisher = GatedFinisher()
     private val output = MusicAssistantOutput(
         session = session,
         resolver = MaMediaResolver(session, { emptyMap() }, { null }),
@@ -237,6 +239,7 @@ class MusicAssistantOutputTest {
 
     @Test
     fun `forgets a stored playback that has no episodes`() = runBlocking<Unit> {
+        server.reply("player_queues/all", "queues_all_idle")
         store.playback = RemotePlayback(KITCHEN, emptyList())
         output.routes = routes
 
@@ -245,6 +248,115 @@ class MusicAssistantOutputTest {
 
         eventually { store.playback == null }
         assertTrue(routes.selected.isEmpty())
+    }
+
+    @Test
+    fun `finishes before it attaches`() = runBlocking<Unit> {
+        val gate = finisher.close()
+        server.reply("player_queues/all", "queues_all_second_item")
+        store.playback = RemotePlayback(KITCHEN, listOf(MirroredItem("episode-a", ITEM_A, URI_A), MirroredItem("episode-b", ITEM_B, URI_B)))
+        output.routes = routes
+
+        session.start()
+        eventually { finisher.calls.get() == 1 }
+        Thread.sleep(SETTLE_MS)
+        assertTrue(routes.selected.isEmpty())
+
+        gate.complete(Unit)
+        eventually { routes.selected == listOf(KITCHEN) }
+        assertEquals(listOf("episode-a"), finisher.finished.toList())
+    }
+
+    @Test
+    fun `does not attach when another speaker is chosen while finishing`() = runBlocking<Unit> {
+        val gate = finisher.close()
+        server.reply("player_queues/all", "queues_all_second_item")
+        store.playback = RemotePlayback(KITCHEN, listOf(MirroredItem("episode-a", ITEM_A, URI_A), MirroredItem("episode-b", ITEM_B, URI_B)))
+        output.routes = routes
+        session.start()
+        eventually { finisher.calls.get() == 1 }
+
+        output.onRouteSelected(OFFICE)
+        gate.complete(Unit)
+
+        eventually { finisher.finished.toList() == listOf("episode-a") }
+        Thread.sleep(SETTLE_MS)
+        assertTrue(routes.selected.isEmpty())
+        assertEquals(OFFICE, output.activePlayerId.value)
+        assertTrue(notices.isEmpty())
+    }
+
+    @Test
+    fun `attaches even when finishing the played episodes fails`() = runBlocking<Unit> {
+        finisher.failure = IllegalStateException("database closed")
+        server.reply("player_queues/all", "queues_all_second_item")
+        store.playback = RemotePlayback(KITCHEN, listOf(MirroredItem("episode-a", ITEM_A, URI_A), MirroredItem("episode-b", ITEM_B, URI_B)))
+        output.routes = routes
+
+        session.start()
+
+        eventually { routes.selected == listOf(KITCHEN) }
+        assertEquals(RemotePlayback(KITCHEN, listOf(MirroredItem("episode-b", ITEM_B, URI_B))), store.playback)
+    }
+
+    @Test
+    fun `finishes and attaches once when the connection comes back while finishing`() = runBlocking<Unit> {
+        val gate = finisher.close()
+        server.reply("player_queues/all", "queues_all_second_item")
+        store.playback = RemotePlayback(KITCHEN, listOf(MirroredItem("episode-a", ITEM_A, URI_A), MirroredItem("episode-b", ITEM_B, URI_B)))
+        output.routes = routes
+        session.start()
+        eventually { finisher.calls.get() == 1 }
+
+        output.attachIfPlaying()
+        output.attachIfPlaying()
+        gate.complete(Unit)
+
+        eventually { routes.selected == listOf(KITCHEN) }
+        Thread.sleep(SETTLE_MS)
+        assertEquals(listOf(KITCHEN), routes.selected.toList())
+        assertEquals(1, finisher.calls.get())
+        assertEquals(listOf("episode-a"), finisher.finished.toList())
+    }
+
+    @Test
+    fun `does not attach when the speaker reached the end while finishing`() = runBlocking<Unit> {
+        val gate = finisher.close()
+        server.reply("player_queues/all", "queues_all_second_item")
+        store.playback = RemotePlayback(KITCHEN, listOf(MirroredItem("episode-a", ITEM_A, URI_A), MirroredItem("episode-b", ITEM_B, URI_B)))
+        output.routes = routes
+        session.start()
+        eventually { finisher.calls.get() == 1 }
+        server.push("event_queue_updated_ended_after_next")
+        session.queues.awaitValue { it[KITCHEN]?.ended == true }
+
+        output.attachIfPlaying()
+        gate.complete(Unit)
+
+        eventually { finisher.finished.sorted() == listOf("episode-a", "episode-b") }
+        Thread.sleep(SETTLE_MS)
+        assertTrue(routes.selected.isEmpty())
+        assertNull(store.playback)
+        assertTrue(notices.isEmpty())
+    }
+
+    @Test
+    fun `does not attach the player when the speaker reached the end before it was created`() = runBlocking<Unit> {
+        store.playback = RemotePlayback(KITCHEN, listOf(MirroredItem("episode-a", ITEM_A, URI_A), MirroredItem("episode-b", ITEM_B, URI_B)))
+        output.routes = routes
+        session.start()
+        eventually { routes.selected == listOf(KITCHEN) }
+        server.push("event_queue_updated_ended_after_next")
+        session.queues.awaitValue { it[KITCHEN]?.ended == true }
+        output.onRouteSelected(KITCHEN)
+        val events = CopyOnWriteArrayList<PlayerEvent>()
+
+        output.createPlayer { _, event -> events += event }
+
+        eventually { finisher.finished.toList() == listOf("episode-a", "episode-b") }
+        assertNull(store.playback)
+        Thread.sleep(SETTLE_MS)
+        assertTrue(events.none { it is PlayerEvent.RemoteMetadataNotMatched })
     }
 
     @Test
@@ -507,6 +619,26 @@ class MusicAssistantOutputTest {
         }
     }
 
+    private class GatedFinisher : EpisodeFinisher {
+        val finished = CopyOnWriteArrayList<String>()
+        val calls = AtomicInteger()
+
+        @Volatile
+        var failure: Exception? = null
+
+        @Volatile
+        private var gate: CompletableDeferred<Unit>? = null
+
+        fun close(): CompletableDeferred<Unit> = CompletableDeferred<Unit>().also { gate = it }
+
+        override suspend fun finish(episodeUuids: List<String>) {
+            calls.incrementAndGet()
+            gate?.await()
+            failure?.let { throw it }
+            finished += episodeUuids
+        }
+    }
+
     private class RecordingRoutes : OutputRoutes {
         val selected = CopyOnWriteArrayList<String>()
         val phone = CopyOnWriteArrayList<String>()
@@ -533,6 +665,7 @@ class MusicAssistantOutputTest {
     private companion object {
         const val KITCHEN = "media_player.kitchen"
         const val OFFICE = "media_player.office"
+        const val SETTLE_MS = 300L
         const val ITEM_A = "5b2f0e8c9d6a4f1b8e3c7a2d1f0e9b8a"
         const val URI_A = "builtin://track/https://cdn.example.com/a.mp3"
         const val ITEM_B = "0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f"

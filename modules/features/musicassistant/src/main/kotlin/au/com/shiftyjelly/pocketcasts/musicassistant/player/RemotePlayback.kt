@@ -11,6 +11,7 @@ data class RemotePlayback(
 )
 
 interface RemotePlaybackStore {
+    /** Returns null, and deletes the stored record, when the record cannot be read or comes from an older version. */
     fun load(): RemotePlayback?
 
     fun save(playback: RemotePlayback?)

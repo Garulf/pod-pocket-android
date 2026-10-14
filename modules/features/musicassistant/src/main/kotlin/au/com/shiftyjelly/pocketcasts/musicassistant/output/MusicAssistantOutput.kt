@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import timber.log.Timber
 
 class MusicAssistantOutput(
@@ -231,7 +232,10 @@ class MusicAssistantOutput(
             if (_activePlayerId.value != null || heldPlayer != null) {
                 return
             }
-            val reconciled = playbackStore.load()?.let(::reconcile) ?: return
+            val reconciled = playbackStore.load()?.let(::reconcile) ?: run {
+                pendingAttach = null
+                return
+            }
             if (pendingAttach == reconciled.playback) {
                 return
             }
@@ -282,7 +286,9 @@ class MusicAssistantOutput(
 
     private suspend fun finish(episodeUuids: List<String>) {
         try {
-            finisher.finish(episodeUuids)
+            if (withTimeoutOrNull(FINISH_TIMEOUT_MS) { finisher.finish(episodeUuids) } == null) {
+                Timber.w("${finisher::class.java.name} did not finish the episodes Music Assistant played while the app was away within $FINISH_TIMEOUT_MS ms")
+            }
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
@@ -302,5 +308,6 @@ class MusicAssistantOutput(
         const val MAX_ATTACH_NUDGES = 3
         const val ATTACH_NUDGE_DELAY_MS = 2_500L
         const val HELD_PLAYER_GRACE_MS = 3 * 60_000L
+        const val FINISH_TIMEOUT_MS = 10_000L
     }
 }
