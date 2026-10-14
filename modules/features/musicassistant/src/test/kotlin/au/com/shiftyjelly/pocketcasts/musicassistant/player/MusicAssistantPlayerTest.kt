@@ -18,9 +18,12 @@ import au.com.shiftyjelly.pocketcasts.repositories.playback.Player
 import au.com.shiftyjelly.pocketcasts.repositories.playback.PlayerEvent
 import java.util.Date
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.runBlocking
 import okhttp3.OkHttpClient
@@ -51,6 +54,10 @@ class MusicAssistantPlayerTest {
     private val resolver = MaMediaResolver(session, { uuids -> sources.filterKeys { it in uuids } }, { GPODDER })
     private val store = InMemoryPlaybackStore()
     private val events = CopyOnWriteArrayList<PlayerEvent>()
+    private val bufferingSignals = AtomicInteger()
+    private val unheard = AtomicInteger()
+    private var listening = true
+    private var nowMs = 0L
     private var fellBack = false
     private val episodeA = PodcastEpisode(uuid = EPISODE_A, publishedDate = Date(), downloadUrl = URL_A, duration = 1800.0)
 
@@ -177,10 +184,33 @@ class MusicAssistantPlayerTest {
     }
 
     @Test
-    fun `restarts at the position when the item cannot seek`() = runBlocking<Unit> {
+    fun `keeps a seek the paused item refuses until playback resumes`() = runBlocking<Unit> {
         val player = handedOff()
         server.push("event_queue_updated_paused")
         eventually { events.lastOrNull() == PlayerEvent.PlayerPaused }
+        server.reply("player_queues/seek", "error_invalid_command")
+        server.commands.clear()
+
+        player.seekToTimeMs(1_000_000)
+
+        assertEquals("player_queues/seek", server.next().name)
+        assertTrue(server.commands.isEmpty())
+        assertEquals(1_000_000, player.getCurrentPositionMs())
+
+        player.play(1_000_000)
+
+        assertEquals(
+            FakeMaServer.Command("player_queues/play_index", mapOf("queue_id" to KITCHEN, "index" to 0.0, "seek_position" to 1000.0)),
+            server.next(),
+        )
+        assertTrue(server.commands.isEmpty())
+    }
+
+    @Test
+    fun `restarts at the position when a playing item cannot seek`() = runBlocking<Unit> {
+        val player = handedOff()
+        server.push("event_queue_updated_playing")
+        eventually { events.lastOrNull() == PlayerEvent.PlayerPlaying }
         server.reply("player_queues/seek", "error_invalid_command")
         server.commands.clear()
 
@@ -191,6 +221,120 @@ class MusicAssistantPlayerTest {
             FakeMaServer.Command("player_queues/play_index", mapOf("queue_id" to KITCHEN, "index" to 0.0, "seek_position" to 1000.0)),
             server.next(),
         )
+    }
+
+    @Test
+    fun `follows the queue time`() = runBlocking<Unit> {
+        val player = handedOff()
+        server.push("event_queue_updated_playing")
+        eventually { events.lastOrNull() == PlayerEvent.PlayerPlaying }
+
+        server.push("event_queue_time_updated")
+
+        eventually { runBlocking { player.getCurrentPositionMs() } == 900_500 }
+    }
+
+    @Test
+    fun `keeps the position steady and the ownership across a reconnect`() = runBlocking<Unit> {
+        server.reply("player_queues/all", "queues_all")
+        val player = handedOff()
+        server.push("event_queue_updated_playing")
+        eventually { events.lastOrNull() == PlayerEvent.PlayerPlaying }
+        assertEquals(756_700, player.getCurrentPositionMs())
+
+        server.dropConnections()
+        eventually { !session.isConnected }
+        assertEquals(756_700, player.getCurrentPositionMs())
+        eventually { session.isConnected }
+
+        assertTrue(player.isPlaying())
+        assertEquals(756_700, player.getCurrentPositionMs())
+        assertEquals(listOf(PlayerEvent.PlayerPlaying), events.toList())
+    }
+
+    @Test
+    fun `hands the episode off at the listener's speed`() = runBlocking<Unit> {
+        val player = player()
+        player.setEpisode(episodeA)
+
+        player.setPlaybackEffects(PlaybackEffects().apply { playbackSpeed = 1.5 })
+        assertTrue(server.commands.isEmpty())
+        player.play(754_900)
+
+        val commands = generateSequence { server.commands.poll() }.filter { it.name.startsWith("player_queues/") }.toList()
+        assertEquals(
+            listOf("clear", "play_media", "items", "play_index", "set_playback_speed").map { "player_queues/$it" },
+            commands.map { it.name },
+        )
+        assertEquals(mapOf("queue_id" to KITCHEN, "speed" to 1.5), commands.last().args)
+    }
+
+    @Test
+    fun `keeps the speed within what Music Assistant accepts`() = runBlocking<Unit> {
+        val player = handedOff()
+        server.push("event_queue_updated_playing")
+        eventually { events.lastOrNull() == PlayerEvent.PlayerPlaying }
+        server.commands.clear()
+
+        player.setPlaybackEffects(PlaybackEffects().apply { playbackSpeed = 5.0 })
+
+        assertEquals(FakeMaServer.Command("player_queues/set_playback_speed", mapOf("queue_id" to KITCHEN, "speed" to 3.0)), server.next())
+    }
+
+    @Test
+    fun `reports buffering until the speaker starts`() = runBlocking<Unit> {
+        val player = player()
+        player.setEpisode(episodeA)
+
+        player.play(754_900)
+
+        assertTrue(player.isBuffering())
+        assertTrue(bufferingSignals.get() >= 1)
+        server.push("event_queue_updated_playing")
+        eventually { events.lastOrNull() == PlayerEvent.PlayerPlaying }
+        assertFalse(player.isBuffering())
+    }
+
+    @Test
+    fun `stops reporting buffering when the handoff fails`() = runBlocking<Unit> {
+        server.reply("player_queues/play_media", "error_media_not_found")
+        val player = player()
+        player.setEpisode(episodeA)
+
+        player.play(60_000)
+
+        assertFalse(player.isBuffering())
+    }
+
+    @Test
+    fun `does not announce a pause when the player moves on to another episode`() = runBlocking<Unit> {
+        val player = handedOff()
+        server.push("event_queue_updated_playing")
+        eventually { events.lastOrNull() == PlayerEvent.PlayerPlaying }
+        events.clear()
+        server.commands.clear()
+
+        player.setEpisode(PodcastEpisode(uuid = "episode-b", publishedDate = Date(), downloadUrl = "https://cdn.example.com/b.mp3"))
+        player.play(0)
+
+        assertEquals("player_queues/clear", server.nextExcept("music/podcasts/podcast_episodes").name)
+        assertFalse(events.any { it == PlayerEvent.PlayerPaused })
+        assertEquals(RemotePlayback(KITCHEN, ITEM_A, "episode-b"), store.playback)
+    }
+
+    @Test
+    fun `keeps overlapping plays from interleaving their commands`() = runBlocking<Unit> {
+        val player = player()
+        player.setEpisode(episodeA)
+
+        listOf(
+            async(Dispatchers.Default) { player.play(754_900) },
+            async(Dispatchers.Default) { player.play(754_900) },
+        ).awaitAll()
+
+        val names = generateSequence { server.commands.poll() }.map { it.name }.filter { it != "music/podcasts/podcast_episodes" }.toList()
+        val handoff = listOf("clear", "play_media", "items", "play_index").map { "player_queues/$it" }
+        assertEquals(handoff + handoff, names)
     }
 
     @Test
@@ -259,6 +403,44 @@ class MusicAssistantPlayerTest {
     }
 
     @Test
+    fun `gives up at once when the speaker is unavailable`() = runBlocking<Unit> {
+        server.reply("player_queues/play_media", "error_player_unavailable")
+        val player = player()
+        player.setEpisode(episodeA)
+
+        player.play(60_000)
+
+        val playMedia = generateSequence { server.commands.poll() }.count { it.name == "player_queues/play_media" }
+        assertEquals(1, playMedia)
+        assertEquals("Could not play on Kitchen", (events.single() as PlayerEvent.PlayerError).message)
+        assertTrue(fellBack)
+        assertNull(store.playback)
+    }
+
+    @Test
+    fun `announces an attached session again when the first announcement went unheard`() = runBlocking<Unit> {
+        server.push("event_queue_updated_playing")
+        eventually { session.queues.value[KITCHEN]?.currentItem != null }
+        listening = false
+        val player = player(attachTo = RemotePlayback(KITCHEN, ITEM_A, EPISODE_A))
+        eventually { unheard.get() == 1 }
+        listening = true
+        assertTrue(events.isEmpty())
+
+        nowMs += 2_000
+        player.getCurrentPositionMs()
+
+        assertEquals(EPISODE_A, (events.single() as PlayerEvent.RemoteMetadataNotMatched).remoteEpisodeUuid)
+        nowMs += 1_000
+        player.getCurrentPositionMs()
+        assertEquals(1, events.size)
+        player.setEpisode(episodeA)
+        nowMs += 5_000
+        player.getCurrentPositionMs()
+        assertEquals(1, events.size)
+    }
+
+    @Test
     fun `knows nothing before a handoff`() = runBlocking<Unit> {
         val player = player()
         player.setEpisode(episodeA)
@@ -277,10 +459,19 @@ class MusicAssistantPlayerTest {
         queueId = KITCHEN,
         playerName = "Kitchen",
         scope = scope,
-        onPlayerEvent = { _: Player, event: PlayerEvent -> events += event },
+        onPlayerEvent = { _: Player, event: PlayerEvent -> record(event) },
         attachTo = attachTo,
         onPlaybackFailed = { fellBack = true },
+        monotonicMs = { nowMs },
     )
+
+    private fun record(event: PlayerEvent) {
+        when {
+            event == PlayerEvent.BufferingStateChanged -> bufferingSignals.incrementAndGet()
+            listening -> events += event
+            else -> unheard.incrementAndGet()
+        }
+    }
 
     private suspend fun handedOff(): MusicAssistantPlayer {
         val player = player()

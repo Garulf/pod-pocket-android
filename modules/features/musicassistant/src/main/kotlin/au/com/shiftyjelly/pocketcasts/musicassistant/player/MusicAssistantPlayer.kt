@@ -16,11 +16,13 @@ import au.com.shiftyjelly.pocketcasts.repositories.playback.PlayerEvent
 import com.squareup.moshi.JsonDataException
 import java.io.IOException
 import kotlin.math.abs
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 class MusicAssistantPlayer(
     private val remote: MaRemote,
@@ -32,8 +34,11 @@ class MusicAssistantPlayer(
     override val onPlayerEvent: (Player, PlayerEvent) -> Unit,
     attachTo: RemotePlayback? = null,
     private val onPlaybackFailed: () -> Unit = {},
+    private val monotonicMs: () -> Long = { System.nanoTime() / NANOS_PER_MILLI },
 ) : Player {
     private data class Target(val episodeUuid: String, val queueItemId: String, val confirmed: Boolean)
+
+    private enum class Load { Loaded, MediaRejected, Failed }
 
     @Volatile
     private var episode: BaseEpisode? = null
@@ -42,18 +47,27 @@ class MusicAssistantPlayer(
     private var target: Target? = attachTo?.takeIf { it.queueId == queueId }?.let { Target(it.episodeUuid, it.queueItemId, confirmed = false) }
 
     @Volatile
-    private var attachAnnounced = target == null
+    private var attachedUuid: String? = target?.episodeUuid
+
+    @Volatile
+    private var lastAnnouncedAtMs: Long? = null
 
     @Volatile
     private var lastState: String? = null
 
-    private val queueUpdates = scope.launch {
-        remote.queues
-            .map { it[queueId] }
-            .filterNotNull()
-            .distinctUntilChanged()
-            .collect(::onQueue)
-    }
+    @Volatile
+    private var buffering = false
+
+    @Volatile
+    private var pendingSeekMs: Int? = null
+
+    @Volatile
+    private var lastPositionMs = 0
+
+    @Volatile
+    private var speed = 1.0
+
+    private val operations = Mutex()
 
     override val isRemote: Boolean = true
     override val isStreaming: Boolean = true
@@ -63,30 +77,36 @@ class MusicAssistantPlayer(
     override val url: String? get() = episode?.downloadUrl
     override val episodeUuid: String? get() = episode?.uuid
 
+    private val queueUpdates = scope.launch {
+        remote.queues
+            .map { it[queueId] }
+            .distinctUntilChanged()
+            .collect(::onQueue)
+    }
+
     override fun setEpisode(episode: BaseEpisode, preferStream: Boolean) {
         this.episode = episode
+        attachedUuid = null
     }
 
     override fun setPodcast(podcast: Podcast?) = Unit
 
-    override suspend fun load(currentPositionMs: Int) = Unit
+    override suspend fun load(currentPositionMs: Int) {
+        reannounceAttach()
+    }
 
-    override suspend fun play(currentPositionMs: Int) {
-        val current = episode ?: return
+    override suspend fun play(currentPositionMs: Int) = operations.withLock {
+        val current = episode ?: return@withLock
         if (current !is PodcastEpisode) {
             fail("Music Assistant can only play podcast episodes")
-            return
+            return@withLock
         }
         val queue = currentQueue()
         if (owns(queue)) {
-            if (queue?.isPlaying == true) {
-                onPlayerEvent(this, PlayerEvent.PlayerPlaying)
-            } else if (!send("player_queues/play")) {
-                fail("Could not resume on $playerName")
-            }
-            return
+            resume(queue)
+        } else {
+            handOff(current, currentPositionMs)
         }
-        handOff(current, currentPositionMs)
     }
 
     override suspend fun pause() {
@@ -95,56 +115,74 @@ class MusicAssistantPlayer(
         }
     }
 
-    override suspend fun stop() {
+    override suspend fun stop() = operations.withLock {
         queueUpdates.cancel()
         val queue = currentQueue()
         if (owns(queue) && queue?.state != MaQueue.STATE_IDLE) {
             send("player_queues/stop")
         }
         forgetTarget()
+        setBuffering(false)
     }
 
-    override suspend fun seekToTimeMs(positionMs: Int) {
+    override suspend fun seekToTimeMs(positionMs: Int) = operations.withLock { seek(positionMs) }
+
+    private suspend fun seek(positionMs: Int) {
         val queue = currentQueue()
         if (queue == null || !owns(queue)) {
             return
         }
         if (abs(queue.elapsedAt(remote.serverNow()) * 1000 - positionMs) < SEEK_TOLERANCE_MS) {
+            pendingSeekMs = null
             return
         }
         try {
             remote.call("player_queues/seek", mapOf("queue_id" to queueId, "position" to positionMs / 1000))
+            pendingSeekMs = null
+            lastPositionMs = positionMs
         } catch (e: MaCommandException) {
-            send("player_queues/play_index", "index" to (queue.currentIndex ?: 0), "seek_position" to startSeconds(positionMs))
+            if (queue.isPlaying) {
+                restartAt(queue, positionMs)
+            } else {
+                pendingSeekMs = positionMs
+            }
         } catch (e: IOException) {
             return
         }
     }
 
     override suspend fun setPlaybackEffects(playbackEffects: PlaybackEffects) {
+        speed = playbackEffects.playbackSpeed.coerceIn(MIN_SPEED, MAX_SPEED)
         val queue = currentQueue()
         if (queue == null || !owns(queue) || (queue.currentItem?.duration ?: 0) <= 0) {
             return
         }
-        if (abs(queue.playbackSpeed - playbackEffects.playbackSpeed) > SPEED_TOLERANCE) {
-            send("player_queues/set_playback_speed", "speed" to playbackEffects.playbackSpeed)
+        if (differs(queue.playbackSpeed, speed)) {
+            send("player_queues/set_playback_speed", "speed" to speed)
         }
     }
 
     override suspend fun getCurrentPositionMs(): Int {
+        reannounceAttach()
         val queue = currentQueue()
         if (queue == null || !owns(queue)) {
             return -1
         }
-        return (queue.elapsedAt(remote.serverNow()) * 1000).toInt()
+        val pending = pendingSeekMs
+        if (pending != null && !queue.isPlaying) {
+            return pending
+        }
+        val position = if (remote.isConnected) steadyPosition((queue.elapsedAt(remote.serverNow()) * 1000).toInt()) else lastPositionMs
+        return position.takeIf { it > 0 } ?: -1
     }
 
     override suspend fun isPlaying(): Boolean {
+        reannounceAttach()
         val queue = currentQueue()
         return owns(queue) && queue?.isPlaying == true
     }
 
-    override suspend fun isBuffering(): Boolean = false
+    override suspend fun isBuffering(): Boolean = buffering
 
     override suspend fun durationMs(): Int? {
         return episode?.durationMs?.takeIf { it > 0 } ?: currentQueue()?.currentItem?.duration?.times(1000)
@@ -172,57 +210,107 @@ class MusicAssistantPlayer(
             current.episodeUuid == episode?.uuid
     }
 
-    private suspend fun handOff(episode: PodcastEpisode, positionMs: Int) {
-        val media = resolver.resolve(episode)
-        if (media == null) {
-            fail("This episode has no stream Music Assistant can play")
-            return
-        }
-        val loaded = load(media, positionMs) ||
-            (media is MaMedia.ProviderEpisode && resolver.plainUrl(episode)?.let { load(it, positionMs) } == true)
-        if (!loaded) {
-            fail("Could not play on $playerName")
+    private fun steadyPosition(positionMs: Int): Int {
+        val position = if (lastPositionMs - positionMs in 1 until BACKSTEP_TOLERANCE_MS) lastPositionMs else positionMs
+        lastPositionMs = position
+        return position
+    }
+
+    private suspend fun resume(queue: MaQueue?) {
+        val pending = pendingSeekMs
+        pendingSeekMs = null
+        when {
+            queue?.isPlaying == true -> onPlayerEvent(this, PlayerEvent.PlayerPlaying)
+            pending != null -> if (queue == null || !restartAt(queue, pending)) fail("Could not resume on $playerName")
+            !send("player_queues/play") -> fail("Could not resume on $playerName")
         }
     }
 
-    private suspend fun load(media: MaMedia, positionMs: Int): Boolean {
+    private suspend fun restartAt(queue: MaQueue, positionMs: Int): Boolean {
+        val restarted = send("player_queues/play_index", "index" to (queue.currentIndex ?: 0), "seek_position" to startSeconds(positionMs))
+        if (restarted) {
+            lastPositionMs = positionMs
+        }
+        return restarted
+    }
+
+    private suspend fun handOff(episode: PodcastEpisode, positionMs: Int) {
+        forgetTarget()
+        setBuffering(true)
+        try {
+            val media = resolver.resolve(episode)
+            if (media == null) {
+                fail("This episode has no stream Music Assistant can play")
+                return
+            }
+            var loaded = load(media, positionMs)
+            val plain = if (loaded == Load.MediaRejected && media is MaMedia.ProviderEpisode) resolver.plainUrl(episode) else null
+            if (plain != null) {
+                loaded = load(plain, positionMs)
+            }
+            if (loaded != Load.Loaded) {
+                fail("Could not play on $playerName")
+            }
+        } catch (e: CancellationException) {
+            setBuffering(false)
+            throw e
+        }
+    }
+
+    private suspend fun load(media: MaMedia, positionMs: Int): Load {
+        var addingMedia = false
         return try {
             remote.call("player_queues/clear", mapOf("queue_id" to queueId))
+            addingMedia = true
             remote.call("player_queues/play_media", mapOf("queue_id" to queueId, "media" to listOf(media.uri), "option" to "add"))
+            addingMedia = false
             val first = MaJson.decodeList<MaQueueItem>(
                 remote.call("player_queues/items", mapOf("queue_id" to queueId, "limit" to 1, "offset" to 0)),
-            ).firstOrNull() ?: return false
+            ).firstOrNull() ?: return Load.MediaRejected
             target = Target(media.episodeUuid, first.queueItemId, confirmed = false)
             lastState = null
+            lastPositionMs = positionMs
             playbackStore.save(RemotePlayback(queueId, first.queueItemId, media.episodeUuid))
             remote.call("player_queues/play_index", mapOf("queue_id" to queueId, "index" to 0, "seek_position" to startSeconds(positionMs)))
-            true
+            applySpeed(first)
+            Load.Loaded
         } catch (e: MaCommandException) {
             forgetTarget()
-            false
+            if (addingMedia && e.rejectsMedia) Load.MediaRejected else Load.Failed
         } catch (e: IOException) {
             forgetTarget()
-            false
+            Load.Failed
         } catch (e: JsonDataException) {
             forgetTarget()
-            false
+            Load.Failed
         }
     }
 
-    private fun onQueue(queue: MaQueue) {
+    private suspend fun applySpeed(item: MaQueueItem) {
+        if ((item.duration ?: 0) <= 0) {
+            return
+        }
+        val queueSpeed = currentQueue()?.playbackSpeed ?: 1.0
+        if (differs(speed, 1.0) || differs(queueSpeed, speed)) {
+            send("player_queues/set_playback_speed", "speed" to speed)
+        }
+    }
+
+    private fun onQueue(queue: MaQueue?) {
         val current = target ?: return
-        if (queue.currentItem?.queueItemId != current.queueItemId) {
+        val item = queue?.currentItem
+        if (queue == null || item == null || item.queueItemId != current.queueItemId) {
             if (current.confirmed) {
-                forgetTarget()
-                onPlayerEvent(this, PlayerEvent.PlayerPaused)
+                letGo()
             }
             return
         }
         if (!current.confirmed) {
             target = current.copy(confirmed = true)
-            if (!attachAnnounced) {
-                attachAnnounced = true
-                onPlayerEvent(this, PlayerEvent.RemoteMetadataNotMatched(current.episodeUuid))
+            setBuffering(false)
+            val attached = attachedUuid
+            if (attached != null && episode == null) {
+                announceAttach(attached)
                 return
             }
         }
@@ -235,7 +323,7 @@ class MusicAssistantPlayer(
             onPlayerEvent(this, PlayerEvent.Completion(current.episodeUuid))
             return
         }
-        val duration = queue.currentItem.duration ?: 0
+        val duration = item.duration ?: 0
         if (playing.durationMs <= 0 && duration > 0) {
             playing.durationMs = duration * 1000
             onPlayerEvent(this, PlayerEvent.DurationAvailable)
@@ -246,9 +334,42 @@ class MusicAssistantPlayer(
         }
     }
 
+    private fun letGo() {
+        forgetTarget()
+        setBuffering(false)
+        onPlayerEvent(this, PlayerEvent.PlayerPaused)
+    }
+
+    private fun announceAttach(uuid: String) {
+        lastAnnouncedAtMs = monotonicMs()
+        onPlayerEvent(this, PlayerEvent.RemoteMetadataNotMatched(uuid))
+    }
+
+    private fun reannounceAttach() {
+        val uuid = attachedUuid ?: return
+        val current = target ?: return
+        if (episode != null || !current.confirmed || currentQueue()?.currentItem?.queueItemId != current.queueItemId) {
+            return
+        }
+        val last = lastAnnouncedAtMs
+        if (last == null || monotonicMs() - last >= REANNOUNCE_INTERVAL_MS) {
+            announceAttach(uuid)
+        }
+    }
+
+    private fun setBuffering(value: Boolean) {
+        if (buffering != value) {
+            buffering = value
+            onPlayerEvent(this, PlayerEvent.BufferingStateChanged)
+        }
+    }
+
     private fun forgetTarget() {
         target = null
+        attachedUuid = null
         lastState = null
+        pendingSeekMs = null
+        lastPositionMs = 0
         playbackStore.save(null)
     }
 
@@ -264,13 +385,24 @@ class MusicAssistantPlayer(
     }
 
     private fun fail(message: String) {
+        setBuffering(false)
         onPlayerEvent(this, PlayerEvent.PlayerError(message))
         onPlaybackFailed()
     }
 
+    private val MaCommandException.rejectsMedia: Boolean
+        get() = !isAuthFailure && code != MaCommandException.PLAYER_UNAVAILABLE
+
     private companion object {
         const val SEEK_TOLERANCE_MS = 2000
+        const val BACKSTEP_TOLERANCE_MS = 3000
+        const val REANNOUNCE_INTERVAL_MS = 2000L
+        const val NANOS_PER_MILLI = 1_000_000L
         const val SPEED_TOLERANCE = 0.001
+        const val MIN_SPEED = 0.5
+        const val MAX_SPEED = 3.0
+
+        fun differs(first: Double, second: Double): Boolean = abs(first - second) > SPEED_TOLERANCE
 
         // Music Assistant reads a seek position of 0 as "resume where Music Assistant last stopped".
         fun startSeconds(positionMs: Int): Int = (positionMs / 1000).coerceAtLeast(1)

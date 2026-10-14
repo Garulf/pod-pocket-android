@@ -2,6 +2,7 @@ package au.com.shiftyjelly.pocketcasts.musicassistant.media
 
 import au.com.shiftyjelly.pocketcasts.musicassistant.eventually
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.launch
@@ -15,12 +16,17 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.Timeout
 import timber.log.Timber
 
 class ServerEpisodeSourceLookupTest {
+    @get:Rule
+    val timeout: Timeout = Timeout.seconds(30)
+
     private val server = MockWebServer()
-    private val client = OkHttpClient()
+    private val client = OkHttpClient.Builder().readTimeout(10, TimeUnit.SECONDS).build()
     private val lookup = ServerEpisodeSourceLookup(client, server.url("/api/"))
     private val logged = CopyOnWriteArrayList<String>()
     private val tree = object : Timber.Tree() {
@@ -106,8 +112,10 @@ class ServerEpisodeSourceLookupTest {
         server.takeRequest()
         eventually { client.dispatcher.runningCallsCount() == 1 }
 
+        val started = System.nanoTime()
         pending.cancelAndJoin()
 
+        assertTrue(TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started) < 2_000)
         eventually { client.dispatcher.runningCallsCount() == 0 }
     }
 }

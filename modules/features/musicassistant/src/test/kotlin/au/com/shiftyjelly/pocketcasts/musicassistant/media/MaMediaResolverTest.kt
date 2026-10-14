@@ -7,18 +7,22 @@ import au.com.shiftyjelly.pocketcasts.musicassistant.account
 import au.com.shiftyjelly.pocketcasts.musicassistant.awaitValue
 import au.com.shiftyjelly.pocketcasts.musicassistant.client.MaConnection
 import au.com.shiftyjelly.pocketcasts.musicassistant.client.MaRemote
-import au.com.shiftyjelly.pocketcasts.musicassistant.client.MaTimeoutException
 import au.com.shiftyjelly.pocketcasts.musicassistant.client.MaSession
 import au.com.shiftyjelly.pocketcasts.musicassistant.client.MaSessionState
+import au.com.shiftyjelly.pocketcasts.musicassistant.client.MaTimeoutException
+import au.com.shiftyjelly.pocketcasts.musicassistant.eventually
 import au.com.shiftyjelly.pocketcasts.musicassistant.protocol.MaPlayer
 import au.com.shiftyjelly.pocketcasts.musicassistant.protocol.MaQueue
 import java.util.Date
+import java.util.concurrent.atomic.AtomicInteger
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.runBlocking
@@ -41,12 +45,12 @@ class MaMediaResolverTest {
     private val session = MaSession(scope, InMemoryAccountStore(account(server.url)), { MaConnection(OkHttpClient()) })
     private val sources = mutableMapOf<String, EpisodeSource>()
     private var gpodder: String? = GPODDER
-    private var lookups = 0
+    private val lookups = AtomicInteger()
     private var nowMs = 0L
     private val resolver = MaMediaResolver(
         remote = session,
         sources = { uuids ->
-            lookups++
+            lookups.incrementAndGet()
             sources.filterKeys { it in uuids }
         },
         gpodderInstanceId = { gpodder },
@@ -172,14 +176,20 @@ class MaMediaResolverTest {
     fun `lists a feed once when episodes are resolved together`() = runBlocking<Unit> {
         sources["a"] = EpisodeSource("a", FEED, guid = null, enclosureUrl = "https://cdn.example.com/a.mp3")
         sources["c"] = EpisodeSource("c", FEED, guid = null, enclosureUrl = "https://cdn.example.com/c.mp3")
+        val gate = CompletableDeferred<Unit>()
+        val remote = ScriptedRemote(gate) { listOf(episodeItem("a", "https://cdn.example.com/a.mp3"), episodeItem("c", "https://cdn.example.com/c.mp3")) }
+        val scripted = MaMediaResolver(remote, { uuids -> sources.filterKeys { it in uuids }.also { lookups.incrementAndGet() } }, { GPODDER })
 
         val resolved = listOf(
-            async(Dispatchers.Default) { resolver.resolve(episode("a", "https://cdn.example.com/a.mp3")) },
-            async(Dispatchers.Default) { resolver.resolve(episode("c", "https://cdn.example.com/c.mp3")) },
-        ).awaitAll()
+            async(Dispatchers.Default) { scripted.resolve(episode("a", "https://cdn.example.com/a.mp3")) },
+            async(Dispatchers.Default) { scripted.resolve(episode("c", "https://cdn.example.com/c.mp3")) },
+        )
+        eventually { lookups.get() == 2 && remote.calls.get() >= 1 }
+        delay(300)
+        gate.complete(Unit)
 
-        assertTrue(resolved.all { it is MaMedia.ProviderEpisode })
-        assertEquals(1, listings())
+        assertTrue(resolved.awaitAll().all { it is MaMedia.ProviderEpisode })
+        assertEquals(1, remote.calls.get())
     }
 
     @Test
@@ -190,7 +200,7 @@ class MaMediaResolverTest {
         val media = resolver.resolve(episode("a", "https://cdn.example.com/a.mp3"))
 
         assertEquals(MaMedia.PlainUrl("a", "builtin://track/https://cdn.example.com/a.mp3"), media)
-        assertEquals(0, lookups)
+        assertEquals(0, lookups.get())
     }
 
     @Test
@@ -233,12 +243,24 @@ class MaMediaResolverTest {
 
     private fun listings() = generateSequence { server.commands.poll() }.count { it.name == "music/podcasts/podcast_episodes" }
 
-    private class ScriptedRemote(private val listing: () -> Any?) : MaRemote {
+    private fun episodeItem(id: String, url: String) = mapOf(
+        "item_id" to id,
+        "provider" to "gpodder",
+        "uri" to "$GPODDER://podcast_episode/$id",
+        "provider_mappings" to listOf(mapOf("item_id" to id, "provider_instance" to GPODDER, "url" to url)),
+    )
+
+    private class ScriptedRemote(private val gate: CompletableDeferred<Unit>? = null, private val listing: () -> Any?) : MaRemote {
+        val calls = AtomicInteger()
         override val players: StateFlow<Map<String, MaPlayer>> = MutableStateFlow(emptyMap())
         override val queues: StateFlow<Map<String, MaQueue>> = MutableStateFlow(emptyMap())
         override val isConnected: Boolean = true
 
-        override suspend fun call(command: String, args: Map<String, Any?>, timeoutMs: Long?): Any? = listing()
+        override suspend fun call(command: String, args: Map<String, Any?>, timeoutMs: Long?): Any? {
+            calls.incrementAndGet()
+            gate?.await()
+            return listing()
+        }
 
         override fun serverNow(): Double = 0.0
     }

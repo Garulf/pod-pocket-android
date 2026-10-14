@@ -29,10 +29,15 @@ class MaMediaResolver(
 ) {
     private data class FeedKey(val instanceId: String, val feedUrl: String)
 
+    private class FeedLock {
+        val mutex = Mutex()
+        var users = 0
+    }
+
     private class CachedEpisodes(val episodes: List<MaMediaItem>, val fetchedAtMs: Long)
 
     private val episodesByFeed = ConcurrentHashMap<FeedKey, CachedEpisodes>()
-    private val feedLocks = ConcurrentHashMap<FeedKey, Mutex>()
+    private val feedLocks = HashMap<FeedKey, FeedLock>()
 
     suspend fun resolve(episode: PodcastEpisode): MaMedia? {
         val plain = plainUrl(episode)
@@ -56,8 +61,18 @@ class MaMediaResolver(
 
     private suspend fun podcastEpisodes(feedUrl: String, instanceId: String): List<MaMediaItem>? {
         val key = FeedKey(instanceId, feedUrl)
-        return feedLocks.getOrPut(key) { Mutex() }.withLock {
-            cachedEpisodes(key) ?: listEpisodes(key)?.also { episodesByFeed[key] = CachedEpisodes(it, now()) }
+        val lock = synchronized(feedLocks) { feedLocks.getOrPut(key) { FeedLock() }.also { it.users++ } }
+        try {
+            return lock.mutex.withLock {
+                cachedEpisodes(key) ?: listEpisodes(key)?.also { episodesByFeed[key] = CachedEpisodes(it, now()) }
+            }
+        } finally {
+            synchronized(feedLocks) {
+                lock.users--
+                if (lock.users == 0) {
+                    feedLocks.remove(key)
+                }
+            }
         }
     }
 

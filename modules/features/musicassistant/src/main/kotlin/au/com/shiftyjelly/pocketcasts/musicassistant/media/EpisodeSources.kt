@@ -58,7 +58,13 @@ class ServerEpisodeSourceLookup(
                 }
 
                 override fun onResponse(call: Call, response: Response) {
-                    continuation.resume(response.use(::readSources))
+                    val sources = try {
+                        response.use(::readSources)
+                    } catch (e: RuntimeException) {
+                        Timber.w("Episode source lookup failed: ${e.javaClass.simpleName}")
+                        emptyList()
+                    }
+                    continuation.resume(sources)
                 }
             },
         )

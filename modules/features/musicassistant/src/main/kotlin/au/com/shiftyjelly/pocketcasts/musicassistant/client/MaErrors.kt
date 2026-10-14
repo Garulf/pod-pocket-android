@@ -7,6 +7,7 @@ class MaCommandException(val code: Int, val details: String?) : Exception("Music
 
     companion object {
         const val MEDIA_NOT_FOUND = 2
+        const val PLAYER_UNAVAILABLE = 10
         const val INVALID_COMMAND = 12
         private val AUTH_FAILURE_CODES = setOf(20, 21, 23)
     }
