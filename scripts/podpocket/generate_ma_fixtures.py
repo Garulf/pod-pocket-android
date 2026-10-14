@@ -4,11 +4,13 @@ Messages are built from music-assistant-models 1.1.221, the version that
 music-assistant/server 09e6bfb868b6a55e0f93afbb3356205948420d54 pins, and serialized
 with the same to_json calls the server's websocket handler uses.
 
-Run: PYTHONHASHSEED=0 uv run --python 3.13 --with music-assistant-models==1.1.221 \
+Run (PYTHONHASHSEED=0 is required: player features are sets, and the seed fixes their order):
+PYTHONHASHSEED=0 uv run --python 3.13 --with music-assistant-models==1.1.221 \
     python scripts/podpocket/generate_ma_fixtures.py modules/features/musicassistant/src/test/resources/ma
 """
 
 import json
+import os
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
@@ -38,6 +40,9 @@ from music_assistant_models.media_items import (
 from music_assistant_models.player import DeviceInfo, Player, PlayerMedia
 from music_assistant_models.player_queue import PlayerQueue
 from music_assistant_models.queue_item import QueueItem
+
+if os.environ.get("PYTHONHASHSEED") != "0":
+    sys.exit("Set PYTHONHASHSEED=0 so set-valued fields serialize in a fixed order.")
 
 OUT = Path(sys.argv[1])
 OUT.mkdir(parents=True, exist_ok=True)

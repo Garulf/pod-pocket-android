@@ -60,7 +60,7 @@ data class MaQueue(
     val isPlaying: Boolean get() = state == STATE_PLAYING
 
     fun elapsedAt(serverNow: Double): Double {
-        val running = if (isPlaying) (serverNow - elapsedTimeLastUpdated).coerceAtLeast(0.0) * playbackSpeed else 0.0
+        val running = if (isPlaying && elapsedTimeLastUpdated > 0.0) (serverNow - elapsedTimeLastUpdated).coerceAtLeast(0.0) * playbackSpeed else 0.0
         return (elapsedTime + running).coerceAtLeast(0.0)
     }
 

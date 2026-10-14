@@ -6,6 +6,7 @@ import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
 import java.io.IOException
 import java.lang.reflect.Type
+import timber.log.Timber
 
 sealed interface MaIncoming {
     data class ServerInfo(val info: MaServerInfo) : MaIncoming
@@ -60,7 +61,7 @@ object MaJson {
     }
 
     inline fun <reified T : Any> decodeList(value: Any?): List<T> {
-        return decode(value, Types.newParameterizedType(List::class.java, T::class.java))
+        return decodeList(value, T::class.java)
     }
 
     inline fun <reified T : Any> decodeOrNull(value: Any?): T? {
@@ -68,6 +69,19 @@ object MaJson {
             decode<T>(value)
         } catch (e: JsonDataException) {
             null
+        }
+    }
+
+    fun <T : Any> decodeList(value: Any?, elementType: Class<T>): List<T> {
+        val items = value as? List<*> ?: throw JsonDataException("Expected a list of $elementType")
+        val adapter = moshi.adapter(elementType)
+        return items.mapNotNull { item ->
+            try {
+                adapter.fromJsonValue(item)
+            } catch (e: JsonDataException) {
+                Timber.w("Skipping a Music Assistant ${elementType.simpleName} that could not be read: ${e.message}")
+                null
+            }
         }
     }
 

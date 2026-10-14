@@ -1,8 +1,20 @@
 [extend]
 useDefault = true
 
-[allowlist]
+[[allowlists]]
 description = "global allow list"
 regexes = [
     "AIzaSyBguqVfwriVWjnSqRg50XPfZZH5r1VumNM", # google services debug api key
+]
+
+[[allowlists]]
+description = "fake Music Assistant provider instance ids in fixtures"
+condition = "AND"
+targetRules = ["generic-api-key"]
+paths = [
+    '''modules/features/musicassistant/src/test/resources/ma/.*''',
+    '''scripts/podpocket/generate_ma_fixtures\.py''',
+]
+regexes = [
+    '''(gpodder|sonos|builtin)--[A-Za-z0-9]{8}''',
 ]

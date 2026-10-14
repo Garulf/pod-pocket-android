@@ -1,9 +1,11 @@
 package au.com.shiftyjelly.pocketcasts.musicassistant.protocol
 
 import au.com.shiftyjelly.pocketcasts.musicassistant.FakeMaServer.Companion.fixture
+import com.squareup.moshi.JsonDataException
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -90,6 +92,73 @@ class MaJsonTest {
         assertEquals(115.0, queue.elapsedAt(serverNow = 1010.0), 0.0001)
         assertEquals(100.0, queue.copy(state = MaQueue.STATE_PAUSED).elapsedAt(serverNow = 1010.0), 0.0)
         assertEquals(100.0, queue.elapsedAt(serverNow = 990.0), 0.0)
+    }
+
+    @Test
+    fun `does not guess the elapsed time of a queue without a server timestamp`() {
+        val queue = MaQueue(queueId = "q", state = MaQueue.STATE_PLAYING, elapsedTime = 100.0)
+
+        assertEquals(100.0, queue.elapsedAt(serverNow = 1_792_000_000.0), 0.0)
+        assertEquals(100.0, MaJson.decode<MaQueue>(mapOf("queue_id" to "q", "state" to "playing", "elapsed_time" to 100.0)).elapsedAt(1_792_000_000.0), 0.0)
+    }
+
+    @Test
+    fun `accepts enum strings it has never seen`() {
+        val player = MaJson.decode<MaPlayer>(
+            mapOf("player_id" to "p", "name" to "P", "type" to "stereo_pair", "available" to true, "supported_features" to listOf("teleport", "volume_set")),
+        )
+        val queue = MaJson.decode<MaQueue>(mapOf("queue_id" to "q", "state" to "buffering"))
+
+        assertEquals("stereo_pair", player.type)
+        assertTrue(player.canSetVolume)
+        assertEquals("buffering", queue.state)
+        assertFalse(queue.isPlaying)
+    }
+
+    @Test
+    fun `passes on events it does not know`() {
+        val event = MaJson.parse(fixture("event_unknown")) as MaIncoming.Event
+
+        assertEquals("media_item_played", event.event)
+        assertEquals(mapOf("x" to 1.0), event.data)
+    }
+
+    @Test
+    fun `decodes the episodes of a partial and a final result`() {
+        val partial = MaJson.parse(fixture("podcast_episodes_partial")) as MaIncoming.Result
+        val final = MaJson.parse(fixture("podcast_episodes_final")) as MaIncoming.Result
+
+        val episodes = MaJson.decodeList<MaMediaItem>((partial.result as List<*>) + (final.result as List<*>))
+
+        assertEquals(listOf("Episode A", "Episode B", "Episode C has a guid with a space"), episodes.map { it.name })
+        assertEquals("podcast_episode", episodes[0].mediaType)
+        assertEquals("https://cdn.example.com/a.mp3", episodes[0].providerMappings.single().url)
+    }
+
+    @Test
+    fun `returns null instead of throwing for the wrong shape`() {
+        assertNull(MaJson.decodeOrNull<MaQueue>("not a queue"))
+        assertNull(MaJson.decodeOrNull<MaPlayer>(mapOf("player_id" to "p")))
+        assertEquals("q", MaJson.decodeOrNull<MaQueue>(mapOf("queue_id" to "q"))?.queueId)
+    }
+
+    @Test
+    fun `skips list elements that cannot be read`() {
+        val players = MaJson.decodeList<MaPlayer>(
+            listOf(
+                mapOf("player_id" to "a", "name" to "A", "type" to "player", "available" to true),
+                mapOf("player_id" to "b"),
+                "not a player",
+                mapOf("player_id" to "c", "name" to "C", "type" to "player", "available" to false),
+            ),
+        )
+
+        assertEquals(listOf("a", "c"), players.map { it.playerId })
+    }
+
+    @Test
+    fun `rejects a list result that is not a list`() {
+        assertThrows(JsonDataException::class.java) { MaJson.decodeList<MaPlayer>(mapOf("player_id" to "a")) }
     }
 
     @Test
