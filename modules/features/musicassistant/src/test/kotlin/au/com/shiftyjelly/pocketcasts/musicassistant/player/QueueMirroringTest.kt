@@ -292,6 +292,43 @@ class QueueMirroringTest {
     }
 
     @Test
+    fun `keeps following when the speaker refuses to stop after the last episode`() = runBlocking<Unit> {
+        handedOff(listOf(a, b), "queue_items")
+        buffering(1)
+        upNext.episodes.value = listOf(a)
+        Thread.sleep(600)
+        server.reply("player_queues/stop", "error_invalid_command")
+
+        server.push("event_queue_updated_next_item")
+
+        assertEquals("player_queues/stop", server.next().name)
+        Thread.sleep(200)
+        assertTrue(events.none { it is PlayerEvent.Completion || it == PlayerEvent.PlayerPaused })
+        assertEquals(listOf(MIRROR_A, MIRROR_B), store.playback?.items)
+        server.reply("player_queues/stop", "command_ok")
+        server.pushEdited("event_queue_updated_next_item") { event -> queue(event)["elapsed_time"] = 5.0 }
+        assertEquals("player_queues/stop", server.next().name)
+        eventually { (events.lastOrNull() as? PlayerEvent.Completion)?.episodeUUID == "a" }
+        assertNull(store.playback)
+    }
+
+    @Test
+    fun `stops the speaker on a later mirrored episode while finishing the ones it passed`() = runBlocking<Unit> {
+        val entered = CompletableDeferred<Unit>()
+        val stuck = EpisodeFinisher {
+            entered.complete(Unit)
+            CompletableDeferred<Unit>().await()
+        }
+        val player = handedOff(listOf(a, b, c), "queue_items_three", finisher = stuck)
+        server.push("event_queue_updated_third_item")
+        entered.await()
+
+        player.stop()
+
+        assertEquals(FakeMaServer.Command("player_queues/stop", mapOf("queue_id" to KITCHEN)), server.next())
+    }
+
+    @Test
     fun `reports the end when the speaker ends on an episode it is skipping`() = runBlocking<Unit> {
         bufferedSecondB()
         server.push("event_queue_updated_next_item")

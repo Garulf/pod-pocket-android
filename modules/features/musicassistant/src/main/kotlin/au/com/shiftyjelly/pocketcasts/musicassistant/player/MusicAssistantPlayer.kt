@@ -192,7 +192,7 @@ class MusicAssistantPlayer(
         operations.withLock {
             try {
                 val queue = currentQueue()
-                val speakerStillPlays = if (startedHereUnconfirmed(queue) || (owns(queue) && queue?.state != MaQueue.STATE_IDLE)) {
+                val speakerStillPlays = if (startedHereUnconfirmed(queue) || (playsMirror(queue) && queue?.state != MaQueue.STATE_IDLE)) {
                     !send("player_queues/stop")
                 } else {
                     false
@@ -294,6 +294,11 @@ class MusicAssistantPlayer(
             !queue.ended &&
             queue.currentItem?.queueItemId == current.queueItemId &&
             current.episodeUuid == episode?.uuid
+    }
+
+    private fun playsMirror(queue: MaQueue?): Boolean {
+        val itemId = queue?.currentItem?.queueItemId ?: return false
+        return owns(queue) || (!queue.ended && upcoming.any { it.queueItemId == itemId })
     }
 
     private fun estimatedPositionMs(queue: MaQueue, baseline: SeekBaseline?): Int {
@@ -496,7 +501,9 @@ class MusicAssistantPlayer(
                     return
                 }
             } else {
-                send("player_queues/stop")
+                if (!send("player_queues/stop")) {
+                    return
+                }
                 ended = true
             }
         }
