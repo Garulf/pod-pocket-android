@@ -20,8 +20,6 @@ import au.com.shiftyjelly.pocketcasts.repositories.bookmark.BookmarkManager
 import au.com.shiftyjelly.pocketcasts.repositories.bookmark.BookmarkManagerImpl
 import au.com.shiftyjelly.pocketcasts.repositories.chat.ChatManager
 import au.com.shiftyjelly.pocketcasts.repositories.chat.ChatManagerImpl
-import au.com.shiftyjelly.pocketcasts.repositories.chromecast.CastManager
-import au.com.shiftyjelly.pocketcasts.repositories.chromecast.CastManagerImpl
 import au.com.shiftyjelly.pocketcasts.repositories.download.DownloadManager
 import au.com.shiftyjelly.pocketcasts.repositories.download.DownloadQueue
 import au.com.shiftyjelly.pocketcasts.repositories.download.DownloadStatusObserver
@@ -43,8 +41,6 @@ import au.com.shiftyjelly.pocketcasts.repositories.notification.NotificationMana
 import au.com.shiftyjelly.pocketcasts.repositories.notification.NotificationManagerImpl
 import au.com.shiftyjelly.pocketcasts.repositories.notification.NotificationScheduler
 import au.com.shiftyjelly.pocketcasts.repositories.notification.NotificationSchedulerImpl
-import au.com.shiftyjelly.pocketcasts.repositories.playback.PlayerFactory
-import au.com.shiftyjelly.pocketcasts.repositories.playback.PlayerFactoryImpl
 import au.com.shiftyjelly.pocketcasts.repositories.playback.UpNextQueue
 import au.com.shiftyjelly.pocketcasts.repositories.playback.UpNextQueueImpl
 import au.com.shiftyjelly.pocketcasts.repositories.playlist.PlaylistManager
@@ -168,14 +164,6 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun providesUpNextQueue(upNextQueueImpl: UpNextQueueImpl): UpNextQueue
-
-    @Binds
-    @Singleton
-    abstract fun providesPlayerFactory(playerFactoryImpl: PlayerFactoryImpl): PlayerFactory
-
-    @Binds
-    @Singleton
-    abstract fun providesCastManager(castManagerImpl: CastManagerImpl): CastManager
 
     @Binds
     @Singleton
