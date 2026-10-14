@@ -2097,7 +2097,7 @@ open class PlaybackManager @Inject constructor(
         }
         // using Chrome Cast make sure the player is connected
         return if (!castManager.isConnected()) {
-            player is CastPlayer
+            player?.isRemote == true
         } else {
             player is SimplePlayer
         } // otherwise use the ExoPlayer
