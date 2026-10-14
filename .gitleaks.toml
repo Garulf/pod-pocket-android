@@ -12,9 +12,9 @@ description = "fake Music Assistant provider instance ids in fixtures"
 condition = "AND"
 targetRules = ["generic-api-key"]
 paths = [
-    '''modules/features/musicassistant/src/test/resources/ma/.*''',
-    '''scripts/podpocket/generate_ma_fixtures\.py''',
+    '''^modules/features/musicassistant/src/test/resources/ma/.*$''',
+    '''^scripts/podpocket/generate_ma_fixtures\.py$''',
 ]
 regexes = [
-    '''(gpodder|sonos|builtin)--[A-Za-z0-9]{8}''',
+    '''^(gpodder|sonos|builtin)--[A-Za-z0-9]{8}$''',
 ]

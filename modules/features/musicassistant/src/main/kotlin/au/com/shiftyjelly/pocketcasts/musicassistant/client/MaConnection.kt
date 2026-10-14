@@ -4,6 +4,7 @@ import au.com.shiftyjelly.pocketcasts.musicassistant.protocol.MaIncoming
 import au.com.shiftyjelly.pocketcasts.musicassistant.protocol.MaJson
 import au.com.shiftyjelly.pocketcasts.musicassistant.protocol.MaServerInfo
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicLong
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.channels.Channel
@@ -26,24 +27,39 @@ class MaConnection(private val client: OkHttpClient) {
     private val closed = CompletableDeferred<Unit>()
     private val eventChannel = Channel<MaIncoming.Event>(Channel.UNLIMITED)
 
+    private val lock = Any()
+
     @Volatile
     private var socket: WebSocket? = null
+
+    @Volatile
+    private var failure: MaConnectionClosedException? = null
 
     val events: ReceiveChannel<MaIncoming.Event> get() = eventChannel
 
     suspend fun open(server: HttpUrl): MaServerInfo {
         val url = server.newBuilder().addPathSegment("ws").build()
-        socket = client.newWebSocket(Request.Builder().url(url).build(), Listener())
-        return serverInfo.await()
+        val webSocket = synchronized(lock) {
+            failure?.let { throw it }
+            client.newWebSocket(Request.Builder().url(url).build(), Listener()).also { socket = it }
+        }
+        try {
+            return serverInfo.await()
+        } catch (e: Throwable) {
+            webSocket.cancel()
+            fail(e)
+            throw e
+        }
     }
 
     suspend fun call(command: String, args: Map<String, Any?> = emptyMap()): Any? {
-        val webSocket = socket ?: throw MaConnectionClosedException()
+        val webSocket = socket ?: throw failure ?: MaConnectionClosedException()
         val messageId = nextMessageId.getAndIncrement().toString()
         val call = PendingCall()
         pending[messageId] = call
         try {
-            if (closed.isCompleted || !webSocket.send(MaJson.command(messageId, command, args))) {
+            failure?.let { throw it }
+            if (!webSocket.send(MaJson.command(messageId, command, args))) {
                 throw MaConnectionClosedException()
             }
             return call.result.await()
@@ -57,12 +73,14 @@ class MaConnection(private val client: OkHttpClient) {
     }
 
     fun close() {
-        socket?.close(NORMAL_CLOSURE, null)
         fail(MaConnectionClosedException())
+        socket?.close(NORMAL_CLOSURE, null)
     }
 
     private fun fail(cause: Throwable) {
-        val error = cause as? MaConnectionClosedException ?: MaConnectionClosedException(cause)
+        val error = synchronized(lock) {
+            failure ?: (cause as? MaConnectionClosedException ?: MaConnectionClosedException(cause)).also { failure = it }
+        }
         serverInfo.completeExceptionally(error)
         pending.values.forEach { it.result.completeExceptionally(error) }
         eventChannel.close()
@@ -108,7 +126,12 @@ class MaConnection(private val client: OkHttpClient) {
         }
     }
 
-    private companion object {
-        const val NORMAL_CLOSURE = 1000
+    companion object {
+        const val PING_INTERVAL_SECONDS = 20L
+        private const val NORMAL_CLOSURE = 1000
+
+        fun pingingClient(base: OkHttpClient = OkHttpClient()): OkHttpClient {
+            return base.newBuilder().pingInterval(PING_INTERVAL_SECONDS, TimeUnit.SECONDS).build()
+        }
     }
 }

@@ -15,6 +15,13 @@ class MaServerUrlsTest {
             "https://ma.example.com" to "https://ma.example.com/",
             "http://192.168.1.20:8095/ma/" to "http://192.168.1.20:8095/ma",
             "https://user:secret@ma.example.com/?x=1#top" to "https://ma.example.com/",
+            "user:secret@music.local" to "http://music.local:8095/",
+            "user:secret@music.local:9000" to "http://music.local:9000/",
+            "music.local/ma:1" to "http://music.local:8095/ma:1",
+            "music.local?next=a:b" to "http://music.local:8095/",
+            "music.local/go?to=http://other.example" to "http://music.local:8095/go",
+            "[::1]" to "http://[::1]:8095/",
+            "[::1]:9000" to "http://[::1]:9000/",
         )
 
         cases.forEach { (input, expected) ->

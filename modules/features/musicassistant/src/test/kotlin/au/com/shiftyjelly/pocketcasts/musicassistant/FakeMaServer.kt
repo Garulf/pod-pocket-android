@@ -25,9 +25,19 @@ class FakeMaServer : Closeable {
     private val onceReplies = ConcurrentHashMap<String, ConcurrentLinkedQueue<List<String>>>()
     private val sockets = CopyOnWriteArrayList<WebSocket>()
     val commands = LinkedBlockingQueue<Command>()
+    val requestPaths = CopyOnWriteArrayList<String>()
 
     @Volatile
     var acceptConnections = true
+
+    @Volatile
+    var greetClients = true
+
+    @Volatile
+    var requests = 0
+        private set
+
+    val openSockets: Int get() = sockets.size
 
     @Volatile
     var connections = 0
@@ -36,6 +46,8 @@ class FakeMaServer : Closeable {
     init {
         server.dispatcher = object : Dispatcher() {
             override fun dispatch(request: RecordedRequest): MockResponse {
+                requests++
+                requestPaths += request.path.orEmpty()
                 if (!acceptConnections) {
                     return MockResponse().setResponseCode(503)
                 }
@@ -94,7 +106,9 @@ class FakeMaServer : Closeable {
     private inner class Listener : WebSocketListener() {
         override fun onOpen(webSocket: WebSocket, response: Response) {
             sockets += webSocket
-            webSocket.send(fixture("server_info"))
+            if (greetClients) {
+                webSocket.send(fixture("server_info"))
+            }
         }
 
         override fun onMessage(webSocket: WebSocket, text: String) {
@@ -109,6 +123,10 @@ class FakeMaServer : Closeable {
 
         override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
             webSocket.close(1000, null)
+            sockets -= webSocket
+        }
+
+        override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
             sockets -= webSocket
         }
     }
