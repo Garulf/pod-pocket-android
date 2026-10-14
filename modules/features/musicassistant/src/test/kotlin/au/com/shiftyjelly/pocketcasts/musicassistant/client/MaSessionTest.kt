@@ -247,6 +247,35 @@ class MaSessionTest {
     }
 
     @Test
+    fun `does not try a rejected token again when started again`() = runBlocking<Unit> {
+        server.reply("auth", "auth_invalid_token")
+        session.start()
+        session.state.awaitValue { it == MaSessionState.SignInRequired }
+        val states = scope.record(session.state)
+
+        session.stop()
+        session.start()
+        Thread.sleep(200)
+
+        assertEquals(1, server.connections)
+        assertEquals(listOf<MaSessionState>(MaSessionState.SignInRequired), states.toList())
+    }
+
+    @Test
+    fun `tries again once the user signs in with a new token`() = runBlocking<Unit> {
+        server.reply("auth", "auth_invalid_token")
+        session.start()
+        session.state.awaitValue { it == MaSessionState.SignInRequired }
+        server.reply("auth", "auth_ok")
+
+        accounts.save(accounts.account.value!!.copy(token = "new.long.lived.jwt"))
+        session.restart()
+
+        session.state.awaitValue { it is MaSessionState.Connected }
+        assertEquals(2, server.connections)
+    }
+
+    @Test
     fun `closes the socket when stopped during the handshake`() = runBlocking<Unit> {
         server.reply("auth")
         session.start()

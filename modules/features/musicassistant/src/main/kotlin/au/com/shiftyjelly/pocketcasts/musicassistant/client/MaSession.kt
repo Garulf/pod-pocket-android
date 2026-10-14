@@ -76,6 +76,9 @@ class MaSession(
 
     private var job: Job? = null
 
+    @Volatile
+    private var rejectedLogin: Pair<HttpUrl, String>? = null
+
     @Synchronized
     override fun start() {
         if (job?.isActive == true) {
@@ -118,6 +121,10 @@ class MaSession(
                 publish(owner, MaSessionState.NotConfigured)
                 return
             }
+            if (account.login == rejectedLogin) {
+                publish(owner, MaSessionState.SignInRequired)
+                return
+            }
             publish(owner, if (attempt == 0) MaSessionState.Connecting else MaSessionState.Reconnecting(attempt))
             val stayedUp = try {
                 serve(owner, account)
@@ -125,6 +132,7 @@ class MaSession(
                 throw e
             } catch (e: MaCommandException) {
                 if (e.isAuthFailure) {
+                    rejectedLogin = account.login
                     publish(owner, MaSessionState.SignInRequired)
                     return
                 }
@@ -243,6 +251,8 @@ class MaSession(
     }
 
     private class Answer<T>(val value: T)
+
+    private val MaAccount.login: Pair<HttpUrl, String> get() = serverUrl to token
 
     @Synchronized
     private fun apply(owner: Job, event: MaIncoming.Event) {

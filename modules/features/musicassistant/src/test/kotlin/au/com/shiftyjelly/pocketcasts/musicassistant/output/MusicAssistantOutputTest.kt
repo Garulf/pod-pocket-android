@@ -395,6 +395,21 @@ class MusicAssistantOutputTest {
     }
 
     @Test
+    fun `asks for a new sign-in once per refused token`() = runBlocking<Unit> {
+        server.reply("auth", "auth_invalid_token")
+        session.start()
+        eventually { notices.toList() == listOf(OutputNotice.SignInRequired) }
+
+        repeat(3) {
+            session.stop()
+            session.start()
+        }
+        Thread.sleep(200)
+
+        assertEquals(listOf<OutputNotice>(OutputNotice.SignInRequired), notices.toList())
+    }
+
+    @Test
     fun `asks the route provider to return to the phone`() = runBlocking<Unit> {
         output.routes = routes
         output.onRouteSelected(KITCHEN)
