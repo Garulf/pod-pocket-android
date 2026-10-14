@@ -61,8 +61,8 @@ jobs:
           distribution: temurin
           java-version: "21"
       - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6
-      - name: Wear, TV and Automotive still compile
-        run: ./gradlew :wear:compileDebugKotlin :tv:compileDebugKotlin :automotive:compileDebugKotlin
+      - name: Wear, TV and Automotive still compile with their Hilt graphs
+        run: ./gradlew :wear:hiltJavaCompileDebug :tv:hiltJavaCompileDebug :automotive:hiltJavaCompileDebug
 
   apk:
     runs-on: ubuntu-latest
