@@ -15,3 +15,5 @@ class MaCommandException(val code: Int, val details: String?) : Exception("Music
 class MaConnectionClosedException(cause: Throwable? = null) : IOException("Music Assistant connection closed", cause)
 
 class MaNotConnectedException : IOException("Not connected to Music Assistant")
+
+class MaTimeoutException(what: String) : IOException("Music Assistant did not answer $what in time")
