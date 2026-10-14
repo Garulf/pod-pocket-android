@@ -45,6 +45,8 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
 import au.com.shiftyjelly.pocketcasts.localization.R as LR
 
+private const val SHOW_TIER_BADGE = false
+
 @Composable
 internal fun AccountHeader(
     state: AccountHeaderState,
@@ -79,7 +81,7 @@ internal fun AccountHeader(
             )
         }
         val tier = state.subscription.tier
-        if (tier != null) {
+        if (SHOW_TIER_BADGE && tier != null) {
             Spacer(
                 modifier = Modifier.height(8.dp),
             )

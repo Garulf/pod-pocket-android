@@ -2,6 +2,7 @@ package au.com.shiftyjelly.pocketcasts.musicassistant.output
 
 import android.content.Context
 import android.content.IntentFilter
+import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.support.v4.media.session.MediaSessionCompat
@@ -15,6 +16,7 @@ import au.com.shiftyjelly.pocketcasts.musicassistant.client.MaCommandException
 import au.com.shiftyjelly.pocketcasts.musicassistant.client.MaSession
 import au.com.shiftyjelly.pocketcasts.musicassistant.client.MaSessionState
 import au.com.shiftyjelly.pocketcasts.musicassistant.protocol.MaPlayer
+import au.com.shiftyjelly.pocketcasts.views.extensions.MUSIC_ASSISTANT_PLAYER_NAME_EXTRA
 import au.com.shiftyjelly.pocketcasts.views.extensions.MUSIC_ASSISTANT_ROUTE_CATEGORY
 import java.io.IOException
 import kotlinx.coroutines.CoroutineScope
@@ -31,6 +33,7 @@ class MaRouteProvider(
     private val scope: CoroutineScope,
     private val describe: (MaSessionState) -> String = { state -> context.getString(routeLabel(state)) },
     private val mediaSession: () -> MediaSessionCompat? = { null },
+    private val routeName: (MaPlayer) -> String = { player -> context.getString(R.string.pod_pocket_ma_route_name, player.name) },
 ) : MediaRouteProvider(context),
     OutputRoutes {
     private val mainHandler = Handler(Looper.getMainLooper())
@@ -63,7 +66,7 @@ class MaRouteProvider(
                 publishedRoutes(outputPlayers(players.values), state, selected)
             }.distinctUntilChanged().collect { routes ->
                 descriptor = MediaRouteProviderDescriptor.Builder()
-                    .addRoutes(routes.map { routeDescriptor(it.player, it.ready, it.description) })
+                    .addRoutes(routes.map { routeDescriptor(it.player, it.ready, it.description, routeName(it.player)) })
                     .build()
                 handVolumeKeysToSelectedSpeaker()
             }
@@ -204,9 +207,10 @@ class MaRouteProvider(
 
         fun playerIdOf(routeId: String): String? = routeId.takeIf { it.startsWith(ROUTE_PREFIX) }?.removePrefix(ROUTE_PREFIX)
 
-        fun routeDescriptor(player: MaPlayer, ready: Boolean, description: String): MediaRouteDescriptor {
-            return MediaRouteDescriptor.Builder(routeId(player.playerId), player.name)
+        fun routeDescriptor(player: MaPlayer, ready: Boolean, description: String, name: String): MediaRouteDescriptor {
+            return MediaRouteDescriptor.Builder(routeId(player.playerId), name)
                 .setDescription(description)
+                .setExtras(Bundle().apply { putString(MUSIC_ASSISTANT_PLAYER_NAME_EXTRA, player.name) })
                 .addControlFilter(IntentFilter().apply { addCategory(MUSIC_ASSISTANT_ROUTE_CATEGORY) })
                 .setPlaybackType(MediaRouter.RouteInfo.PLAYBACK_TYPE_REMOTE)
                 .setDeviceType(MediaRouter.RouteInfo.DEVICE_TYPE_REMOTE_SPEAKER)
