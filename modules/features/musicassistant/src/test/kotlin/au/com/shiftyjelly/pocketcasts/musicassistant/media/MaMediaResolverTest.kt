@@ -6,18 +6,27 @@ import au.com.shiftyjelly.pocketcasts.musicassistant.InMemoryAccountStore
 import au.com.shiftyjelly.pocketcasts.musicassistant.account
 import au.com.shiftyjelly.pocketcasts.musicassistant.awaitValue
 import au.com.shiftyjelly.pocketcasts.musicassistant.client.MaConnection
+import au.com.shiftyjelly.pocketcasts.musicassistant.client.MaRemote
+import au.com.shiftyjelly.pocketcasts.musicassistant.client.MaTimeoutException
 import au.com.shiftyjelly.pocketcasts.musicassistant.client.MaSession
 import au.com.shiftyjelly.pocketcasts.musicassistant.client.MaSessionState
+import au.com.shiftyjelly.pocketcasts.musicassistant.protocol.MaPlayer
+import au.com.shiftyjelly.pocketcasts.musicassistant.protocol.MaQueue
 import java.util.Date
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.runBlocking
 import okhttp3.OkHttpClient
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -32,7 +41,17 @@ class MaMediaResolverTest {
     private val session = MaSession(scope, InMemoryAccountStore(account(server.url)), { MaConnection(OkHttpClient()) })
     private val sources = mutableMapOf<String, EpisodeSource>()
     private var gpodder: String? = GPODDER
-    private val resolver = MaMediaResolver(session, { uuids -> sources.filterKeys { it in uuids } }, { gpodder })
+    private var lookups = 0
+    private var nowMs = 0L
+    private val resolver = MaMediaResolver(
+        remote = session,
+        sources = { uuids ->
+            lookups++
+            sources.filterKeys { it in uuids }
+        },
+        gpodderInstanceId = { gpodder },
+        now = { nowMs },
+    )
 
     @Before
     fun setUp() = runBlocking<Unit> {
@@ -119,6 +138,109 @@ class MaMediaResolverTest {
         assertEquals(MaMedia.ProviderEpisode("c", "$GPODDER://podcast_episode/$FEED https://cdn.example.com/c.mp3"), media)
         val listings = generateSequence { server.commands.poll() }.count { it.name == "music/podcasts/podcast_episodes" }
         assertEquals(1, listings)
+    }
+
+    @Test
+    fun `lists a feed again once the cached listing is stale`() = runBlocking<Unit> {
+        sources["a"] = EpisodeSource("a", FEED, guid = null, enclosureUrl = "https://cdn.example.com/a.mp3")
+
+        resolver.resolve(episode("a", "https://cdn.example.com/a.mp3"))
+        nowMs += 10 * 60 * 1000 - 1
+        resolver.resolve(episode("a", "https://cdn.example.com/a.mp3"))
+        nowMs += 1
+        resolver.resolve(episode("a", "https://cdn.example.com/a.mp3"))
+
+        assertEquals(2, listings())
+    }
+
+    @Test
+    fun `keeps listings apart per gPodder instance`() = runBlocking<Unit> {
+        sources["a"] = EpisodeSource("a", FEED, guid = null, enclosureUrl = "https://cdn.example.com/a.mp3")
+
+        resolver.resolve(episode("a", "https://cdn.example.com/a.mp3"))
+        gpodder = "gpodder--Other123"
+        resolver.resolve(episode("a", "https://cdn.example.com/a.mp3"))
+
+        val instances = generateSequence { server.commands.poll() }
+            .filter { it.name == "music/podcasts/podcast_episodes" }
+            .map { it.args["provider_instance_id_or_domain"] }
+            .toList()
+        assertEquals(listOf(GPODDER, "gpodder--Other123"), instances)
+    }
+
+    @Test
+    fun `lists a feed once when episodes are resolved together`() = runBlocking<Unit> {
+        sources["a"] = EpisodeSource("a", FEED, guid = null, enclosureUrl = "https://cdn.example.com/a.mp3")
+        sources["c"] = EpisodeSource("c", FEED, guid = null, enclosureUrl = "https://cdn.example.com/c.mp3")
+
+        val resolved = listOf(
+            async(Dispatchers.Default) { resolver.resolve(episode("a", "https://cdn.example.com/a.mp3")) },
+            async(Dispatchers.Default) { resolver.resolve(episode("c", "https://cdn.example.com/c.mp3")) },
+        ).awaitAll()
+
+        assertTrue(resolved.all { it is MaMedia.ProviderEpisode })
+        assertEquals(1, listings())
+    }
+
+    @Test
+    fun `plays the plain URL at once when Music Assistant is not connected`() = runBlocking<Unit> {
+        sources["a"] = EpisodeSource("a", FEED, guid = null, enclosureUrl = "https://cdn.example.com/a.mp3")
+        session.stop()
+
+        val media = resolver.resolve(episode("a", "https://cdn.example.com/a.mp3"))
+
+        assertEquals(MaMedia.PlainUrl("a", "builtin://track/https://cdn.example.com/a.mp3"), media)
+        assertEquals(0, lookups)
+    }
+
+    @Test
+    fun `plays the plain URL when Music Assistant does not answer the listing`() = runBlocking<Unit> {
+        sources["a"] = EpisodeSource("a", FEED, guid = null, enclosureUrl = "https://cdn.example.com/a.mp3")
+        val silent = MaMediaResolver(ScriptedRemote { throw MaTimeoutException("music/podcasts/podcast_episodes") }, { sources }, { GPODDER })
+
+        val media = silent.resolve(episode("a", "https://cdn.example.com/a.mp3"))
+
+        assertEquals(MaMedia.PlainUrl("a", "builtin://track/https://cdn.example.com/a.mp3"), media)
+    }
+
+    @Test
+    fun `matches addresses that differ only in scheme case, host case and an empty path`() = runBlocking<Unit> {
+        sources["a"] = EpisodeSource("a", FEED, guid = null, enclosureUrl = "HTTPS://CDN.Example.com/")
+        val listing = listOf(mapOf("item_id" to "ep", "provider" to "gpodder", "uri" to "gpodder--Xk3dTq9a://podcast_episode/ep", "provider_mappings" to listOf(mapOf("item_id" to "ep", "provider_instance" to GPODDER, "url" to "https://cdn.example.com"))))
+        val scripted = MaMediaResolver(ScriptedRemote { listing }, { sources }, { GPODDER })
+
+        val media = scripted.resolve(episode("a", "https://cdn.example.com"))
+
+        assertEquals(MaMedia.ProviderEpisode("a", "gpodder--Xk3dTq9a://podcast_episode/ep"), media)
+    }
+
+    @Test
+    fun `does not match an episode without a download URL to a mapping without a URL`() = runBlocking<Unit> {
+        sources["a"] = EpisodeSource("a", FEED, guid = null, enclosureUrl = "https://cdn.example.com/a.mp3")
+        val listing = listOf(mapOf("item_id" to "ep", "provider" to "gpodder", "uri" to "gpodder--Xk3dTq9a://podcast_episode/ep", "provider_mappings" to listOf(mapOf("item_id" to "ep", "provider_instance" to GPODDER))))
+        val scripted = MaMediaResolver(ScriptedRemote { listing }, { sources }, { GPODDER })
+
+        assertNull(scripted.resolve(episode("a", null)))
+    }
+
+    @Test
+    fun `accepts web URLs in any case`() {
+        assertEquals(
+            MaMedia.PlainUrl("a", "builtin://track/HTTPS://cdn.example.com/a.mp3"),
+            resolver.plainUrl(episode("a", "HTTPS://cdn.example.com/a.mp3")),
+        )
+    }
+
+    private fun listings() = generateSequence { server.commands.poll() }.count { it.name == "music/podcasts/podcast_episodes" }
+
+    private class ScriptedRemote(private val listing: () -> Any?) : MaRemote {
+        override val players: StateFlow<Map<String, MaPlayer>> = MutableStateFlow(emptyMap())
+        override val queues: StateFlow<Map<String, MaQueue>> = MutableStateFlow(emptyMap())
+        override val isConnected: Boolean = true
+
+        override suspend fun call(command: String, args: Map<String, Any?>, timeoutMs: Long?): Any? = listing()
+
+        override fun serverNow(): Double = 0.0
     }
 
     private fun episode(uuid: String, url: String?) = PodcastEpisode(uuid = uuid, publishedDate = Date(), downloadUrl = url)

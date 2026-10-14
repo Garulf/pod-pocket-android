@@ -8,6 +8,8 @@ import au.com.shiftyjelly.pocketcasts.musicassistant.protocol.MaMediaItem
 import com.squareup.moshi.JsonDataException
 import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 
 sealed interface MaMedia {
@@ -25,46 +27,63 @@ class MaMediaResolver(
     private val gpodderInstanceId: () -> String?,
     private val now: () -> Long = System::currentTimeMillis,
 ) {
+    private data class FeedKey(val instanceId: String, val feedUrl: String)
+
     private class CachedEpisodes(val episodes: List<MaMediaItem>, val fetchedAtMs: Long)
 
-    private val episodesByFeed = ConcurrentHashMap<String, CachedEpisodes>()
+    private val episodesByFeed = ConcurrentHashMap<FeedKey, CachedEpisodes>()
+    private val feedLocks = ConcurrentHashMap<FeedKey, Mutex>()
 
     suspend fun resolve(episode: PodcastEpisode): MaMedia? {
         val plain = plainUrl(episode)
         val instanceId = gpodderInstanceId() ?: return plain
+        if (!remote.isConnected) {
+            return plain
+        }
         val source = sources.find(listOf(episode.uuid))[episode.uuid] ?: return plain
         val candidates = podcastEpisodes(source.feedUrl, instanceId) ?: return plain
-        val match = candidates.firstOrNull { item -> item.providerMappings.any { it.url == source.enclosureUrl || it.url == episode.downloadUrl } }
+        val wanted = listOfNotNull(source.enclosureUrl, episode.downloadUrl).map(::normalised)
+        val match = candidates.firstOrNull { item -> item.providerMappings.any { mapping -> mapping.url?.let(::normalised) in wanted } }
             ?: guidItemIds(source).firstNotNullOfOrNull { itemId -> candidates.firstOrNull { it.itemId == itemId } }
             ?: return plain
         return MaMedia.ProviderEpisode(episode.uuid, match.uri ?: "$instanceId://podcast_episode/${match.itemId}")
     }
 
     fun plainUrl(episode: PodcastEpisode): MaMedia? {
-        return episode.downloadUrl?.takeIf { it.startsWith("http://") || it.startsWith("https://") }
+        return episode.downloadUrl?.takeIf { it.startsWith("http://", ignoreCase = true) || it.startsWith("https://", ignoreCase = true) }
             ?.let { MaMedia.PlainUrl(episode.uuid, "$BUILTIN_TRACK$it") }
     }
 
     private suspend fun podcastEpisodes(feedUrl: String, instanceId: String): List<MaMediaItem>? {
-        episodesByFeed[feedUrl]?.takeIf { now() - it.fetchedAtMs < CACHE_MS }?.let { return it.episodes }
-        val episodes = try {
+        val key = FeedKey(instanceId, feedUrl)
+        return feedLocks.getOrPut(key) { Mutex() }.withLock {
+            cachedEpisodes(key) ?: listEpisodes(key)?.also { episodesByFeed[key] = CachedEpisodes(it, now()) }
+        }
+    }
+
+    private fun cachedEpisodes(key: FeedKey): List<MaMediaItem>? {
+        return episodesByFeed[key]?.takeIf { now() - it.fetchedAtMs < CACHE_MS }?.episodes
+    }
+
+    private suspend fun listEpisodes(key: FeedKey): List<MaMediaItem>? {
+        return try {
             MaJson.decodeList<MaMediaItem>(
                 remote.call(
                     "music/podcasts/podcast_episodes",
-                    mapOf("item_id" to feedUrl, "provider_instance_id_or_domain" to instanceId),
+                    mapOf("item_id" to key.feedUrl, "provider_instance_id_or_domain" to key.instanceId),
                     timeoutMs = LISTING_TIMEOUT_MS,
                 ),
             )
         } catch (e: MaCommandException) {
-            return null
+            null
         } catch (e: IOException) {
-            return null
+            null
         } catch (e: JsonDataException) {
-            return null
+            null
         }
-        episodesByFeed[feedUrl] = CachedEpisodes(episodes, now())
-        return episodes
     }
+
+    private fun normalised(url: String): String = url.toHttpUrlOrNull()?.toString() ?: url
 
     private fun guidItemIds(source: EpisodeSource): List<String> {
         val guid = source.guid?.trim()?.takeIf { it.isNotEmpty() && ' ' !in it } ?: return emptyList()

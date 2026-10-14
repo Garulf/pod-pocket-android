@@ -67,6 +67,8 @@ class MaSession(
     @Volatile
     private var connection: MaConnection? = null
 
+    override val isConnected: Boolean get() = connection != null
+
     @Volatile
     private var clockOffset = 0.0
 
