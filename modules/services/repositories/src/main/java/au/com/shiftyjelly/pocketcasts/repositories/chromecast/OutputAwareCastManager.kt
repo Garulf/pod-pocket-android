@@ -33,7 +33,7 @@ class OutputAwareCastManager(
     }
 
     override suspend fun startSessionListener(sessionListener: CastManager.SessionListener) {
-        cast.startSessionListener(sessionListener)
+        cast.startSessionListener(ChromecastSessionListener(sessionListener))
         remote?.setSessionListener(sessionListener)
     }
 
@@ -44,5 +44,23 @@ class OutputAwareCastManager(
 
     override suspend fun isPlaying(): Boolean {
         return if (remoteActive.value) remote?.isPlaying() == true else cast.isPlaying()
+    }
+
+    private inner class ChromecastSessionListener(private val listener: CastManager.SessionListener) : CastManager.SessionListener {
+        override fun sessionStarted() = whileChromecastLeads { listener.sessionStarted() }
+
+        override fun sessionEnded() = whileChromecastLeads { listener.sessionEnded() }
+
+        override fun sessionReconnected() = whileChromecastLeads { listener.sessionReconnected() }
+
+        override fun sessionFailed(errorCode: Int, failureType: CastManager.SessionFailureType) {
+            whileChromecastLeads { listener.sessionFailed(errorCode, failureType) }
+        }
+
+        private inline fun whileChromecastLeads(forward: () -> Unit) {
+            if (!remoteActive.value) {
+                forward()
+            }
+        }
     }
 }

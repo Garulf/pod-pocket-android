@@ -11,6 +11,7 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -63,10 +64,92 @@ class OutputAwareCastManagerTest {
 
         manager.startSessionListener(listener)
 
-        assertSame(listener, cast.listener)
+        assertNotNull(cast.listener)
         assertSame(listener, remote.listener)
         manager.stopSessionListener()
         assertEquals(null, remote.listener)
+    }
+
+    @Test
+    fun `keeps Chromecast session events from reaching a listener while the remote output is active`() = runTest(UnconfinedTestDispatcher()) {
+        val manager = OutputAwareCastManager(cast, Optional.of(remote), backgroundScope)
+        val listener = RecordingListener()
+        manager.startSessionListener(listener)
+        remote.active.value = true
+
+        cast.listener?.sessionStarted()
+        cast.listener?.sessionReconnected()
+        cast.listener?.sessionEnded()
+        cast.listener?.sessionFailed(7, CastManager.SessionFailureType.RESUME)
+
+        assertEquals(emptyList<String>(), listener.events)
+    }
+
+    @Test
+    fun `passes Chromecast session events on while the remote output is inactive`() = runTest(UnconfinedTestDispatcher()) {
+        val manager = OutputAwareCastManager(cast, Optional.of(remote), backgroundScope)
+        val listener = RecordingListener()
+        manager.startSessionListener(listener)
+
+        cast.listener?.sessionStarted()
+        cast.listener?.sessionReconnected()
+        cast.listener?.sessionEnded()
+        cast.listener?.sessionFailed(7, CastManager.SessionFailureType.RESUME)
+        remote.active.value = true
+        remote.active.value = false
+        cast.listener?.sessionEnded()
+
+        assertEquals(listOf("started", "reconnected", "ended", "failed 7 RESUME", "ended"), listener.events)
+    }
+
+    @Test
+    fun `still passes the remote output's own session events on`() = runTest(UnconfinedTestDispatcher()) {
+        val manager = OutputAwareCastManager(cast, Optional.of(remote), backgroundScope)
+        val listener = RecordingListener()
+        manager.startSessionListener(listener)
+        remote.active.value = true
+
+        remote.listener?.sessionReconnected()
+
+        assertEquals(listOf("reconnected"), listener.events)
+    }
+
+    @Test
+    fun `follows the remote output when Chromecast is connected too`() = runTest(UnconfinedTestDispatcher()) {
+        val manager = OutputAwareCastManager(cast, Optional.of(remote), backgroundScope)
+        cast.connected.value = true
+        cast.playing = true
+        remote.active.value = true
+        remote.playing = false
+
+        assertTrue(manager.isConnected())
+        assertFalse(manager.isPlaying())
+        manager.endSession()
+        assertEquals(1, remote.endedSessions)
+        assertEquals(0, cast.endedSessions)
+        remote.active.value = false
+        assertTrue(manager.isConnected())
+        assertTrue(manager.isPlaying())
+    }
+
+    private class RecordingListener : CastManager.SessionListener {
+        val events = mutableListOf<String>()
+
+        override fun sessionStarted() {
+            events += "started"
+        }
+
+        override fun sessionEnded() {
+            events += "ended"
+        }
+
+        override fun sessionReconnected() {
+            events += "reconnected"
+        }
+
+        override fun sessionFailed(errorCode: Int, failureType: CastManager.SessionFailureType) {
+            events += "failed $errorCode $failureType"
+        }
     }
 
     private class FakeCastManager : CastManager {
