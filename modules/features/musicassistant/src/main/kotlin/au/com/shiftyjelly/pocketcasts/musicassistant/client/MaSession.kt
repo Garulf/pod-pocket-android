@@ -1,12 +1,13 @@
 package au.com.shiftyjelly.pocketcasts.musicassistant.client
 
+import au.com.shiftyjelly.pocketcasts.musicassistant.auth.MaAccount
 import au.com.shiftyjelly.pocketcasts.musicassistant.auth.MaAccountStore
 import au.com.shiftyjelly.pocketcasts.musicassistant.protocol.MaIncoming
 import au.com.shiftyjelly.pocketcasts.musicassistant.protocol.MaJson
 import au.com.shiftyjelly.pocketcasts.musicassistant.protocol.MaPlayer
 import au.com.shiftyjelly.pocketcasts.musicassistant.protocol.MaQueue
-import com.squareup.moshi.JsonDataException
-import java.io.IOException
+import kotlin.random.Random
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.currentCoroutineContext
@@ -19,6 +20,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
+import okhttp3.HttpUrl
 import timber.log.Timber
 
 sealed interface MaSessionState {
@@ -50,6 +52,8 @@ class MaSession(
     private val retryDelayMs: (attempt: Int) -> Long = ::defaultRetryDelayMs,
     private val wallClock: () -> Double = { System.currentTimeMillis() / 1000.0 },
     private val callTimeoutMs: Long = DEFAULT_CALL_TIMEOUT_MS,
+    private val monotonicClock: () -> Double = { System.nanoTime() / NANOS_PER_SECOND },
+    private val random: () -> Double = { Random.nextDouble() },
 ) : MaRemote, MaSessionControl {
     private val _state = MutableStateFlow<MaSessionState>(MaSessionState.Disconnected)
     val state: StateFlow<MaSessionState> = _state.asStateFlow()
@@ -65,6 +69,8 @@ class MaSession(
 
     @Volatile
     private var clockOffset = 0.0
+
+    private var knownServer: HttpUrl? = null
 
     private var job: Job? = null
 
@@ -82,17 +88,20 @@ class MaSession(
         job = null
         connection?.close()
         connection = null
-        _state.value = MaSessionState.Disconnected
+        if (_state.value != MaSessionState.SignInRequired) {
+            _state.value = MaSessionState.Disconnected
+        }
     }
 
+    @Synchronized
     override fun restart() {
         stop()
         start()
     }
 
-    override suspend fun call(command: String, args: Map<String, Any?>): Any? {
+    override suspend fun call(command: String, args: Map<String, Any?>, timeoutMs: Long?): Any? {
         val current = connection ?: throw MaNotConnectedException()
-        return withinTimeout(command) { current.call(command, args) }
+        return withinTimeout(command, timeoutMs ?: callTimeoutMs) { current.call(command, args) }
     }
 
     override fun serverNow(): Double = wallClock() + clockOffset
@@ -102,41 +111,65 @@ class MaSession(
         var attempt = 0
         while (true) {
             val account = accounts.account.value
+            adopt(owner, account?.serverUrl)
             if (account == null) {
                 publish(owner, MaSessionState.NotConfigured)
                 return
             }
             publish(owner, if (attempt == 0) MaSessionState.Connecting else MaSessionState.Reconnecting(attempt))
-            val current = connections.create()
-            try {
-                val info = withinTimeout("open") { current.open(account.serverUrl) }
-                withinTimeout("auth") { current.call("auth", mapOf("token" to account.token)) }
-                clockOffset = withinTimeout("time") { measureClockOffset(current) }
-                _players.value = loadPlayers(current)
-                _queues.value = loadQueues(current)
-                publishConnected(owner, current, info.name)
-                attempt = 0
-                for (event in current.events) {
-                    apply(event)
-                }
+            val stayedUp = try {
+                serve(owner, account)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: MaCommandException) {
                 if (e.isAuthFailure) {
                     publish(owner, MaSessionState.SignInRequired)
                     return
                 }
-                Timber.w("Music Assistant refused a command: ${e.message}")
-            } catch (e: IOException) {
-                Timber.w("Music Assistant connection failed: ${e.message}")
-            } catch (e: JsonDataException) {
-                Timber.w("Music Assistant sent something unexpected: ${e.message}")
-            } finally {
-                disconnect(current)
+                Timber.w("Music Assistant refused a command with code ${e.code}")
+                false
+            } catch (e: Exception) {
+                Timber.w("Music Assistant connection failed: ${e.javaClass.simpleName}: ${e.message}")
+                false
             }
             currentCoroutineContext().ensureActive()
-            attempt++
+            attempt = if (stayedUp) 1 else attempt + 1
             publish(owner, MaSessionState.Reconnecting(attempt))
-            delay(retryDelayMs(attempt))
+            delay(withJitter(retryDelayMs(attempt)))
         }
+    }
+
+    private suspend fun serve(owner: Job, account: MaAccount): Boolean {
+        val current = connections.create()
+        try {
+            val info = withinTimeout("open") { current.open(account.serverUrl) }
+            withinTimeout("auth") { current.call("auth", mapOf("token" to account.token)) }
+            val offset = measureClockOffset(current)
+            val loadedPlayers = loadPlayers(current)
+            val loadedQueues = loadQueues(current)
+            publishConnected(owner, current, info.name, offset, loadedPlayers, loadedQueues)
+            val connectedAt = monotonicClock()
+            for (event in current.events) {
+                owner.ensureActive()
+                apply(owner, event)
+            }
+            return monotonicClock() - connectedAt >= STABLE_CONNECTION_SECONDS
+        } finally {
+            disconnect(current)
+        }
+    }
+
+    private fun withJitter(delayMs: Long): Long = delayMs + (delayMs * MAX_JITTER * random()).toLong()
+
+    @Synchronized
+    private fun adopt(owner: Job, serverUrl: HttpUrl?) {
+        if (!owner.isActive || serverUrl == knownServer) {
+            return
+        }
+        knownServer = serverUrl
+        _players.value = emptyMap()
+        _queues.value = emptyMap()
+        clockOffset = 0.0
     }
 
     @Synchronized
@@ -147,8 +180,18 @@ class MaSession(
     }
 
     @Synchronized
-    private fun publishConnected(owner: Job, current: MaConnection, serverName: String?) {
+    private fun publishConnected(
+        owner: Job,
+        current: MaConnection,
+        serverName: String?,
+        offset: Double,
+        loadedPlayers: Map<String, MaPlayer>,
+        loadedQueues: Map<String, MaQueue>,
+    ) {
         owner.ensureActive()
+        clockOffset = offset
+        _players.value = loadedPlayers
+        _queues.value = loadedQueues
         connection = current
         _state.value = MaSessionState.Connected(serverName)
     }
@@ -172,20 +215,38 @@ class MaSession(
     }
 
     private suspend fun measureClockOffset(current: MaConnection): Double {
-        val before = wallClock()
-        val server = (current.call("time") as? Number)?.toDouble() ?: return 0.0
-        val after = wallClock()
-        return server - (before + after) / 2
+        val wallBefore = wallClock()
+        val monotonicBefore = monotonicClock()
+        val reply = try {
+            withinTimeout("time") { current.call("time") }
+        } catch (e: MaCommandException) {
+            if (e.isAuthFailure) {
+                throw e
+            }
+            Timber.w("Music Assistant refused the time command with code ${e.code}")
+            return 0.0
+        }
+        val server = (reply as? Number)?.toDouble()
+        if (server == null) {
+            Timber.w("Music Assistant answered the time command with something that is not a number")
+            return 0.0
+        }
+        val roundTrip = monotonicClock() - monotonicBefore
+        return server - (wallBefore + roundTrip / 2)
     }
 
-    private suspend fun <T> withinTimeout(what: String, block: suspend () -> T): T {
-        val answer = withTimeoutOrNull(callTimeoutMs) { Answer(block()) }
+    private suspend fun <T> withinTimeout(what: String, timeoutMs: Long = callTimeoutMs, block: suspend () -> T): T {
+        val answer = withTimeoutOrNull(timeoutMs) { Answer(block()) }
         return (answer ?: throw MaTimeoutException(what)).value
     }
 
     private class Answer<T>(val value: T)
 
-    private fun apply(event: MaIncoming.Event) {
+    @Synchronized
+    private fun apply(owner: Job, event: MaIncoming.Event) {
+        if (!owner.isActive) {
+            return
+        }
         when (event.event) {
             "player_added", "player_updated" -> MaJson.decodeOrNull<MaPlayer>(event.data)?.let { player ->
                 _players.update { it + (player.playerId to player) }
@@ -210,6 +271,9 @@ class MaSession(
 
     companion object {
         const val DEFAULT_CALL_TIMEOUT_MS = 15_000L
+        const val STABLE_CONNECTION_SECONDS = 30.0
+        private const val MAX_JITTER = 0.2
+        private const val NANOS_PER_SECOND = 1_000_000_000.0
     }
 }
 

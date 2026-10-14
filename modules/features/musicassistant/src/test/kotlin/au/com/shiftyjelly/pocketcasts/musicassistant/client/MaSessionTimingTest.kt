@@ -92,6 +92,79 @@ class MaSessionTimingTest {
     }
 
     @Test
+    fun `lets a command wait longer when asked to`() = runTest {
+        server.reply("slow/short")
+        server.reply("slow/long")
+        val session = newSession()
+        session.start()
+        pumpUntil { session.state.value is MaSessionState.Connected }
+        val short = async { runCatching { session.call("slow/short") } }
+        val long = async { runCatching { session.call("slow/long", timeoutMs = 60_000) } }
+        pumpUntil { server.commands.count { it.name.startsWith("slow/") } == 2 }
+
+        advance(20_000)
+        server.answerLate("slow/long", "token_created")
+
+        pumpUntil { short.isCompleted && long.isCompleted }
+        assertEquals(MaTimeoutException::class.java, short.await().exceptionOrNull()?.javaClass)
+        assertEquals("long.lived.jwt", long.await().getOrNull())
+        session.stop()
+    }
+
+    @Test
+    fun `adds up to a fifth of the wait as jitter`() = runTest {
+        server.acceptConnections = false
+        val session = newSession(random = { 0.5 })
+
+        session.start()
+
+        pumpUntil { session.state.value == MaSessionState.Reconnecting(1) }
+        assertNoNewRequestAfter(1_099, expectedRequests = 1)
+        advance(1)
+        pumpUntil { server.requests == 2 }
+        session.stop()
+    }
+
+    @Test
+    fun `keeps backing off when connections drop soon after they open`() = runTest {
+        val session = newSession()
+        session.start()
+        pumpUntil { session.state.value is MaSessionState.Connected }
+
+        server.dropConnections()
+        pumpUntil { session.state.value == MaSessionState.Reconnecting(1) }
+        advance(1_000)
+        pumpUntil { server.connections == 2 && session.state.value is MaSessionState.Connected }
+        server.dropConnections()
+
+        pumpUntil { session.state.value == MaSessionState.Reconnecting(2) }
+        assertNoNewRequestAfter(1_999, expectedRequests = 2)
+        advance(1)
+        pumpUntil { server.connections == 3 }
+        session.stop()
+    }
+
+    @Test
+    fun `starts over once a connection has stayed up for 30 seconds`() = runTest {
+        val session = newSession()
+        session.start()
+        pumpUntil { session.state.value is MaSessionState.Connected }
+        server.dropConnections()
+        pumpUntil { session.state.value == MaSessionState.Reconnecting(1) }
+        advance(1_000)
+        pumpUntil { server.connections == 2 && session.state.value is MaSessionState.Connected }
+
+        advance(30_000)
+        server.dropConnections()
+
+        pumpUntil { session.state.value == MaSessionState.Reconnecting(1) }
+        assertNoNewRequestAfter(999, expectedRequests = 2)
+        advance(1)
+        pumpUntil { server.connections == 3 }
+        session.stop()
+    }
+
+    @Test
     fun `opens a fresh connection when restarted`() = runTest {
         val session = newSession()
         session.start()
@@ -103,12 +176,17 @@ class MaSessionTimingTest {
         session.stop()
     }
 
-    private fun TestScope.newSession(retryDelayMs: (Int) -> Long = ::defaultRetryDelayMs) = MaSession(
+    private fun TestScope.newSession(
+        retryDelayMs: (Int) -> Long = ::defaultRetryDelayMs,
+        random: () -> Double = { 0.0 },
+    ) = MaSession(
         scope = backgroundScope,
         accounts = accounts,
         connections = { MaConnection(client) },
         retryDelayMs = retryDelayMs,
         wallClock = { 1_792_000_000.0 },
+        monotonicClock = { testScheduler.currentTime / 1_000.0 },
+        random = random,
     )
 
     private fun TestScope.advance(ms: Long) {

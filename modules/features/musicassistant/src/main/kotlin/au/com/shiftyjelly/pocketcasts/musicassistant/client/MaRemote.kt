@@ -8,7 +8,7 @@ interface MaRemote {
     val players: StateFlow<Map<String, MaPlayer>>
     val queues: StateFlow<Map<String, MaQueue>>
 
-    suspend fun call(command: String, args: Map<String, Any?> = emptyMap()): Any?
+    suspend fun call(command: String, args: Map<String, Any?> = emptyMap(), timeoutMs: Long? = null): Any?
 
     fun serverNow(): Double
 }

@@ -26,6 +26,7 @@ class FakeMaServer : Closeable {
     private val sockets = CopyOnWriteArrayList<WebSocket>()
     val commands = LinkedBlockingQueue<Command>()
     val requestPaths = CopyOnWriteArrayList<String>()
+    private val lastMessageIds = ConcurrentHashMap<String, String>()
 
     @Volatile
     var acceptConnections = true
@@ -80,6 +81,11 @@ class FakeMaServer : Closeable {
         sockets.forEach { it.send(text) }
     }
 
+    fun answerLate(command: String, fixture: String) {
+        val text = withMessageId(fixture(fixture), lastMessageIds.getValue(command))
+        sockets.forEach { it.send(text) }
+    }
+
     fun dropConnections() {
         sockets.forEach { it.close(GOING_AWAY, null) }
         sockets.clear()
@@ -116,6 +122,7 @@ class FakeMaServer : Closeable {
             val name = message["command"] as String
             @Suppress("UNCHECKED_CAST")
             val args = message["args"] as? Map<String, Any?> ?: emptyMap()
+            lastMessageIds[name] = message["message_id"] as String
             commands += Command(name, args)
             val fixtures = onceReplies[name]?.poll() ?: replies[name] ?: listOf("command_ok")
             fixtures.forEach { webSocket.send(withMessageId(fixture(it), message["message_id"] as String)) }
