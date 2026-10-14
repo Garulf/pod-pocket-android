@@ -26,22 +26,23 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
-import org.robolectric.annotation.Config
 
 // No JUnit Timeout rule: it would run the test off the main looper thread that MediaRouter requires. Every wait below is bounded.
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [35])
 class MaRouteProviderRoutingTest {
     private val context = ApplicationProvider.getApplicationContext<Context>()
     private val server = FakeMaServer().signedIn()
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-    private val session = MaSession(scope, InMemoryAccountStore(account(server.url)), { MaConnection(OkHttpClient()) }, retryDelayMs = { 60_000L })
+    @Volatile
+    private var retryDelayMs = 60_000L
+    private val session = MaSession(scope, InMemoryAccountStore(account(server.url)), { MaConnection(OkHttpClient()) }, retryDelayMs = { retryDelayMs })
     private val store = InMemoryPlaybackStore()
     private val notices = CopyOnWriteArrayList<OutputNotice>()
     private val output = MusicAssistantOutput(
@@ -51,7 +52,7 @@ class MaRouteProviderRoutingTest {
         scope = scope,
         notify = { notices += it },
     )
-    private val provider = MaRouteProvider(context, session, output, scope, describe = { connected -> if (connected) CONNECTED else RECONNECTING })
+    private val provider = MaRouteProvider(context, session, output, scope, describe = ::label)
     private val router = MediaRouter.getInstance(context)
 
     @Before
@@ -134,7 +135,7 @@ class MaRouteProviderRoutingTest {
         output.attachIfPlaying()
         output.attachIfPlaying()
         shadowOf(Looper.getMainLooper()).idle()
-        assertEquals(1, notices.count { it is OutputNotice.PlayingOn })
+        assertTrue(notices.isEmpty())
 
         shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(MaRouteProvider.SELECTION_TIMEOUT_MS))
         server.pushEdited("event_player_updated_unavailable") { message ->
@@ -146,7 +147,59 @@ class MaRouteProviderRoutingTest {
 
         output.attachIfPlaying()
         idleUntil { output.activePlayerId.value == KITCHEN }
-        assertEquals(2, notices.count { it is OutputNotice.PlayingOn })
+        assertEquals(listOf<OutputNotice>(OutputNotice.PlayingOn("Kitchen")), notices.toList())
+    }
+
+    @Test
+    fun `keeps waiting for a selection only until it lands`() {
+        store.playback = RemotePlayback(KITCHEN, ITEM_A, "episode-a")
+        output.attachIfPlaying()
+        idleUntil { output.activePlayerId.value == KITCHEN }
+
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(MaRouteProvider.SELECTION_TIMEOUT_MS))
+
+        assertEquals(KITCHEN, output.activePlayerId.value)
+        assertTrue(routeFor(KITCHEN)!!.isSelected)
+    }
+
+    @Test
+    fun `labels the selected speaker when Music Assistant wants a new sign-in`() {
+        routeFor(KITCHEN)!!.select()
+        retryDelayMs = 20L
+        server.reply("auth", "auth_invalid_token")
+
+        server.dropConnections()
+        runBlocking { session.state.awaitValue { it == MaSessionState.SignInRequired } }
+
+        idleUntil { routeFor(KITCHEN)?.description == SIGN_IN }
+        assertTrue(routeFor(KITCHEN)!!.isSelected)
+        assertTrue(routeFor(KITCHEN)!!.isEnabled)
+        assertFalse(routeFor(DOWNSTAIRS)!!.isEnabled)
+        assertEquals(SIGN_IN, routeFor(DOWNSTAIRS)!!.description)
+    }
+
+    @Test
+    fun `lists no speakers while disconnected except the one playing`() {
+        routeFor(KITCHEN)!!.select()
+
+        session.stop()
+
+        idleUntil { routeFor(DOWNSTAIRS) == null }
+        assertTrue(routeFor(KITCHEN)!!.isSelected)
+        assertEquals(RECONNECTING, routeFor(KITCHEN)!!.description)
+        router.unselect(MediaRouter.UNSELECT_REASON_STOPPED)
+        idleUntil { routeFor(KITCHEN) == null }
+    }
+
+    @Test
+    fun `publishes the routes again only when they change`() {
+        val published = provider.descriptor
+
+        routeFor(KITCHEN)!!.select()
+        shadowOf(Looper.getMainLooper()).idle()
+
+        assertEquals(KITCHEN, output.activePlayerId.value)
+        assertSame(published, provider.descriptor)
     }
 
     @Test
@@ -159,6 +212,12 @@ class MaRouteProviderRoutingTest {
         val command = generateSequence { server.next() }.first { it.name == "players/cmd/volume_set" }
         assertEquals(KITCHEN, command.args["player_id"])
         assertEquals(50.0, (command.args["volume_level"] as Number).toDouble(), 0.0)
+    }
+
+    private fun label(state: MaSessionState) = when (state) {
+        is MaSessionState.Connected -> CONNECTED
+        MaSessionState.SignInRequired -> SIGN_IN
+        else -> RECONNECTING
     }
 
     private fun routeFor(playerId: String): MediaRouter.RouteInfo? {
@@ -185,5 +244,6 @@ class MaRouteProviderRoutingTest {
         const val ITEM_A = "5b2f0e8c9d6a4f1b8e3c7a2d1f0e9b8a"
         const val CONNECTED = "Music Assistant"
         const val RECONNECTING = "Reconnecting"
+        const val SIGN_IN = "Sign in again"
     }
 }

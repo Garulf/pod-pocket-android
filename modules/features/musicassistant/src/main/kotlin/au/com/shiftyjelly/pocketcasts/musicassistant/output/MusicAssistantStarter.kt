@@ -11,20 +11,23 @@ import au.com.shiftyjelly.pocketcasts.musicassistant.auth.MaAccountStore
 import au.com.shiftyjelly.pocketcasts.musicassistant.client.MaSession
 import au.com.shiftyjelly.pocketcasts.utils.AppPlatform
 import au.com.shiftyjelly.pocketcasts.utils.Util
+import dagger.Lazy
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.components.SingletonComponent
 import dagger.hilt.internal.GeneratedComponentManager
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class MusicAssistantStarter(
     private val context: Context,
-    private val session: MaSession,
-    private val output: MusicAssistantOutput,
-    private val accounts: MaAccountStore,
-    private val routeProvider: MaRouteProvider,
+    private val accounts: Lazy<MaAccountStore>,
+    private val session: Lazy<MaSession>,
+    private val output: Lazy<MusicAssistantOutput>,
     private val scope: CoroutineScope,
 ) {
     private var started = false
@@ -34,10 +37,18 @@ class MusicAssistantStarter(
             return
         }
         started = true
-        output.routes = routeProvider
-        routeProvider.start()
-        val foreground = ProcessLifecycleOwner.get().lifecycle.currentStateFlow.map { it.isAtLeast(Lifecycle.State.STARTED) }
-        MaConnectionPolicy(session, foreground, output.needsConnection, accounts.account).launchIn(scope)
+        scope.launch(Dispatchers.IO) {
+            val accounts = accounts.get()
+            val session = session.get()
+            val output = output.get()
+            val foreground = withContext(Dispatchers.Main) {
+                val routes = MaRouteProvider(context, session, output, scope)
+                output.routes = routes
+                routes.start()
+                ProcessLifecycleOwner.get().lifecycle.currentStateFlow
+            }
+            MaConnectionPolicy(session, foreground.map { it.isAtLeast(Lifecycle.State.STARTED) }, output.needsConnection, accounts.account).launchIn(scope)
+        }
     }
 }
 

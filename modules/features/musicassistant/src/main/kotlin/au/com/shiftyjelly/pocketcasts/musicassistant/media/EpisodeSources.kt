@@ -11,7 +11,6 @@ import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.HttpUrl
 import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
@@ -33,7 +32,7 @@ fun interface EpisodeSourceLookup {
 }
 
 class ServerEpisodeSourceLookup(
-    private val client: OkHttpClient,
+    private val client: Call.Factory,
     private val apiBaseUrl: HttpUrl,
 ) : EpisodeSourceLookup {
     private val requestAdapter = MaJson.moshi.adapter(EpisodeSourcesRequest::class.java)

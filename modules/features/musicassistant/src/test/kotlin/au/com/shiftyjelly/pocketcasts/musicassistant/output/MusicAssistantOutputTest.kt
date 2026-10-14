@@ -218,7 +218,7 @@ class MusicAssistantOutputTest {
     }
 
     @Test
-    fun `announces an attach only once while the selection is pending`() = runBlocking<Unit> {
+    fun `asks for the speaker once and says nothing until the selection lands`() = runBlocking<Unit> {
         store.playback = RemotePlayback(KITCHEN, ITEM_A, "episode-a")
         output.routes = routes
         session.start()
@@ -228,6 +228,8 @@ class MusicAssistantOutputTest {
         output.attachIfPlaying()
 
         assertEquals(listOf(KITCHEN), routes.selected.toList())
+        assertTrue(notices.isEmpty())
+        output.onRouteSelected(KITCHEN)
         assertEquals(listOf<OutputNotice>(OutputNotice.PlayingOn("Kitchen")), notices.toList())
     }
 

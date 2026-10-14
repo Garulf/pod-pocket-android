@@ -19,6 +19,7 @@ import java.io.IOException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 
 class MaRouteProvider(
@@ -26,9 +27,7 @@ class MaRouteProvider(
     private val session: MaSession,
     private val output: MusicAssistantOutput,
     private val scope: CoroutineScope,
-    private val describe: (connected: Boolean) -> String = { connected ->
-        context.getString(if (connected) R.string.pod_pocket_ma_route_description else R.string.pod_pocket_ma_status_reconnecting)
-    },
+    private val describe: (MaSessionState) -> String = { state -> context.getString(routeLabel(state)) },
 ) : MediaRouteProvider(context),
     OutputRoutes {
     private val mainHandler = Handler(Looper.getMainLooper())
@@ -36,6 +35,11 @@ class MaRouteProvider(
     private val selectionDeadline = Runnable { giveUpSelection() }
 
     private var pendingSelection: String? = null
+    private var awaitedSelection: String? = null
+
+    init {
+        check(Looper.myLooper() == Looper.getMainLooper()) { "MaRouteProvider must be created on the main thread" }
+    }
 
     fun start() {
         router.addProvider(this)
@@ -49,11 +53,11 @@ class MaRouteProvider(
         )
         scope.launch(Dispatchers.Main) {
             combine(session.players, session.state, output.activePlayerId) { players, state, selected ->
-                val connected = state is MaSessionState.Connected
-                val description = describe(connected)
-                outputPlayers(players.values).map { routeDescriptor(it, ready = connected || it.playerId == selected, description) }
-            }.collect { routes ->
-                descriptor = MediaRouteProviderDescriptor.Builder().addRoutes(routes).build()
+                publishedRoutes(outputPlayers(players.values), state, selected)
+            }.distinctUntilChanged().collect { routes ->
+                descriptor = MediaRouteProviderDescriptor.Builder()
+                    .addRoutes(routes.map { routeDescriptor(it.player, it.ready, it.description) })
+                    .build()
             }
         }
     }
@@ -61,6 +65,7 @@ class MaRouteProvider(
     override fun selectPlayer(playerId: String) {
         mainHandler.post {
             pendingSelection = playerId
+            awaitedSelection = playerId
             mainHandler.removeCallbacks(selectionDeadline)
             mainHandler.postDelayed(selectionDeadline, SELECTION_TIMEOUT_MS)
             selectPending()
@@ -69,8 +74,9 @@ class MaRouteProvider(
 
     override fun selectPhone(playerId: String) {
         mainHandler.post {
-            if (pendingSelection == playerId) {
-                clearPendingSelection()
+            if (awaitedSelection == playerId) {
+                pendingSelection = null
+                confirmSelection(playerId)
             }
             if (isSelected(router.selectedRoute, playerId)) {
                 router.unselect(MediaRouter.UNSELECT_REASON_STOPPED)
@@ -84,6 +90,7 @@ class MaRouteProvider(
         val playerId = playerIdOf(routeId) ?: return null
         return object : RouteController() {
             override fun onSelect() {
+                confirmSelection(playerId)
                 output.onRouteSelected(playerId)
             }
 
@@ -105,22 +112,39 @@ class MaRouteProvider(
     private fun selectPending() {
         val playerId = pendingSelection ?: return
         val route = router.routes.firstOrNull { isOurs(it, playerId) && it.isEnabled } ?: return
-        clearPendingSelection()
-        if (!route.isSelected) {
+        pendingSelection = null
+        if (route.isSelected) {
+            confirmSelection(playerId)
+        } else {
             route.select()
         }
     }
 
+    private fun confirmSelection(playerId: String) {
+        if (awaitedSelection == playerId) {
+            awaitedSelection = null
+            mainHandler.removeCallbacks(selectionDeadline)
+        }
+    }
+
     private fun giveUpSelection() {
-        val playerId = pendingSelection ?: return
+        val playerId = awaitedSelection ?: return
+        awaitedSelection = null
         pendingSelection = null
         output.onRouteSelectionAbandoned(playerId)
     }
 
-    private fun clearPendingSelection() {
-        pendingSelection = null
-        mainHandler.removeCallbacks(selectionDeadline)
+    private fun publishedRoutes(players: List<MaPlayer>, state: MaSessionState, selected: String?): List<PublishedRoute> {
+        return when (state) {
+            is MaSessionState.Connected -> players.map { PublishedRoute(it, ready = true, describe(state)) }
+            is MaSessionState.Connecting, is MaSessionState.Reconnecting, MaSessionState.SignInRequired ->
+                players.map { PublishedRoute(it, ready = it.playerId == selected, describe(state)) }
+            MaSessionState.Disconnected, MaSessionState.NotConfigured ->
+                players.filter { it.playerId == selected }.map { PublishedRoute(it, ready = true, describe(state)) }
+        }
     }
+
+    private data class PublishedRoute(val player: MaPlayer, val ready: Boolean, val description: String)
 
     private fun isSelected(route: MediaRouter.RouteInfo, playerId: String) = route.isSelected && isOurs(route, playerId)
 
@@ -146,6 +170,13 @@ class MaRouteProvider(
         const val SELECTION_TIMEOUT_MS = 5_000L
 
         fun routeId(playerId: String) = "$ROUTE_PREFIX$playerId"
+
+        private fun routeLabel(state: MaSessionState): Int = when (state) {
+            is MaSessionState.Connected -> R.string.pod_pocket_ma_route_description
+            is MaSessionState.Connecting -> R.string.pod_pocket_ma_status_connecting
+            MaSessionState.SignInRequired -> R.string.pod_pocket_ma_route_sign_in
+            else -> R.string.pod_pocket_ma_status_reconnecting
+        }
 
         fun playerIdOf(routeId: String): String? = routeId.takeIf { it.startsWith(ROUTE_PREFIX) }?.removePrefix(ROUTE_PREFIX)
 

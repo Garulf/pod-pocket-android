@@ -12,6 +12,7 @@ import au.com.shiftyjelly.pocketcasts.servers.di.InterceptorModule
 import au.com.shiftyjelly.pocketcasts.servers.di.NetworkModule
 import au.com.shiftyjelly.pocketcasts.servers.sync.TokenHandler
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.runBlocking
@@ -21,19 +22,23 @@ import kotlinx.coroutines.withTimeout
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
+import okhttp3.Request
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.Timeout
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [35])
 class MusicAssistantWiringTest {
+    @get:Rule
+    val timeout: Timeout = Timeout.seconds(30)
+
     private val context = ApplicationProvider.getApplicationContext<Context>()
     private val server = MockWebServer()
 
@@ -57,12 +62,28 @@ class MusicAssistantWiringTest {
         )
         val noCacheTokened = NetworkModule().provideNoCacheTokenedClient(raw, interceptors)
 
-        withTimeout(10_000) { MusicAssistantModule.provideEpisodeSources(noCacheTokened).find(listOf("e1")) }
+        withTimeout(10_000) { MusicAssistantModule.provideEpisodeSources { noCacheTokened }.find(listOf("e1")) }
 
         val request = checkNotNull(server.takeRequest(5, TimeUnit.SECONDS))
         assertEquals("POST", request.method)
         assertEquals("/api/podpocket/episode_sources", request.path)
         assertEquals("Bearer pod-pocket-token", request.getHeader("Authorization"))
+    }
+
+    @Test
+    fun `opens the signed-in client only for the first lookup and limits each call to 15 seconds`() {
+        val opened = AtomicInteger()
+        val calls = episodeSourceCalls {
+            opened.incrementAndGet()
+            OkHttpClient()
+        }
+        assertEquals(0, opened.get())
+
+        val call = calls.newCall(Request.Builder().url("https://api.pocketcasts.com/podpocket/episode_sources").build())
+        calls.newCall(Request.Builder().url("https://api.pocketcasts.com/podpocket/episode_sources").build())
+
+        assertEquals(1, opened.get())
+        assertEquals(TimeUnit.SECONDS.toNanos(15), call.timeout().timeoutNanos())
     }
 
     @Test

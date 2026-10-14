@@ -24,13 +24,13 @@ class MusicAssistantOutput(
     private val playbackStore: RemotePlaybackStore,
     private val scope: CoroutineScope,
     private val heldPlayerGraceMs: Long = HELD_PLAYER_GRACE_MS,
+    private val signals: RemoteSessionSignals = RemoteSessionSignals(),
     private val notify: (OutputNotice) -> Unit,
 ) : RemoteOutput {
     private val _activePlayerId = MutableStateFlow<String?>(null)
     val activePlayerId: StateFlow<String?> = _activePlayerId.asStateFlow()
 
-    private val _isActive = MutableStateFlow(false)
-    override val isActive: StateFlow<Boolean> = _isActive.asStateFlow()
+    override val isActive: StateFlow<Boolean> = signals.isActive
 
     private val _needsConnection = MutableStateFlow(false)
     val needsConnection: StateFlow<Boolean> = _needsConnection.asStateFlow()
@@ -38,9 +38,7 @@ class MusicAssistantOutput(
     @Volatile
     var routes: OutputRoutes? = null
 
-    private val handoff = Any()
-    private var listener: CastManager.SessionListener? = null
-    private var undelivered: ((CastManager.SessionListener) -> Unit)? = null
+    private val connectionLock = Any()
 
     private val attachLock = Any()
 
@@ -64,13 +62,7 @@ class MusicAssistantOutput(
     }
 
     override fun setSessionListener(listener: CastManager.SessionListener?) {
-        val waiting = synchronized(handoff) {
-            this.listener = listener
-            if (listener != null) undelivered.also { undelivered = null } else null
-        }
-        if (listener != null) {
-            waiting?.invoke(listener)
-        }
+        signals.setSessionListener(listener)
     }
 
     override suspend fun isPlaying(): Boolean {
@@ -114,13 +106,16 @@ class MusicAssistantOutput(
         }
         _activePlayerId.value?.let(::onRouteUnselected)
         _activePlayerId.value = playerId
-        _isActive.value = true
+        signals.setActive(true)
         refreshNeedsConnection()
         val attaching = pendingAttach?.queueId == playerId && heldPlayer == null
         if (!attaching) {
             pendingAttach = null
         }
-        deliver { if (attaching) it.sessionReconnected() else it.sessionStarted() }
+        signals.deliver { if (attaching) it.sessionReconnected() else it.sessionStarted() }
+        if (attaching) {
+            notify(OutputNotice.PlayingOn(playerName(playerId)))
+        }
     }
 
     fun onRouteUnselected(playerId: String) {
@@ -128,10 +123,10 @@ class MusicAssistantOutput(
             return
         }
         _activePlayerId.value = null
-        _isActive.value = false
+        signals.setActive(false)
         pendingAttach = null
         refreshNeedsConnection()
-        deliver { it.sessionEnded() }
+        signals.deliver { it.sessionEnded() }
     }
 
     fun onRouteSelectionAbandoned(playerId: String) {
@@ -174,7 +169,7 @@ class MusicAssistantOutput(
     }
 
     private fun refreshNeedsConnection() {
-        synchronized(handoff) {
+        synchronized(connectionLock) {
             val active = _activePlayerId.value != null
             if (active || heldPlayer == null) {
                 heldPlayerGrace?.cancel()
@@ -189,7 +184,7 @@ class MusicAssistantOutput(
 
     private fun endHeldPlayerGraceLater(): Job = scope.launch {
         delay(heldPlayerGraceMs)
-        synchronized(handoff) {
+        synchronized(connectionLock) {
             if (heldPlayerGrace !== coroutineContext[Job]) {
                 return@launch
             }
@@ -237,18 +232,10 @@ class MusicAssistantOutput(
             pendingAttach = stored
             stored
         }
-        notify(OutputNotice.PlayingOn(playerName(stored.queueId)))
         routes?.selectPlayer(stored.queueId) ?: onRouteSelected(stored.queueId)
     }
 
     private fun playerName(playerId: String): String = session.players.value[playerId]?.name ?: playerId
-
-    private fun deliver(signal: (CastManager.SessionListener) -> Unit) {
-        val current = synchronized(handoff) {
-            listener.also { if (it == null) undelivered = signal }
-        }
-        current?.let(signal)
-    }
 
     private companion object {
         const val MAX_ATTACH_NUDGES = 3
