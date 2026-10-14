@@ -175,7 +175,7 @@ class MaRouteProvider(
             is MaSessionState.Connected -> R.string.pod_pocket_ma_route_description
             is MaSessionState.Connecting -> R.string.pod_pocket_ma_status_connecting
             MaSessionState.SignInRequired -> R.string.pod_pocket_ma_route_sign_in
-            else -> R.string.pod_pocket_ma_status_reconnecting
+            MaSessionState.NotConfigured, MaSessionState.Disconnected, is MaSessionState.Reconnecting -> R.string.pod_pocket_ma_status_reconnecting
         }
 
         fun playerIdOf(routeId: String): String? = routeId.takeIf { it.startsWith(ROUTE_PREFIX) }?.removePrefix(ROUTE_PREFIX)

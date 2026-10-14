@@ -17,11 +17,13 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.components.SingletonComponent
 import dagger.hilt.internal.GeneratedComponentManager
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import timber.log.Timber
 
 class MusicAssistantStarter(
     private val context: Context,
@@ -38,16 +40,22 @@ class MusicAssistantStarter(
         }
         started = true
         scope.launch(Dispatchers.IO) {
-            val accounts = accounts.get()
-            val session = session.get()
-            val output = output.get()
-            val foreground = withContext(Dispatchers.Main) {
-                val routes = MaRouteProvider(context, session, output, scope)
-                output.routes = routes
-                routes.start()
-                ProcessLifecycleOwner.get().lifecycle.currentStateFlow
+            try {
+                val accounts = accounts.get()
+                val session = session.get()
+                val output = output.get()
+                val foreground = withContext(Dispatchers.Main) {
+                    val routes = MaRouteProvider(context, session, output, scope)
+                    output.routes = routes
+                    routes.start()
+                    ProcessLifecycleOwner.get().lifecycle.currentStateFlow
+                }
+                MaConnectionPolicy(session, foreground.map { it.isAtLeast(Lifecycle.State.STARTED) }, output.needsConnection, accounts.account).launchIn(scope)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Timber.e("Music Assistant could not start: ${e.javaClass.simpleName}")
             }
-            MaConnectionPolicy(session, foreground.map { it.isAtLeast(Lifecycle.State.STARTED) }, output.needsConnection, accounts.account).launchIn(scope)
         }
     }
 }
