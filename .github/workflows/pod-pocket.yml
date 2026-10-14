@@ -44,7 +44,8 @@ jobs:
           :modules:features:profile:testDebugUnitTest --tests '*ProfileSectionTest'
           :modules:services:crashlogging:testDebugUnitTest
           :modules:services:analytics:testDebugUnitTest --tests '*ExperimentProviderTest' --tests '*TrackerBindingsTest'
-          :modules:services:repositories:testDebugUnitTest --tests '*Media3LibrarySessionCallbackTest'
+          :modules:features:musicassistant:testDebugUnitTest
+          :modules:services:repositories:testDebugUnitTest --tests '*Media3LibrarySessionCallbackTest' --tests '*OutputAware*' --tests '*CastSessionFailureTest' --tests '*PlaybackManagerRemoteHandBackTest'
           :modules:services:ui:testDebugUnitTest --tests '*AppIconTest'
           :app:testDebugUnitTest --tests '*MainActivityViewModelTest'
 
