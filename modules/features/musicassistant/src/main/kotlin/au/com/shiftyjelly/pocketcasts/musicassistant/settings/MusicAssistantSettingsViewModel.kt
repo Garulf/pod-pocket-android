@@ -17,18 +17,20 @@ import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.NonCancellable
-import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.emitAll
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import okhttp3.HttpUrl
 import timber.log.Timber
 
 data class SignInForm(
@@ -48,6 +50,8 @@ sealed interface SignInError {
     data class Rejected(val reason: String) : SignInError
 
     data class Unreachable(val reason: String) : SignInError
+
+    data object Failed : SignInError
 }
 
 data class MusicAssistantSettingsState(
@@ -55,6 +59,8 @@ data class MusicAssistantSettingsState(
     val account: MaAccount?,
     val connection: MaSessionState,
     val ready: Boolean = true,
+    val signingOut: Boolean = false,
+    val loadFailed: Boolean = false,
 )
 
 @HiltViewModel
@@ -75,23 +81,38 @@ class MusicAssistantSettingsViewModel internal constructor(
 
     private class Services(val accounts: MaAccountStore, val session: MaSession)
 
-    private val form = MutableStateFlow(SignInForm())
+    private sealed interface Load {
+        data object Opening : Load
 
-    private val services = viewModelScope.async(io) {
-        try {
-            Services(accounts.get(), session.get())
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            Timber.e("Music Assistant settings could not open: ${e.javaClass.simpleName}")
-            null
-        }
+        data object Failed : Load
+
+        class Ready(val services: Services) : Load
     }
 
-    val state: StateFlow<MusicAssistantSettingsState> = flow {
-        val ready = services.await() ?: return@flow
-        emitAll(combine(form, ready.accounts.account, ready.session.state) { form, account, connection -> MusicAssistantSettingsState(form, account, connection) })
+    private val form = MutableStateFlow(SignInForm())
+    private val signingOut = MutableStateFlow(false)
+    private val load = MutableStateFlow<Load>(Load.Opening)
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val state: StateFlow<MusicAssistantSettingsState> = load.flatMapLatest { loaded ->
+        when (loaded) {
+            is Load.Ready -> combine(form, signingOut, loaded.services.accounts.account, loaded.services.session.state) { form, signingOut, account, connection ->
+                MusicAssistantSettingsState(form, account, connection, signingOut = signingOut)
+            }
+
+            Load.Opening, Load.Failed -> form.map { MusicAssistantSettingsState(it, null, MaSessionState.Disconnected, ready = false, loadFailed = loaded == Load.Failed) }
+        }
     }.stateIn(viewModelScope, SharingStarted.Eagerly, MusicAssistantSettingsState(form.value, account = null, connection = MaSessionState.Disconnected, ready = false))
+
+    init {
+        open()
+    }
+
+    fun retry() {
+        if (load.value == Load.Failed) {
+            open()
+        }
+    }
 
     fun updateServerUrl(text: String) = form.update { it.copy(serverUrl = text, error = null) }
 
@@ -111,53 +132,104 @@ class MusicAssistantSettingsViewModel internal constructor(
         }
         form.update { it.copy(busy = true, error = null) }
         viewModelScope.launch {
-            val store = services.await()?.accounts
+            val store = services()?.accounts
             if (store == null) {
-                form.update { it.copy(busy = false) }
+                failSignIn(SignInError.Failed)
                 return@launch
             }
-            when (val result = signer.signIn(server, current.username.trim(), current.password)) {
+            when (val result = attempt(server, current)) {
                 is MaSignInResult.SignedIn -> {
-                    save(store, MaAccount(server, result.token, result.gpodderProviders.singleOrNull()?.instanceId))
-                    form.value = SignInForm(providerChoices = result.gpodderProviders.takeIf { it.size > 1 }.orEmpty())
+                    val account = MaAccount(server, result.token, result.gpodderProviders.singleOrNull()?.instanceId)
+                    if (withContext(NonCancellable) { save(store, account) }) {
+                        form.value = SignInForm(providerChoices = result.gpodderProviders.takeIf { it.size > 1 }.orEmpty())
+                    } else {
+                        failSignIn(SignInError.Failed)
+                    }
                 }
 
-                is MaSignInResult.Rejected -> form.update { it.copy(busy = false, error = SignInError.Rejected(result.reason)) }
+                is MaSignInResult.Rejected -> failSignIn(SignInError.Rejected(result.reason))
 
-                is MaSignInResult.Unreachable -> form.update { it.copy(busy = false, error = SignInError.Unreachable(result.reason)) }
+                is MaSignInResult.Unreachable -> failSignIn(SignInError.Unreachable(result.reason))
+
+                null -> failSignIn(SignInError.Failed)
             }
         }
     }
 
     fun chooseProvider(instanceId: String) {
-        viewModelScope.launch {
-            val store = services.await()?.accounts ?: return@launch
-            val account = store.account.value ?: return@launch
-            save(store, account.copy(gpodderInstanceId = instanceId))
-            form.update { it.copy(providerChoices = emptyList()) }
-        }
-    }
-
-    fun signOut() {
-        if (form.value.busy) {
+        if (form.value.providerChoices.none { it.instanceId == instanceId }) {
             return
         }
-        form.update { it.copy(busy = true) }
         viewModelScope.launch {
-            withContext(NonCancellable) {
-                val store = services.await()?.accounts
-                if (store == null) {
-                    form.update { it.copy(busy = false) }
-                    return@withContext
-                }
-                store.account.value?.let { revoker.revoke(it) }
-                save(store, null)
-                form.value = SignInForm()
+            val store = services()?.accounts ?: return@launch
+            val account = store.account.value ?: return@launch
+            if (save(store, account.copy(gpodderInstanceId = instanceId))) {
+                form.update { it.copy(providerChoices = emptyList()) }
             }
         }
     }
 
-    private suspend fun save(store: MaAccountStore, account: MaAccount?) {
-        withContext(io) { store.save(account) }
+    fun signOut() {
+        if (signingOut.value) {
+            return
+        }
+        signingOut.value = true
+        viewModelScope.launch {
+            withContext(NonCancellable) {
+                val store = services()?.accounts
+                try {
+                    store?.account?.value?.let { revoker.revoke(it) }
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    Timber.w("Music Assistant sign-out could not revoke the token: ${e.javaClass.simpleName}")
+                } finally {
+                    store?.let { save(it, null) }
+                    form.value = SignInForm()
+                    signingOut.value = false
+                }
+            }
+        }
+    }
+
+    private fun open() {
+        load.value = Load.Opening
+        viewModelScope.launch {
+            load.value = try {
+                withContext(io) { Load.Ready(Services(accounts.get(), session.get())) }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Timber.e("Music Assistant settings could not open: ${e.javaClass.simpleName}")
+                Load.Failed
+            }
+        }
+    }
+
+    private suspend fun services(): Services? = (load.first { it !is Load.Opening } as? Load.Ready)?.services
+
+    private suspend fun attempt(server: HttpUrl, current: SignInForm): MaSignInResult? {
+        return try {
+            signer.signIn(server, current.username.trim(), current.password)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Timber.e("Music Assistant sign-in failed unexpectedly: ${e.javaClass.simpleName}")
+            null
+        }
+    }
+
+    private fun failSignIn(error: SignInError) = form.update { it.copy(busy = false, error = error) }
+
+    private suspend fun save(store: MaAccountStore, account: MaAccount?): Boolean {
+        return try {
+            withContext(io) { store.save(account) }
+            true
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Timber.e("Music Assistant account could not be saved: ${e.javaClass.simpleName}")
+            false
+        }
     }
 }

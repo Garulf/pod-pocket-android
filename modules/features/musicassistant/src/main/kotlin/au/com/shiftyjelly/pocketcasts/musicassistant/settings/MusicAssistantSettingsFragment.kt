@@ -37,6 +37,7 @@ class MusicAssistantSettingsFragment : BaseFragment() {
                 onSignIn = viewModel::signIn,
                 onChooseProvider = viewModel::chooseProvider,
                 onSignOut = viewModel::signOut,
+                onRetry = viewModel::retry,
             )
         }
     }

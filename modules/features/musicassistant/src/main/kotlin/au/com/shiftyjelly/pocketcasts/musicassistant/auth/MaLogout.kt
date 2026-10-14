@@ -1,12 +1,10 @@
 package au.com.shiftyjelly.pocketcasts.musicassistant.auth
 
-import au.com.shiftyjelly.pocketcasts.musicassistant.client.MaCommandException
+import au.com.shiftyjelly.pocketcasts.musicassistant.client.MaConnection
 import au.com.shiftyjelly.pocketcasts.musicassistant.client.MaConnectionFactory
-import com.squareup.moshi.JsonDataException
-import java.io.IOException
-import kotlinx.coroutines.NonCancellable
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.withTimeoutOrNull
+import timber.log.Timber
 
 fun interface MaTokenRevoker {
     suspend fun revoke(account: MaAccount)
@@ -17,21 +15,21 @@ class MaLogout(
     private val timeoutMs: Long = 3_000,
 ) : MaTokenRevoker {
     override suspend fun revoke(account: MaAccount) {
-        val connection = connections.create()
+        var connection: MaConnection? = null
         try {
+            val created = connections.create()
+            connection = created
             withTimeoutOrNull(timeoutMs) {
-                connection.open(account.serverUrl)
-                connection.call("auth", mapOf("token" to account.token))
-                connection.call("auth/logout")
+                created.open(account.serverUrl)
+                created.call("auth", mapOf("token" to account.token))
+                created.call("auth/logout")
             }
-        } catch (e: MaCommandException) {
-            return
-        } catch (e: IOException) {
-            return
-        } catch (e: JsonDataException) {
-            return
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Timber.w("Music Assistant token was not revoked: ${e.javaClass.simpleName}")
         } finally {
-            withContext(NonCancellable) { connection.close() }
+            connection?.close()
         }
     }
 }

@@ -27,6 +27,7 @@ import au.com.shiftyjelly.pocketcasts.compose.components.TextP40
 import au.com.shiftyjelly.pocketcasts.compose.theme
 import au.com.shiftyjelly.pocketcasts.musicassistant.R
 import au.com.shiftyjelly.pocketcasts.musicassistant.client.MaSessionState
+import au.com.shiftyjelly.pocketcasts.musicassistant.protocol.MaProvider
 import au.com.shiftyjelly.pocketcasts.images.R as IR
 
 @Composable
@@ -50,6 +51,7 @@ internal fun MusicAssistantSettingsPage(
     onSignIn: () -> Unit,
     onChooseProvider: (String) -> Unit,
     onSignOut: () -> Unit,
+    onRetry: () -> Unit,
 ) {
     Column {
         ThemedTopAppBar(
@@ -63,6 +65,9 @@ internal fun MusicAssistantSettingsPage(
         ) {
             val account = state.account
             if (!state.ready) {
+                if (state.loadFailed) {
+                    item { LoadFailed(onRetry) }
+                }
                 return@LazyColumn
             }
             if (account == null) {
@@ -84,7 +89,7 @@ internal fun MusicAssistantSettingsPage(
                 items(state.form.providerChoices, key = { it.instanceId }) { provider ->
                     SettingRow(
                         primaryText = provider.name,
-                        secondaryText = provider.instanceId,
+                        secondaryText = instanceIdWhenNamesClash(provider, state.form.providerChoices),
                         indent = false,
                         modifier = Modifier.clickable { onChooseProvider(provider.instanceId) },
                     )
@@ -92,13 +97,29 @@ internal fun MusicAssistantSettingsPage(
             }
             item {
                 RowButton(
-                    text = stringResource(if (state.form.busy) R.string.pod_pocket_ma_signing_out else R.string.pod_pocket_ma_sign_out),
+                    text = stringResource(if (state.signingOut) R.string.pod_pocket_ma_signing_out else R.string.pod_pocket_ma_sign_out),
                     onClick = onSignOut,
-                    enabled = !state.form.busy,
+                    enabled = !state.signingOut,
                     modifier = Modifier.padding(top = 16.dp),
                 )
             }
         }
+    }
+}
+
+internal fun instanceIdWhenNamesClash(provider: MaProvider, all: List<MaProvider>): String? {
+    return provider.instanceId.takeIf { all.count { it.name == provider.name } > 1 }
+}
+
+@Composable
+private fun LoadFailed(onRetry: () -> Unit) {
+    Column {
+        TextP40(text = stringResource(R.string.pod_pocket_ma_open_failed), modifier = Modifier.padding(vertical = 8.dp))
+        RowButton(
+            text = stringResource(R.string.pod_pocket_ma_retry),
+            onClick = onRetry,
+            modifier = Modifier.padding(top = 16.dp),
+        )
     }
 }
 
@@ -154,6 +175,7 @@ private fun errorText(error: SignInError): String = when (error) {
     SignInError.InvalidAddress -> stringResource(R.string.pod_pocket_ma_invalid_address)
     is SignInError.Rejected -> stringResource(R.string.pod_pocket_ma_rejected, error.reason)
     is SignInError.Unreachable -> stringResource(R.string.pod_pocket_ma_unreachable, error.reason)
+    SignInError.Failed -> stringResource(R.string.pod_pocket_ma_sign_in_failed)
 }
 
 @Composable

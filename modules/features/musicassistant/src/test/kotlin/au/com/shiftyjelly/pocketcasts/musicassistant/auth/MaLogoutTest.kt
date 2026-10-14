@@ -62,5 +62,10 @@ class MaLogoutTest {
         assertEquals("auth", server.next().name)
     }
 
+    @Test
+    fun `leaves quietly when no connection can be created`() = runBlocking<Unit> {
+        MaLogout(connections = { error("no client") }).revoke(account(server.url))
+    }
+
     private fun logout(timeoutMs: Long = 10_000) = MaLogout(connections = { MaConnection(client) }, timeoutMs = timeoutMs)
 }
