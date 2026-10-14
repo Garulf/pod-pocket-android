@@ -64,6 +64,7 @@ class MaRouteProvider(
                 descriptor = MediaRouteProviderDescriptor.Builder()
                     .addRoutes(routes.map { routeDescriptor(it.player, it.ready, it.description) })
                     .build()
+                handVolumeKeysToSelectedSpeaker()
             }
         }
     }
@@ -162,9 +163,11 @@ class MaRouteProvider(
 
     private fun handVolumeKeysToSelectedSpeaker() {
         val appSession = mediaSession() ?: return
+        val routerHoldsAppSession = router.mediaSessionToken == appSession.sessionToken
+        val speakerSelected = router.selectedRoute.provider.providerInstance === this
         when {
-            router.selectedRoute.provider.providerInstance === this -> router.setMediaSessionCompat(appSession)
-            router.mediaSessionToken == appSession.sessionToken -> router.setMediaSessionCompat(null)
+            speakerSelected && !routerHoldsAppSession -> router.setMediaSessionCompat(appSession)
+            !speakerSelected && routerHoldsAppSession -> router.setMediaSessionCompat(null)
         }
     }
 

@@ -41,7 +41,17 @@ class MusicAssistantPlayer(
     private val onStopped: () -> Unit = {},
     private val monotonicMs: () -> Long = { System.nanoTime() / NANOS_PER_MILLI },
 ) : Player {
-    private data class Target(val episodeUuid: String, val queueItemId: String, val confirmed: Boolean, val loadedHere: Boolean = false)
+    private data class Target(
+        val episodeUuid: String,
+        val queueItemId: String,
+        val confirmed: Boolean,
+        val loadedHere: Boolean = false,
+        val replacedItemId: String? = null,
+    ) {
+        fun lostTo(item: MaQueueItem?): Boolean {
+            return loadedHere && !confirmed && item != null && item.queueItemId != queueItemId && item.queueItemId != replacedItemId
+        }
+    }
 
     private class SeekBaseline(val positionMs: Int, val serverSeconds: Double) {
         fun outdates(queue: MaQueue): Boolean = queue.elapsedTimeLastUpdated < serverSeconds
@@ -133,7 +143,8 @@ class MusicAssistantPlayer(
             }
             handingOff
         }
-        if (!deferred && (startedHereUnconfirmed() || owns(currentQueue()))) {
+        val queue = currentQueue()
+        if (!deferred && (startedHereUnconfirmed(queue) || owns(queue))) {
             send("player_queues/pause")
         }
     }
@@ -142,7 +153,7 @@ class MusicAssistantPlayer(
         try {
             queueUpdates.cancel()
             val queue = currentQueue()
-            val speakerStillPlays = if (startedHereUnconfirmed() || (owns(queue) && queue?.state != MaQueue.STATE_IDLE)) {
+            val speakerStillPlays = if (startedHereUnconfirmed(queue) || (owns(queue) && queue?.state != MaQueue.STATE_IDLE)) {
                 !send("player_queues/stop")
             } else {
                 false
@@ -231,7 +242,11 @@ class MusicAssistantPlayer(
 
     private fun currentQueue(): MaQueue? = remote.queues.value[queueId]
 
-    private fun startedHereUnconfirmed(): Boolean = target?.let { it.loadedHere && !it.confirmed } == true
+    private fun startedHereUnconfirmed(queue: MaQueue?): Boolean {
+        val current = target ?: return false
+        val item = queue?.currentItem
+        return current.loadedHere && !current.confirmed && (item == null || item.queueItemId == current.queueItemId)
+    }
 
     private fun owns(queue: MaQueue?): Boolean {
         val current = target ?: return false
@@ -299,7 +314,8 @@ class MusicAssistantPlayer(
                 handingOff = false
                 pauseAfterHandOff.also { pauseAfterHandOff = false }
             }
-            if (pauseRequested && loaded == Load.Loaded) {
+            val queue = currentQueue()
+            if (pauseRequested && loaded == Load.Loaded && (startedHereUnconfirmed(queue) || owns(queue))) {
                 withContext(NonCancellable) { send("player_queues/pause") }
             }
         }
@@ -331,6 +347,7 @@ class MusicAssistantPlayer(
 
     private suspend fun load(media: MaMedia, positionMs: Int): Load {
         var addingMedia = false
+        val replacedItemId = currentQueue()?.currentItem?.queueItemId
         return try {
             remote.call("player_queues/clear", mapOf("queue_id" to queueId))
             addingMedia = true
@@ -339,7 +356,7 @@ class MusicAssistantPlayer(
             val first = MaJson.decodeList<MaQueueItem>(
                 remote.call("player_queues/items", mapOf("queue_id" to queueId, "limit" to 1, "offset" to 0)),
             ).firstOrNull() ?: return Load.MediaRejected
-            target = Target(media.episodeUuid, first.queueItemId, confirmed = false, loadedHere = true)
+            target = Target(media.episodeUuid, first.queueItemId, confirmed = false, loadedHere = true, replacedItemId = replacedItemId)
             lastState = null
             lastPositionMs = positionMs
             playbackStore.save(RemotePlayback(queueId, first.queueItemId, media.episodeUuid))
@@ -373,7 +390,7 @@ class MusicAssistantPlayer(
         val current = target ?: return
         val item = queue?.currentItem
         if (queue == null || item == null || item.queueItemId != current.queueItemId) {
-            if (current.confirmed) {
+            if (current.confirmed || current.lostTo(item)) {
                 letGo()
             }
             return

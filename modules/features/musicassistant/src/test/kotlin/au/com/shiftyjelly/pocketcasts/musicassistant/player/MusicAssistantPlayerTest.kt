@@ -163,6 +163,8 @@ class MusicAssistantPlayerTest {
 
     @Test
     fun `ignores the queue it replaced while the handoff settles`() = runBlocking<Unit> {
+        server.push("event_queue_updated_next_item")
+        eventually { session.queues.value[KITCHEN]?.currentItem?.queueItemId == ITEM_NEXT }
         handedOff()
 
         server.push("event_queue_updated_next_item")
@@ -611,6 +613,33 @@ class MusicAssistantPlayerTest {
     }
 
     @Test
+    fun `lets go of a handoff when another item takes over before Music Assistant confirms ours`() = runBlocking<Unit> {
+        val player = handedOff()
+        server.commands.clear()
+
+        server.push("event_queue_updated_next_item")
+        eventually { events.lastOrNull() == PlayerEvent.PlayerPaused }
+        player.pause()
+        player.stop()
+
+        assertNull(server.commands.firstOrNull { it.name == "player_queues/pause" || it.name == "player_queues/stop" })
+        assertNull(store.playback)
+    }
+
+    @Test
+    fun `does not pause or stop the item it replaced before Music Assistant confirms ours`() = runBlocking<Unit> {
+        server.push("event_queue_updated_next_item")
+        eventually { session.queues.value[KITCHEN]?.currentItem?.queueItemId == ITEM_NEXT }
+        val player = handedOff()
+        server.commands.clear()
+
+        player.pause()
+        player.stop()
+
+        assertNull(server.commands.firstOrNull { it.name == "player_queues/pause" || it.name == "player_queues/stop" })
+    }
+
+    @Test
     fun `remembers the speaker playback when it cannot reach Music Assistant to stop it`() = runBlocking<Unit> {
         val player = handedOff()
         server.push("event_queue_updated_playing")
@@ -712,6 +741,7 @@ class MusicAssistantPlayerTest {
         const val EPISODE_A = "episode-a"
         const val URL_A = "https://cdn.example.com/a.mp3"
         const val ITEM_A = "5b2f0e8c9d6a4f1b8e3c7a2d1f0e9b8a"
+        const val ITEM_NEXT = "0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f"
         const val URI_A = "$GPODDER://podcast_episode/$FEED https://pod.example.com/feeds/ep-a"
     }
 }

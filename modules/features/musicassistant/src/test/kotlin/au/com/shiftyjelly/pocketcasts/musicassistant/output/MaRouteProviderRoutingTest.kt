@@ -246,6 +246,21 @@ class MaRouteProviderRoutingTest {
         idleUntil { router.mediaSessionToken == null }
     }
 
+    @Test
+    fun `hands the app's media session back to the router when something else clears it`() {
+        routeFor(KITCHEN)!!.select()
+        idleUntil { router.mediaSessionToken == appSession.sessionToken }
+
+        router.setMediaSessionCompat(null)
+        server.pushEdited("event_player_updated_unavailable") { message ->
+            @Suppress("UNCHECKED_CAST")
+            message["data"] = (message["data"] as Map<String, Any?>) + mapOf("available" to true, "volume_level" to 61)
+        }
+
+        idleUntil { router.mediaSessionToken == appSession.sessionToken }
+        assertTrue(routeFor(KITCHEN)!!.isSelected)
+    }
+
     private fun label(state: MaSessionState) = when (state) {
         is MaSessionState.Connected -> CONNECTED
         MaSessionState.SignInRequired -> SIGN_IN
