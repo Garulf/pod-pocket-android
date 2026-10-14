@@ -1,6 +1,5 @@
 package au.com.shiftyjelly.pocketcasts.compose.components
 
-import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
@@ -60,6 +59,8 @@ fun EmailAndPasswordFields(
     passwordPlaceholder: String = stringResource(LR.string.profile_password),
     showPasswordErrorMessage: Boolean = showPasswordError,
     focusEnabled: Boolean = true,
+    emailErrorMessage: String = stringResource(LR.string.onboarding_email_invalid_message),
+    passwordErrorMessage: String = stringResource(LR.string.profile_create_password_requirements),
 ) {
     val emailFocusRequester = remember { FocusRequester() }
     val passwordFocusRequester = remember { FocusRequester() }
@@ -84,7 +85,7 @@ fun EmailAndPasswordFields(
         )
 
         if (showEmailError) {
-            ErrorText(LR.string.onboarding_email_invalid_message)
+            ErrorText(emailErrorMessage)
         }
 
         Spacer(Modifier.height(16.dp))
@@ -102,17 +103,17 @@ fun EmailAndPasswordFields(
         )
 
         if (showPasswordError && showPasswordErrorMessage) {
-            ErrorText(LR.string.profile_create_password_requirements)
+            ErrorText(passwordErrorMessage)
         }
     }
 }
 
 @Composable
 private fun ErrorText(
-    @StringRes textRes: Int,
+    text: String,
 ) {
     TextP40(
-        text = stringResource(textRes),
+        text = text,
         color = MaterialTheme.theme.colors.support05,
         modifier = Modifier.padding(top = 8.dp),
     )

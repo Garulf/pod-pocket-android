@@ -84,16 +84,16 @@ class PromoCodeViewModel @Inject constructor(
                     var message = errorResponse?.messageLocalized(resources) ?: "Unknown error"
                     if (it.code() == 404) {
                         message = if (isSignedIn) {
-                            "$message\nYou’re welcome to sign up for Pocket Casts Plus anyway, or continue using all the great features of your free account."
+                            "$message\nYou’re welcome to sign up for Pod Pocket Plus anyway, or continue using all the great features of your free account."
                         } else {
-                            "$message\nYou’re welcome to sign up for Pocket Casts Plus anyway, create a free account, or just dive right in."
+                            "$message\nYou’re welcome to sign up for Pod Pocket Plus anyway, create a free account, or just dive right in."
                         }
                     }
 
                     val title = when (it.code()) {
                         400 -> "Code already used"
                         404 -> "Promotion Expired or Invalid"
-                        409 -> "You already have a Pocket Casts Plus account"
+                        409 -> "You already have a Pod Pocket Plus account"
                         else -> "Error"
                     }
                     val images = when (it.code()) {

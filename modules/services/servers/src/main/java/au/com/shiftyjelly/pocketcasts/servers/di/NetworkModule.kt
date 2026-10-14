@@ -14,6 +14,9 @@ import au.com.shiftyjelly.pocketcasts.models.type.PodcastsSortTypeMoshiAdapter
 import au.com.shiftyjelly.pocketcasts.preferences.AccessToken
 import au.com.shiftyjelly.pocketcasts.preferences.RefreshToken
 import au.com.shiftyjelly.pocketcasts.preferences.Settings
+import au.com.shiftyjelly.pocketcasts.selfhosted.SelfHostedBlockNetworkInterceptor
+import au.com.shiftyjelly.pocketcasts.selfhosted.SelfHostedBlockingDns
+import au.com.shiftyjelly.pocketcasts.selfhosted.SelfHostedRewriteInterceptor
 import au.com.shiftyjelly.pocketcasts.servers.OkHttpInterceptor
 import au.com.shiftyjelly.pocketcasts.servers.adapters.ExecutorEnqueueAdapterFactory
 import au.com.shiftyjelly.pocketcasts.servers.adapters.InstantAdapter
@@ -131,9 +134,17 @@ class NetworkModule {
     @Provides
     @Singleton
     @Raw
-    fun provideRawClient(dispatcher: Dispatcher): OkHttpClient {
+    fun provideRawClient(
+        dispatcher: Dispatcher,
+        selfHostedRewriteInterceptor: SelfHostedRewriteInterceptor,
+        selfHostedBlockNetworkInterceptor: SelfHostedBlockNetworkInterceptor,
+        selfHostedBlockingDns: SelfHostedBlockingDns,
+    ): OkHttpClient {
         return OkHttpClient.Builder()
             .dispatcher(dispatcher)
+            .dns(selfHostedBlockingDns)
+            .addInterceptor(selfHostedRewriteInterceptor)
+            .addNetworkInterceptor(selfHostedBlockNetworkInterceptor)
             .build()
     }
 

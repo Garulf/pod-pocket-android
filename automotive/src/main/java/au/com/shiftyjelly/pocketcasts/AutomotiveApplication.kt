@@ -27,6 +27,8 @@ import au.com.shiftyjelly.pocketcasts.utils.featureflag.providers.FirebaseRemote
 import au.com.shiftyjelly.pocketcasts.utils.featureflag.providers.PreferencesFeatureProvider
 import au.com.shiftyjelly.pocketcasts.utils.log.LogBuffer
 import au.com.shiftyjelly.pocketcasts.utils.log.RxJavaUncaughtExceptionHandling
+import coil3.ImageLoader
+import coil3.SingletonImageLoader
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.GoogleApiAvailability
 import com.squareup.moshi.Moshi
@@ -76,11 +78,14 @@ class AutomotiveApplication :
 
     @Inject lateinit var preferencesFeatureProvider: PreferencesFeatureProvider
 
+    @Inject lateinit var coilImageLoader: ImageLoader
+
     @Inject @ApplicationScope
     lateinit var applicationScope: CoroutineScope
 
     override fun onCreate() {
         super.onCreate()
+        SingletonImageLoader.setSafe { coilImageLoader }
 
         setupFeatureFlags()
 

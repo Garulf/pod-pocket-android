@@ -28,13 +28,7 @@ class ExperimentProvider @Inject constructor(
     }
 
     fun initialize(uuid: String) {
-        LogBuffer.i(TAG, "Initializing experiments with uuid: $uuid")
-        runCatching {
-            repository.initialize(anonymousId = uuid, oAuthToken = null)
-        }.onFailure { throwable ->
-            LogBuffer.e(TAG, throwable, "Failed to initialize experiments")
-            runCatching { repository.clear() }
-        }
+        LogBuffer.i(TAG, "Experiments are disabled in Pod Pocket, ignoring uuid: $uuid")
     }
 
     suspend fun refreshExperiments(uuid: String? = null) = withContext(ioDispatcher) {

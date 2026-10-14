@@ -89,7 +89,7 @@ private fun Content(
             modifier = GlanceModifier
                 .size(72.dp)
                 .clickable(OpenPocketCastsAction.action())
-                .semantics { contentDescription = "${state.episode?.title}. Open Pocket Casts" },
+                .semantics { contentDescription = "${state.episode?.title}. Open Pod Pocket" },
         ) {
             Cover(episode = state.episode, useEpisodeArtwork = state.useEpisodeArtwork)
         }

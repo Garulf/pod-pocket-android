@@ -1,16 +1,12 @@
 package au.com.shiftyjelly.pocketcasts.crashlogging.di
 
-import android.app.Application
 import android.content.Context
-import au.com.shiftyjelly.pocketcasts.coroutines.di.ApplicationScope
 import au.com.shiftyjelly.pocketcasts.crashlogging.BuildConfig
 import au.com.shiftyjelly.pocketcasts.crashlogging.BuildDataProvider
 import au.com.shiftyjelly.pocketcasts.crashlogging.ContextBasedLocaleProvider
-import au.com.shiftyjelly.pocketcasts.crashlogging.FilteringCrashLogging
 import au.com.shiftyjelly.pocketcasts.crashlogging.LocaleProvider
-import au.com.shiftyjelly.pocketcasts.crashlogging.PocketCastsCrashLoggingDataProvider
+import au.com.shiftyjelly.pocketcasts.crashlogging.NoOpCrashLogging
 import com.automattic.android.tracks.crashlogging.CrashLogging
-import com.automattic.android.tracks.crashlogging.CrashLoggingProvider
 import com.automattic.encryptedlogging.EncryptedLogging
 import dagger.Binds
 import dagger.Module
@@ -20,7 +16,6 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import java.io.File
 import javax.inject.Singleton
-import kotlinx.coroutines.CoroutineScope
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -53,18 +48,6 @@ abstract class CrashLoggingModule {
 
         @Provides
         @Singleton
-        internal fun provideCrashLogging(
-            @ApplicationContext application: Context,
-            @ApplicationScope scope: CoroutineScope,
-            crashLoggingDataProvider: PocketCastsCrashLoggingDataProvider,
-        ): CrashLogging {
-            return FilteringCrashLogging(
-                CrashLoggingProvider.createInstance(
-                    application as Application,
-                    crashLoggingDataProvider,
-                    scope,
-                ),
-            )
-        }
+        internal fun provideCrashLogging(): CrashLogging = NoOpCrashLogging
     }
 }

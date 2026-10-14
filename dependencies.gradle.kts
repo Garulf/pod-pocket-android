@@ -6,6 +6,11 @@ val versionCodeDifferenceBetweenAppAndTv = 50000 + versionCodeDifferenceBetweenA
 
 val secretProperties = loadPropertiesFromFile(file("secret.properties"))
 val versionProperties = loadPropertiesFromFile(file("version.properties"))
+val podPocketRevision = requireNotNull(loadPropertiesFromFile(file("pod-pocket.properties")).getProperty("revision")?.toIntOrNull()) {
+    "pod-pocket.properties must exist and define an integer 'revision'"
+}.also { revision ->
+    require(revision in 1..99) { "revision in pod-pocket.properties must be between 1 and 99, was $revision" }
+}
 
 fun loadPropertiesFromFile(file: File): Properties {
     val properties = Properties()
@@ -30,7 +35,7 @@ val isAutomotiveBuild = (project.findProperty("IS_AUTOMOTIVE_BUILD") as? String)
 val isWearBuild = (project.findProperty("IS_WEAR_BUILD") as? String)?.toBoolean() ?: false
 val isTvBuild = (project.findProperty("IS_TV_BUILD") as? String)?.toBoolean() ?: false
 val getVersionCode = {
-    val appVersionCode = versionProperties.getProperty("versionCode", null).toInt()
+    val appVersionCode = versionProperties.getProperty("versionCode", null).toInt() * 100 + podPocketRevision
     when {
         isAutomotiveBuild -> appVersionCode + versionCodeDifferenceBetweenAppAndAutomotive
         isWearBuild -> appVersionCode + versionCodeDifferenceBetweenAppAndWear
@@ -39,7 +44,7 @@ val getVersionCode = {
     }
 }
 val getVersionName = {
-    val versionName = versionProperties.getProperty("versionName", null)
+    val versionName = versionProperties.getProperty("versionName", null) + "-pp.$podPocketRevision"
     when {
         isAutomotiveBuild -> "${versionName}a"
         isWearBuild -> "${versionName}w"
@@ -59,7 +64,7 @@ val getBuildPlatform = {
 project.apply {
     extra.apply {
         // Application
-        set("applicationId", "au.com.shiftyjelly.pocketcasts")
+        set("applicationId", "net.garulf.podpocket")
 
         set("versionName", getVersionName())
         set("versionCode", getVersionCode())

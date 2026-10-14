@@ -11,7 +11,6 @@ import au.com.shiftyjelly.pocketcasts.analytics.AnalyticsController
 import au.com.shiftyjelly.pocketcasts.analytics.experiments.ExperimentProvider
 import au.com.shiftyjelly.pocketcasts.coroutines.di.ApplicationScope
 import au.com.shiftyjelly.pocketcasts.crashlogging.InitializeRemoteLogging
-import au.com.shiftyjelly.pocketcasts.discover.worker.CuratedPodcastsSyncWorker
 import au.com.shiftyjelly.pocketcasts.engage.EngageSdkBridge
 import au.com.shiftyjelly.pocketcasts.models.db.dao.UpNextDao
 import au.com.shiftyjelly.pocketcasts.models.type.EpisodeDownloadStatus
@@ -262,9 +261,6 @@ class PocketCastsApplication :
             notificationHelper.setupNotificationChannels()
             notificationManager.setupOnboardingNotifications()
             notificationManager.setupReEngagementNotifications()
-            notificationManager.setupTrendingAndRecommendationsNotifications()
-            notificationManager.setupNewFeaturesNotifications()
-            notificationManager.setupOffersNotifications()
             appLifecycleObserver.setup()
             PlaybackServiceToggle.ensureCorrectServiceEnabled(this@PocketCastsApplication)
 
@@ -348,7 +344,6 @@ class PocketCastsApplication :
         userEpisodeManager.monitorUploads(applicationContext)
         downloadStatusObserver.monitorDownloadStatus()
         userManager.beginMonitoringAccountManager(playbackManager)
-        CuratedPodcastsSyncWorker.enqueuePeriodicWork(this)
         engageSdkBridge.registerIntegration()
         shortcutsSynchronizer.keepShortcutsInSync()
         playlistInteractionNotifier.monitorPlaylistsInteraction()

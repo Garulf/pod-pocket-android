@@ -10,15 +10,14 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import au.com.shiftyjelly.pocketcasts.account.R
 import au.com.shiftyjelly.pocketcasts.account.onboarding.AccountBenefitsPage
 import au.com.shiftyjelly.pocketcasts.account.onboarding.OnboardingCreateAccountPage
 import au.com.shiftyjelly.pocketcasts.account.onboarding.OnboardingForgotPasswordPage
 import au.com.shiftyjelly.pocketcasts.account.onboarding.OnboardingGetStartedPage
 import au.com.shiftyjelly.pocketcasts.account.onboarding.OnboardingLoginOrSignUpPage
 import au.com.shiftyjelly.pocketcasts.account.onboarding.OnboardingLoginPage
-import au.com.shiftyjelly.pocketcasts.account.onboarding.recommendations.OnboardingRecommendationsFlow
 import au.com.shiftyjelly.pocketcasts.account.viewmodel.OnboardingAccountBenefitsViewModel
-import au.com.shiftyjelly.pocketcasts.account.viewmodel.OnboardingCreateAccountViewModel
 import au.com.shiftyjelly.pocketcasts.account.viewmodel.OnboardingLogInViewModel
 import au.com.shiftyjelly.pocketcasts.account.viewmodel.OnboardingLoginOrSignUpViewModel
 import au.com.shiftyjelly.pocketcasts.account.viewmodel.OnboardingUpgradeFeaturesState
@@ -35,7 +34,6 @@ import au.com.shiftyjelly.pocketcasts.settings.onboarding.OnboardingUpgradeSourc
 import au.com.shiftyjelly.pocketcasts.ui.theme.Theme
 import au.com.shiftyjelly.pocketcasts.utils.extensions.requireBoolean
 import au.com.shiftyjelly.pocketcasts.utils.extensions.requireSerializable
-import au.com.shiftyjelly.pocketcasts.localization.R as LR
 
 object OnboardingFlowRoutes {
     const val CREATE_FREE_ACCOUNT = "create_free_account"
@@ -168,11 +166,7 @@ object OnboardingFlowRoutes {
                 flow = flow,
                 onGetStartedClick = {
                     viewModel.onGetStartedClicked(flow)
-                    if (flow is OnboardingFlow.Upsell || flow is OnboardingFlow.LoggedOut) {
-                        navController.navigate(ROUTE_SIGN_UP)
-                    } else {
-                        navController.navigate(OnboardingRecommendationsFlow.ROUTE)
-                    }
+                    navController.navigate(ROUTE_SIGN_UP)
                 },
                 onLoginClick = {
                     viewModel.onLoginClicked(flow)
@@ -183,9 +177,7 @@ object OnboardingFlowRoutes {
         }
 
         composable(ROUTE_SIGN_UP) {
-            val viewModel: OnboardingCreateAccountViewModel = hiltViewModel()
-            OnboardingCreateAccountPage(
-                viewModel = viewModel,
+            OnboardingLoginPage(
                 theme = theme,
                 flow = flow,
                 onBackPress = {
@@ -194,11 +186,10 @@ object OnboardingFlowRoutes {
                         finishOnboardingFlow()
                     }
                 },
-                onSkip = finishOnboardingFlow,
-                onCreateAccount = {
-                    viewModel.onSignUpEmailPressed(flow)
-                    navController.navigate(CREATE_FREE_ACCOUNT)
+                onLoginComplete = { subscription ->
+                    onLoginToExistingAccount(flow, subscription, exitOnboarding)
                 },
+                onContinueWithoutAccount = finishOnboardingFlow,
                 onUpdateSystemBars = onUpdateSystemBars,
                 onContinueWithGoogleComplete = { state, subscription ->
                     if (state.isNewAccount) {
@@ -206,10 +197,6 @@ object OnboardingFlowRoutes {
                     } else {
                         onLoginToExistingAccount(flow, subscription, exitOnboarding)
                     }
-                },
-                onClickLogin = {
-                    viewModel.onLogInPressed(flow)
-                    navController.navigate(ROUTE_LOG_IN)
                 },
             )
         }
@@ -236,7 +223,7 @@ object OnboardingFlowRoutes {
                 onLoginComplete = { subscription ->
                     onLoginToExistingAccount(flow, subscription, exitOnboarding)
                 },
-                onForgotPasswordClick = { navController.navigate(FORGOT_PASSWORD) },
+                onContinueWithoutAccount = finishOnboardingFlow,
                 onUpdateSystemBars = onUpdateSystemBars,
                 onContinueWithGoogleComplete = { state, subscription ->
                     if (state.isNewAccount) {
@@ -267,7 +254,7 @@ object OnboardingFlowRoutes {
             AppTheme(theme) {
                 AccountBenefitsPage(
                     mainCtaColor = MaterialTheme.theme.colors.primaryInteractive01,
-                    mainCtaLabel = stringResource(LR.string.onboarding_create_account),
+                    mainCtaLabel = stringResource(R.string.pod_pocket_sign_in),
                     onGetStartedClick = {
                         viewModel.onGetStartedClick()
                         navController.navigate(ROUTE_SIGN_UP)

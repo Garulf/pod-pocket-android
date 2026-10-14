@@ -83,6 +83,7 @@ dependencies {
     implementation(projects.modules.features.cartheme)
     implementation(projects.modules.services.images)
     implementation(projects.modules.services.localization)
+    implementation(projects.modules.services.selfhosted)
     implementation(projects.modules.services.utils)
 
     debugImplementation(libs.compose.ui.tooling)

@@ -142,8 +142,8 @@ data class LogInState(
     private val hasAttemptedLogIn: Boolean = false,
     val isNetworkAvailable: Boolean = true,
 ) {
-    val isEmailValid = AccountViewModel.isEmailValid(email)
-    val isPasswordValid = AccountViewModel.isPasswordValid(password)
+    val isEmailValid = email.isNotBlank()
+    val isPasswordValid = password.isNotEmpty()
 
     val showEmailError = hasAttemptedLogIn && !isEmailValid
     val showPasswordError = hasAttemptedLogIn && !isPasswordValid

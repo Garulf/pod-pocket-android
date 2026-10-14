@@ -67,7 +67,6 @@ import au.com.shiftyjelly.pocketcasts.ui.extensions.getComposeThemeColor
 import au.com.shiftyjelly.pocketcasts.ui.extensions.getThemeDrawable
 import au.com.shiftyjelly.pocketcasts.ui.helper.FragmentHostListener
 import au.com.shiftyjelly.pocketcasts.utils.extensions.pxToDp
-import au.com.shiftyjelly.pocketcasts.utils.rateUs
 import au.com.shiftyjelly.pocketcasts.views.fragments.BaseFragment
 import com.automattic.eventhorizon.EventHorizon
 import com.automattic.eventhorizon.LegalAndMoreRowType
@@ -268,15 +267,6 @@ private fun AboutPage(
             item {
                 HorizontalDivider(
                     modifier = Modifier.padding(top = 56.dp, bottom = 8.dp),
-                )
-            }
-            item {
-                RowTextButton(
-                    text = stringResource(LR.string.settings_about_rate_us),
-                    onClick = {
-                        onRateUsClick()
-                        rateUs(context)
-                    },
                 )
             }
             item {

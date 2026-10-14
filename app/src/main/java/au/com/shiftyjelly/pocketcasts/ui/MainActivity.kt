@@ -159,11 +159,8 @@ import au.com.shiftyjelly.pocketcasts.profile.ProfileFragment
 import au.com.shiftyjelly.pocketcasts.profile.SubCancelledFragment
 import au.com.shiftyjelly.pocketcasts.profile.TrialFinishedFragment
 import au.com.shiftyjelly.pocketcasts.profile.cloud.CloudFileBottomSheetFragment
-import au.com.shiftyjelly.pocketcasts.profile.cloud.CloudFilesFragment
 import au.com.shiftyjelly.pocketcasts.profile.sonos.SonosAppLinkActivity
-import au.com.shiftyjelly.pocketcasts.referrals.ReferralsGuestPassFragment
 import au.com.shiftyjelly.pocketcasts.repositories.appreview.AppReviewManager
-import au.com.shiftyjelly.pocketcasts.repositories.bumpstats.BumpStatsTask
 import au.com.shiftyjelly.pocketcasts.repositories.di.NotificationPermissionChecker
 import au.com.shiftyjelly.pocketcasts.repositories.endofyear.EndOfYearManager
 import au.com.shiftyjelly.pocketcasts.repositories.notification.NotificationHelper
@@ -202,7 +199,6 @@ import au.com.shiftyjelly.pocketcasts.utils.Util
 import au.com.shiftyjelly.pocketcasts.utils.featureflag.Feature
 import au.com.shiftyjelly.pocketcasts.utils.featureflag.FeatureFlag
 import au.com.shiftyjelly.pocketcasts.utils.log.LogBuffer
-import au.com.shiftyjelly.pocketcasts.utils.observeOnce
 import au.com.shiftyjelly.pocketcasts.view.LockableBottomSheetBehavior
 import au.com.shiftyjelly.pocketcasts.views.activity.WebViewActivity
 import au.com.shiftyjelly.pocketcasts.views.extensions.showAllowingStateLoss
@@ -829,7 +825,6 @@ class MainActivity :
         super.onResume()
 
         refreshApp()
-        BumpStatsTask.scheduleToRun(this)
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -1694,26 +1689,7 @@ class MainActivity :
         addFragment(fragment)
     }
 
-    override fun showAccountUpgradeNow(autoSelectPlus: Boolean) {
-        showAccountUpgradeNowDialog(autoSelectPlus = autoSelectPlus)
-    }
-
-    private fun showAccountUpgradeNowDialog(autoSelectPlus: Boolean = false) {
-        val observer: Observer<SignInState> = Observer { value ->
-            val intent = if (value.isSignedInAsFree) {
-                AccountActivity.newUpgradeInstance(this)
-            } else if (autoSelectPlus) {
-                AccountActivity.newAutoSelectPlusInstance(
-                    this,
-                )
-            } else {
-                Intent(this, AccountActivity::class.java)
-            }
-            startActivity(intent)
-        }
-
-        viewModel.signInState.observeOnce(this, observer)
-    }
+    override fun showAccountUpgradeNow(autoSelectPlus: Boolean) = Unit
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
@@ -1830,9 +1806,7 @@ class MainActivity :
                     // Do nothing when the user goes to https://pocketcasts.com/get it should either open the play store or the user's app
                 }
 
-                is ReferralsDeepLink -> {
-                    openReferralClaim(deepLink.code)
-                }
+                is ReferralsDeepLink -> Unit
 
                 is ShowPodcastFromUrlDeepLink -> {
                     openPodcastUrl(deepLink.url)
@@ -1849,9 +1823,7 @@ class MainActivity :
                     addFragment(ShareListIncomingFragment.newInstance(deepLink.path, SourceView.fromString(deepLink.sourceView)))
                 }
 
-                is CloudFilesDeepLink -> {
-                    openCloudFiles()
-                }
+                is CloudFilesDeepLink -> Unit
 
                 is UpsellDeepLink -> {
                     closePlayer()
@@ -1866,13 +1838,9 @@ class MainActivity :
                     openTab(VR.id.navigation_podcasts)
                 }
 
-                is UpgradeAccountDeepLink -> {
-                    showAccountUpgradeNowDialog()
-                }
+                is UpgradeAccountDeepLink -> Unit
 
-                is PromoCodeDeepLink -> {
-                    openPromoCode(deepLink.code)
-                }
+                is PromoCodeDeepLink -> Unit
 
                 is NativeShareDeepLink -> {
                     openSharingUrl(deepLink)
@@ -1961,23 +1929,12 @@ class MainActivity :
         }
     }
 
-    private fun openReferralClaim(code: String) {
-        settings.referralClaimCode.set(code, false)
-        openTab(VR.id.navigation_profile)
-        val fragment = ReferralsGuestPassFragment.newInstance(ReferralsGuestPassFragment.ReferralsPageType.Claim)
-        showBottomSheet(fragment)
-    }
-
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
         theme.setupThemeForConfig(this, newConfig)
     }
 
-    override fun openCloudFiles() {
-        if (supportFragmentManager.fragments.find { it is CloudFilesFragment } == null) {
-            addFragment(CloudFilesFragment())
-        }
-    }
+    override fun openCloudFiles() = Unit
 
     override fun openPodcastPage(uuid: String, sourceView: String?) {
         closePlayer()
@@ -2133,12 +2090,6 @@ class MainActivity :
                 }
             }
         }
-    }
-
-    @Suppress("DEPRECATION")
-    private fun openPromoCode(code: String) {
-        val accountIntent = AccountActivity.promoCodeInstance(this, code)
-        startActivityForResult(accountIntent, PROMOCODE_REQUEST_CODE)
     }
 
     private fun showUpgradedFromPromoCode(description: String) {

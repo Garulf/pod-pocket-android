@@ -143,7 +143,7 @@ open class LegacyPlaybackService :
         }
 
         val isAutomotive = Util.isAutomotive(this)
-        if (!clientPackageName.contains("au.com.shiftyjelly.pocketcasts")) {
+        if (clientPackageName != packageName) {
             LogBuffer.i(LogBuffer.TAG_PLAYBACK, "Client: $clientPackageName connected to legacy media session")
             if (isAutomotive && !settings.automotiveConnectedToMediaSession()) {
                 launch {

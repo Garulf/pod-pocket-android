@@ -1,0 +1,35 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-added-large-files
+      - id: check-merge-conflict
+      - id: check-yaml
+      - id: check-json
+      - id: check-toml
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.1
+    hooks:
+      - id: gitleaks
+  - repo: local
+    hooks:
+      - id: selfhosted-unit-tests
+        name: selfhosted unit tests
+        entry: ./gradlew --no-daemon --max-workers=2 "-Dorg.gradle.jvmargs=-Xmx3g -XX:MaxMetaspaceSize=1g" -Pkotlin.compiler.execution.strategy=in-process :modules:services:selfhosted:testDebugUnitTest
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
+      - id: disabled-features
+        name: cloud-only features stay off
+        entry: python3 scripts/podpocket/disable_features.py --check
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
+      - id: rebranded-strings
+        name: strings say Pod Pocket
+        entry: sh -c "python3 scripts/podpocket/rebrand_strings.py --check && python3 -B scripts/podpocket/test_rebrand_strings.py"
+        language: system
+        pass_filenames: false
+        stages: [pre-push]

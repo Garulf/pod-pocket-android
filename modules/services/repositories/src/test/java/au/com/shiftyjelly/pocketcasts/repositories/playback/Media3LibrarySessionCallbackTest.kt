@@ -65,13 +65,13 @@ class Media3LibrarySessionCallbackTest {
         mockSettings = mock()
         mockSession = mock()
         mockController = mock()
-        whenever(mockController.packageName).thenReturn("au.com.shiftyjelly.pocketcasts.debug")
+        whenever(mockController.packageName).thenReturn("net.garulf.podpocket.debug")
         whenever(mockController.uid).thenReturn(1000)
         mockContext = mock()
         val mockPackageManager: PackageManager = mock()
         whenever(mockPackageManager.getApplicationInfo(any<String>(), any<Int>())).thenReturn(ApplicationInfo())
         whenever(mockContext.packageManager).thenReturn(mockPackageManager)
-        whenever(mockContext.packageName).thenReturn("au.com.shiftyjelly.pocketcasts.debug")
+        whenever(mockContext.packageName).thenReturn("net.garulf.podpocket.debug")
         testScope = TestScope(UnconfinedTestDispatcher())
 
         callback = Media3LibrarySessionCallback(
@@ -365,6 +365,37 @@ class Media3LibrarySessionCallbackTest {
     }
 
     @Test
+    fun `onConnect from the app itself does not mark automotive as connected`() {
+        val automotiveCallback = createAutomotiveCallback()
+        whenever(mockSettings.automotiveConnectedToMediaSession()).thenReturn(false)
+        whenever(sessionCallback.onConnect(any(), any())).thenReturn(MediaSession.ConnectionResult.accept(
+            androidx.media3.session.SessionCommands.Builder().build(),
+            androidx.media3.common.Player.Commands.Builder().build(),
+        ))
+
+        automotiveCallback.onConnect(mockSession, mockController)
+        testScope.testScheduler.advanceUntilIdle()
+
+        verify(mockSettings, never()).setAutomotiveConnectedToMediaSession(any())
+    }
+
+    @Test
+    fun `onConnect from an external client marks automotive as connected`() {
+        val automotiveCallback = createAutomotiveCallback()
+        whenever(mockController.packageName).thenReturn("com.external.app")
+        whenever(mockSettings.automotiveConnectedToMediaSession()).thenReturn(false)
+        whenever(sessionCallback.onConnect(any(), any())).thenReturn(MediaSession.ConnectionResult.accept(
+            androidx.media3.session.SessionCommands.Builder().build(),
+            androidx.media3.common.Player.Commands.Builder().build(),
+        ))
+
+        automotiveCallback.onConnect(mockSession, mockController)
+        testScope.testScheduler.advanceUntilIdle()
+
+        verify(mockSettings).setAutomotiveConnectedToMediaSession(true)
+    }
+
+    @Test
     fun `onCustomCommand delegates to sessionCallback`() {
         val command = SessionCommand(APP_ACTION_STAR, Bundle.EMPTY)
 
@@ -474,7 +505,7 @@ class Media3LibrarySessionCallbackTest {
         val appInfo = ApplicationInfo().apply { this.metaData = metaData }
         whenever(automotivePackageManager.getApplicationInfo(any<String>(), any<Int>())).thenReturn(appInfo)
         whenever(automotiveContext.packageManager).thenReturn(automotivePackageManager)
-        whenever(automotiveContext.packageName).thenReturn("au.com.shiftyjelly.pocketcasts.debug")
+        whenever(automotiveContext.packageName).thenReturn("net.garulf.podpocket.debug")
 
         return Media3LibrarySessionCallback(
             sessionCallback = sessionCallback,

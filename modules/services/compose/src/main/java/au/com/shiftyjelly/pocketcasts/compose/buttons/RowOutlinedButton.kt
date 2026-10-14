@@ -58,6 +58,7 @@ fun RowOutlinedButton(
     leadingIcon: Painter? = null,
     tintIcon: Boolean = true,
     fullWidth: Boolean = true,
+    enabled: Boolean = true,
 ) {
     Row(
         modifier = modifier
@@ -66,6 +67,7 @@ fun RowOutlinedButton(
     ) {
         OutlinedButton(
             onClick = { onClick() },
+            enabled = enabled,
             shape = RoundedCornerShape(12.dp),
             border = border,
             colors = colors,
@@ -89,7 +91,7 @@ fun RowOutlinedButton(
                     )
                     TextH30(
                         text = text,
-                        color = colors.contentColor(enabled = true).value,
+                        color = colors.contentColor(enabled = enabled).value,
                         textAlign = TextAlign.Center,
                         fontFamily = fontFamily,
                         fontWeight = fontWeight,

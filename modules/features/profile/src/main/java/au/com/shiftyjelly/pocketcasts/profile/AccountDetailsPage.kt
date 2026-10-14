@@ -113,7 +113,7 @@ internal fun AccountDetailsPage(
     val sectionsState = remember(state.isAutomotive, state.sectionsState) {
         if (state.isAutomotive) {
             state.sectionsState.copy(
-                availableSections = listOf(AccountSection.SignOut, AccountSection.DeleteAccount),
+                availableSections = listOf(AccountSection.SignOut),
             )
         } else {
             state.sectionsState

@@ -123,6 +123,7 @@ internal enum class ProfileSection(
         fun visibleEntries(): List<ProfileSection> = entries.filter { section ->
             when (section) {
                 Blogs -> FeatureFlag.isEnabled(Feature.BLOGS)
+                CloudFiles -> false
                 else -> true
             }
         }

@@ -55,14 +55,10 @@ class RepositoryProviderModule {
 
     @Provides
     @Singleton
-    fun providePaymentDataSource(
-        @ApplicationContext context: Context,
-        listeners: Set<@JvmSuppressWildcards PaymentClient.Listener>,
-    ): PaymentDataSource {
-        return if (context.packageName == "au.com.shiftyjelly.pocketcasts") {
-            PaymentDataSource.billing(context, listeners)
-        } else {
-            PaymentDataSource.fake()
+    fun providePaymentDataSource(): PaymentDataSource {
+        return PaymentDataSource.fake().apply {
+            loadedProducts = emptyList()
+            loadedPurchases = emptyList()
         }
     }
 

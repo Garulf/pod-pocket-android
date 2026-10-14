@@ -125,7 +125,7 @@ class AppIconTest {
     }
 
     private companion object {
-        const val PACKAGE_NAME = "au.com.shiftyjelly.pocketcasts.debug"
+        const val PACKAGE_NAME = "net.garulf.podpocket.debug"
         const val DEFAULT_ALIAS = "au.com.shiftyjelly.pocketcasts.ui.MainActivityDefault"
         const val DARK_ALIAS = "au.com.shiftyjelly.pocketcasts.ui.MainActivity_1"
     }

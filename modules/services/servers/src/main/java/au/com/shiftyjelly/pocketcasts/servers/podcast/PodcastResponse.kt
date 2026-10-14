@@ -131,7 +131,7 @@ data class EpisodeInfo(
             number = number,
             type = type,
             slug = slug.orEmpty(),
-            hasGeneratedTranscript = hasGeneratedTranscript == true,
+            hasGeneratedTranscript = false,
         ).apply {
             alternateEnclosures = enclosures
         }

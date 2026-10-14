@@ -26,6 +26,8 @@ import au.com.shiftyjelly.pocketcasts.utils.TimberDebugTree
 import au.com.shiftyjelly.pocketcasts.utils.log.LogBuffer
 import au.com.shiftyjelly.pocketcasts.utils.log.RxJavaUncaughtExceptionHandling
 import au.com.shiftyjelly.pocketcasts.wear.networking.ConnectivityLogger
+import coil3.ImageLoader
+import coil3.SingletonImageLoader
 import com.automattic.android.tracks.crashlogging.CrashLogging
 import com.google.firebase.FirebaseApp
 import com.squareup.moshi.Moshi
@@ -77,11 +79,14 @@ class PocketCastsWearApplication :
 
     @Inject lateinit var crashLogging: CrashLogging
 
+    @Inject lateinit var coilImageLoader: ImageLoader
+
     @Inject @ApplicationScope
     lateinit var applicationScope: CoroutineScope
 
     override fun onCreate() {
         super.onCreate()
+        SingletonImageLoader.setSafe { coilImageLoader }
         RxJavaUncaughtExceptionHandling.setUp()
         setupCrashLogging()
         setupLogging()

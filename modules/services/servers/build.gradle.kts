@@ -40,6 +40,7 @@ dependencies {
     implementation(libs.timber)
 
     implementation(projects.modules.services.localization)
+    implementation(projects.modules.services.selfhosted)
     implementation(projects.modules.services.utils)
 
     // compileOnly: we only reference MimeTypes.APPLICATION_M3U8, a const that inlines, so there's no runtime media3 dependency.

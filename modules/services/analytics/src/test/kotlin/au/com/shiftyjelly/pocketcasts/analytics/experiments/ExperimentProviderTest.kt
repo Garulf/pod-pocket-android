@@ -24,6 +24,7 @@ import org.mockito.Mockito.mock
 import org.mockito.Mockito.never
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -46,30 +47,13 @@ class ExperimentProviderTest {
     }
 
     @Test
-    fun `should initialize with uuid`() {
+    fun `never asks ExPlat for experiments`() {
         FeatureFlag.setEnabled(Feature.EXPLAT_EXPERIMENT, true)
-
-        val uuid = "test-uuid"
-        whenever(accountStatusInfo.getUserIds()).thenReturn(UserIds(accountId = uuid, anonId = "invalid"))
+        whenever(accountStatusInfo.getUserIds()).thenReturn(UserIds(accountId = "test-uuid", anonId = "invalid"))
 
         experimentProvider.initialize()
 
-        verify(repository).initialize(uuid, null)
-        verify(accountStatusInfo).getUserIds()
-    }
-
-    @Test
-    fun `should initialize with anonID`() {
-        FeatureFlag.setEnabled(Feature.EXPLAT_EXPERIMENT, true)
-
-        val uuid = "test-anonID"
-
-        whenever(accountStatusInfo.getUserIds()).thenReturn(UserIds(accountId = null, anonId = uuid))
-
-        experimentProvider.initialize()
-
-        verify(repository).initialize(uuid, null)
-        verify(accountStatusInfo).getUserIds()
+        verifyNoMoreInteractions(repository)
     }
 
     @Test
@@ -119,7 +103,7 @@ class ExperimentProviderTest {
         experimentProvider.refreshExperiments()
 
         verify(repository).clear()
-        verify(repository).initialize(uuid, null)
+        verify(repository, never()).initialize(anyString(), eq(null))
     }
 }
 

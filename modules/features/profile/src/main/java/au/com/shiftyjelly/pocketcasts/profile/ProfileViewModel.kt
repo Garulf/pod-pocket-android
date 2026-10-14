@@ -42,6 +42,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
@@ -147,10 +148,7 @@ class ProfileViewModel @Inject constructor(
 
     internal val refreshState = settings.refreshStateFlow
 
-    internal val showUpgradeBanner = combine(
-        settings.upgradeProfileClosed.flow,
-        signInState.map { it.isSignedInAsPlusOrPatron },
-    ) { closedClicked, isPlusOrPatron -> !closedClicked && !isPlusOrPatron }
+    internal val showUpgradeBanner = flowOf(false)
 
     internal val miniPlayerInset = settings.bottomInset.stateIn(
         scope = viewModelScope,
