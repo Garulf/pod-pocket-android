@@ -10,12 +10,14 @@ interface UpNextEpisodes {
 }
 
 /**
- * Marks episodes the speaker has played as played and takes them out of Up Next.
+ * Marks episodes the speaker has played as played, takes them out of Up Next and archives them
+ * as the user's settings ask.
  *
- * The caller holds the speaker's player lock while awaiting [finish], so an implementation must never
- * call a Player method, never await a PlaybackManager call that reaches the player, and never use
- * withTimeout. Up Next is changed with direct suspend calls that finish before [finish] returns;
- * fire-and-forget launches are fine.
+ * The caller may hold the speaker's player lock while awaiting [finish], so an implementation must
+ * never call a Player method, never await a PlaybackManager call that reaches the player, and never
+ * use withTimeout. Up Next is changed with direct suspend calls that finish before [finish] returns,
+ * and before archiving is started, because archiving can reach PlaybackManager.removeEpisode.
+ * Fire-and-forget launches are fine.
  */
 fun interface EpisodeFinisher {
     suspend fun finish(episodeUuids: List<String>)
