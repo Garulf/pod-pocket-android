@@ -21,6 +21,7 @@ import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.CyclicBarrier
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -559,6 +560,69 @@ class MusicAssistantPlayerTest {
     }
 
     @Test
+    fun `pauses the speaker once a handoff paused midway finishes`() = runBlocking<Unit> {
+        val lookup = CompletableDeferred<Unit>()
+        val player = player(resolver = gatedResolver(lookup))
+        player.setEpisode(episodeA)
+
+        val handoff = async(Dispatchers.Default) { player.play(754_900) }
+        eventually { runBlocking { player.isBuffering() } }
+        player.pause()
+        lookup.complete(Unit)
+        handoff.await()
+
+        assertEquals(
+            listOf("clear", "play_media", "items", "play_index", "pause").map { "player_queues/$it" },
+            queueCommands(),
+        )
+    }
+
+    @Test
+    fun `stops the speaker once a handoff stopped midway finishes`() = runBlocking<Unit> {
+        val lookup = CompletableDeferred<Unit>()
+        val player = player(resolver = gatedResolver(lookup))
+        player.setEpisode(episodeA)
+
+        val handoff = async(Dispatchers.Default) { player.play(754_900) }
+        eventually { runBlocking { player.isBuffering() } }
+        val stopping = async(Dispatchers.Default) { player.stop() }
+        lookup.complete(Unit)
+        handoff.await()
+        stopping.await()
+
+        assertEquals(
+            listOf("clear", "play_media", "items", "play_index", "stop").map { "player_queues/$it" },
+            queueCommands(),
+        )
+        assertNull(store.playback)
+    }
+
+    @Test
+    fun `controls the speaker it started before Music Assistant confirms the item`() = runBlocking<Unit> {
+        val player = handedOff()
+        server.commands.clear()
+
+        player.pause()
+        player.stop()
+
+        assertEquals(FakeMaServer.Command("player_queues/pause", mapOf("queue_id" to KITCHEN)), server.next())
+        assertEquals(FakeMaServer.Command("player_queues/stop", mapOf("queue_id" to KITCHEN)), server.next())
+        assertNull(store.playback)
+    }
+
+    @Test
+    fun `remembers the speaker playback when it cannot reach Music Assistant to stop it`() = runBlocking<Unit> {
+        val player = handedOff()
+        server.push("event_queue_updated_playing")
+        eventually { events.lastOrNull() == PlayerEvent.PlayerPlaying }
+
+        session.stop()
+        player.stop()
+
+        assertEquals(RemotePlayback(KITCHEN, ITEM_A, EPISODE_A), store.playback)
+    }
+
+    @Test
     fun `knows nothing before a handoff`() = runBlocking<Unit> {
         val player = player()
         player.setEpisode(episodeA)
@@ -592,7 +656,20 @@ class MusicAssistantPlayerTest {
     @Suppress("UNCHECKED_CAST")
     private fun items(reply: MutableMap<String, Any?>) = reply["result"] as List<MutableMap<String, Any?>>
 
-    private fun player(attachTo: RemotePlayback? = null) = MusicAssistantPlayer(
+    private fun gatedResolver(lookup: CompletableDeferred<Unit>) = MaMediaResolver(
+        session,
+        { uuids ->
+            lookup.await()
+            sources.filterKeys { it in uuids }
+        },
+        { GPODDER },
+    )
+
+    private fun queueCommands(): List<String> {
+        return generateSequence { server.commands.poll() }.map { it.name }.filter { it.startsWith("player_queues/") }.toList()
+    }
+
+    private fun player(attachTo: RemotePlayback? = null, resolver: MaMediaResolver = this.resolver) = MusicAssistantPlayer(
         remote = session,
         resolver = resolver,
         playbackStore = store,
