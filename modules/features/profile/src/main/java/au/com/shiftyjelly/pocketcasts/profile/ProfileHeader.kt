@@ -127,6 +127,7 @@ fun VerticalProfileHeader(
             subscriptionTier = state.subscriptionTier,
             borderCompletion = state.expiresIn?.let { it / 30.days }?.toFloat() ?: 1f,
             config = config.avatarConfig,
+            showBadge = false,
         )
         if (expirationLabel != null) {
             TextH70(
@@ -192,6 +193,7 @@ fun HorizontalProfileHeader(
             subscriptionTier = state.subscriptionTier,
             borderCompletion = state.expiresIn?.let { it / 30.days }?.toFloat() ?: 1f,
             config = config.avatarConfig,
+            showBadge = false,
         )
         Spacer(
             modifier = Modifier.width(16.dp * config.spacingScale),

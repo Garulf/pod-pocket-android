@@ -23,6 +23,7 @@
     <string name="pod_pocket_ma_status_sign_in">Music Assistant no longer accepts this sign-in. Sign out and sign in again.</string>
     <string name="pod_pocket_ma_status_offline">Not connected</string>
     <string name="pod_pocket_ma_route_description">Music Assistant</string>
+    <string name="pod_pocket_ma_route_name">%1$s (Music Assistant)</string>
     <string name="pod_pocket_ma_route_sign_in">Sign in to Music Assistant again</string>
     <string name="pod_pocket_ma_notice_playing_on">Playing on %1$s</string>
     <string name="pod_pocket_ma_notice_reconnecting">Lost the connection to Music Assistant. Reconnecting…</string>
