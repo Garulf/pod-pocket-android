@@ -16,7 +16,9 @@ data class MaLoginResult(
     val success: Boolean,
     @Json(name = "access_token") val accessToken: String? = null,
     val error: String? = null,
-)
+) {
+    override fun toString() = "MaLoginResult(success=$success, accessToken=<redacted>, error=$error)"
+}
 
 @JsonClass(generateAdapter = true)
 data class MaProvider(

@@ -11,6 +11,11 @@ internal fun encryptedPreferences(context: Context, name: String): SharedPrefere
     return openOrReset(context, name) { createEncryptedPreferences(context, name) }
 }
 
+internal fun freshEncryptedPreferences(context: Context, name: String): SharedPreferences {
+    context.deleteSharedPreferences(name)
+    return encryptedPreferences(context, name)
+}
+
 internal fun openOrReset(context: Context, name: String, open: () -> SharedPreferences): SharedPreferences {
     return try {
         open()

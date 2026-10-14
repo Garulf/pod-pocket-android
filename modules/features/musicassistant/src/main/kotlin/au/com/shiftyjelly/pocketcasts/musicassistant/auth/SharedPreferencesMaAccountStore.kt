@@ -7,19 +7,22 @@ import kotlinx.coroutines.flow.asStateFlow
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 
 class SharedPreferencesMaAccountStore(
-    private val preferences: SharedPreferences,
+    private var preferences: SharedPreferences,
     private val onAccountChanged: () -> Unit = {},
+    private val resetPreferences: () -> SharedPreferences = { preferences.also { it.edit().clear().commit() } },
 ) : MaAccountStore {
     private val state = MutableStateFlow(read())
     override val account: StateFlow<MaAccount?> = state.asStateFlow()
 
     override fun save(account: MaAccount?) {
-        write(account)
-        onAccountChanged()
+        if (write(account)) {
+            onAccountChanged()
+        }
     }
 
     @Synchronized
-    private fun write(account: MaAccount?) {
+    private fun write(account: MaAccount?): Boolean {
+        val changed = account != state.value
         val editor = preferences.edit().clear()
         if (account != null) {
             editor.putString(KEY_SERVER_URL, account.serverUrl.toString())
@@ -28,9 +31,19 @@ class SharedPreferencesMaAccountStore(
         }
         editor.apply()
         state.value = account
+        return changed
     }
 
     private fun read(): MaAccount? {
+        return try {
+            readStored()
+        } catch (e: RuntimeException) {
+            preferences = resetPreferences()
+            null
+        }
+    }
+
+    private fun readStored(): MaAccount? {
         val serverUrl = preferences.getString(KEY_SERVER_URL, null)?.toHttpUrlOrNull() ?: return null
         val token = preferences.getString(KEY_TOKEN, null) ?: return null
         return MaAccount(serverUrl, token, preferences.getString(KEY_GPODDER_INSTANCE, null))
