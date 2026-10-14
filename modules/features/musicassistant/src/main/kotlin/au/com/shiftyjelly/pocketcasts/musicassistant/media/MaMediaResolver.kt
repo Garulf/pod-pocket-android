@@ -8,11 +8,15 @@ import au.com.shiftyjelly.pocketcasts.musicassistant.protocol.MaMediaItem
 import com.squareup.moshi.JsonDataException
 import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
+import timber.log.Timber
 
 sealed interface MaMedia {
     val episodeUuid: String
@@ -58,8 +62,18 @@ class MaMediaResolver(
         }
     }
 
-    private suspend fun listFeeds(feeds: List<FeedKey>): Map<FeedKey, List<MaMediaItem>?> = coroutineScope {
-        feeds.associateWith { key -> async { podcastEpisodes(key) } }.mapValues { it.value.await() }
+    private suspend fun listFeeds(feeds: List<FeedKey>): Map<FeedKey, List<MaMediaItem>?> = supervisorScope {
+        feeds.associateWith { key -> async { podcastEpisodes(key) } }.mapValues { (key, listing) -> listedOrNull(key, listing) }
+    }
+
+    private suspend fun listedOrNull(key: FeedKey, listing: Deferred<List<MaMediaItem>?>): List<MaMediaItem>? {
+        return try {
+            listing.await()
+        } catch (e: Exception) {
+            currentCoroutineContext().ensureActive()
+            Timber.w(e, "Could not list the episodes of ${key.feedUrl}")
+            null
+        }
     }
 
     private fun providerEpisode(episode: PodcastEpisode, source: EpisodeSource, candidates: List<MaMediaItem>, instanceId: String): MaMedia? {

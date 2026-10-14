@@ -14,6 +14,7 @@ import au.com.shiftyjelly.pocketcasts.musicassistant.eventually
 import au.com.shiftyjelly.pocketcasts.musicassistant.protocol.MaPlayer
 import au.com.shiftyjelly.pocketcasts.musicassistant.protocol.MaQueue
 import java.util.Date
+import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -213,6 +214,42 @@ class MaMediaResolverTest {
     }
 
     @Test
+    fun `lists the feeds of a batch at the same time`() = runBlocking<Unit> {
+        sources["a"] = EpisodeSource("a", FEED, guid = null, enclosureUrl = "https://cdn.example.com/a.mp3")
+        sources["o"] = EpisodeSource("o", OTHER_FEED, guid = null, enclosureUrl = "https://cdn.example.com/o.mp3")
+        val gate = CompletableDeferred<Unit>()
+        val remote = ScriptedRemote(gate) { args -> listOf(if (args["item_id"] == FEED) aItem else oItem) }
+        val scripted = MaMediaResolver(remote, { uuids -> sources.filterKeys { it in uuids } }, { GPODDER })
+
+        val resolving = async(Dispatchers.Default) {
+            scripted.resolveAll(listOf(episode("a", "https://cdn.example.com/a.mp3"), episode("o", "https://cdn.example.com/o.mp3")))
+        }
+        eventually { remote.calls.get() == 2 }
+        gate.complete(Unit)
+
+        assertEquals(
+            listOf(MaMedia.ProviderEpisode("a", "$GPODDER://podcast_episode/a"), MaMedia.ProviderEpisode("o", "$GPODDER://podcast_episode/o")),
+            resolving.await(),
+        )
+        assertEquals(setOf(FEED, OTHER_FEED), remote.feeds.toSet())
+    }
+
+    @Test
+    fun `plays the plain URL only for the feed whose listing broke`() = runBlocking<Unit> {
+        sources["a"] = EpisodeSource("a", FEED, guid = null, enclosureUrl = "https://cdn.example.com/a.mp3")
+        sources["o"] = EpisodeSource("o", OTHER_FEED, guid = null, enclosureUrl = "https://cdn.example.com/o.mp3")
+        val remote = ScriptedRemote { args -> if (args["item_id"] == FEED) listOf(aItem) else error("unreadable listing") }
+        val scripted = MaMediaResolver(remote, { uuids -> sources.filterKeys { it in uuids } }, { GPODDER })
+
+        val media = scripted.resolveAll(listOf(episode("a", "https://cdn.example.com/a.mp3"), episode("o", "https://cdn.example.com/o.mp3")))
+
+        assertEquals(
+            listOf(MaMedia.ProviderEpisode("a", "$GPODDER://podcast_episode/a"), MaMedia.PlainUrl("o", "builtin://track/https://cdn.example.com/o.mp3")),
+            media,
+        )
+    }
+
+    @Test
     fun `keeps the order and leaves out episodes without a stream`() = runBlocking<Unit> {
         sources["a"] = EpisodeSource("a", FEED, guid = null, enclosureUrl = "https://cdn.example.com/a.mp3")
 
@@ -292,16 +329,21 @@ class MaMediaResolverTest {
         "provider_mappings" to listOf(mapOf("item_id" to id, "provider_instance" to GPODDER, "url" to url)),
     )
 
-    private class ScriptedRemote(private val gate: CompletableDeferred<Unit>? = null, private val listing: () -> Any?) : MaRemote {
+    private val aItem = episodeItem("a", "https://cdn.example.com/a.mp3")
+    private val oItem = episodeItem("o", "https://cdn.example.com/o.mp3")
+
+    private class ScriptedRemote(private val gate: CompletableDeferred<Unit>? = null, private val listing: (Map<String, Any?>) -> Any?) : MaRemote {
         val calls = AtomicInteger()
+        val feeds = CopyOnWriteArrayList<Any?>()
         override val players: StateFlow<Map<String, MaPlayer>> = MutableStateFlow(emptyMap())
         override val queues: StateFlow<Map<String, MaQueue>> = MutableStateFlow(emptyMap())
         override val isConnected: Boolean = true
 
         override suspend fun call(command: String, args: Map<String, Any?>, timeoutMs: Long?): Any? {
             calls.incrementAndGet()
+            feeds += args["item_id"]
             gate?.await()
-            return listing()
+            return listing(args)
         }
 
         override fun serverNow(): Double = 0.0
@@ -312,5 +354,6 @@ class MaMediaResolverTest {
     private companion object {
         const val GPODDER = "gpodder--Xk3dTq9a"
         const val FEED = "https://pod.example.com/feeds/show.xml"
+        const val OTHER_FEED = "https://other.example.com/feed.xml"
     }
 }
