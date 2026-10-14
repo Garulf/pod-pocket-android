@@ -1,0 +1,39 @@
+package au.com.shiftyjelly.pocketcasts.musicassistant.output
+
+import au.com.shiftyjelly.pocketcasts.musicassistant.auth.MaAccount
+import au.com.shiftyjelly.pocketcasts.musicassistant.client.MaSessionControl
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.launch
+
+class MaConnectionPolicy(
+    private val session: MaSessionControl,
+    private val appInForeground: Flow<Boolean>,
+    private val outputActive: Flow<Boolean>,
+    private val account: Flow<MaAccount?>,
+) {
+    fun launchIn(scope: CoroutineScope) = scope.launch {
+        var started = false
+        var connectedAccount: MaAccount? = null
+        combine(appInForeground, outputActive, account) { foreground, active, current -> (foreground || active) to current }
+            .distinctUntilChanged()
+            .collect { (wanted, current) ->
+                when {
+                    !wanted -> {
+                        if (started) session.stop()
+                        started = false
+                    }
+
+                    !started -> {
+                        session.start()
+                        started = true
+                    }
+
+                    current != connectedAccount -> session.restart()
+                }
+                connectedAccount = current
+            }
+    }
+}

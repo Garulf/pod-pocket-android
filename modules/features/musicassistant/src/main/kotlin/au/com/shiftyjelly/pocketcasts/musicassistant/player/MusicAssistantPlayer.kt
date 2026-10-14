@@ -36,6 +36,7 @@ class MusicAssistantPlayer(
     override val onPlayerEvent: (Player, PlayerEvent) -> Unit,
     attachTo: RemotePlayback? = null,
     private val onPlaybackFailed: () -> Unit = {},
+    private val onStopped: () -> Unit = {},
     private val monotonicMs: () -> Long = { System.nanoTime() / NANOS_PER_MILLI },
 ) : Player {
     private data class Target(val episodeUuid: String, val queueItemId: String, val confirmed: Boolean)
@@ -133,6 +134,7 @@ class MusicAssistantPlayer(
         }
         forgetTarget()
         setBuffering(false)
+        onStopped()
     }
 
     override suspend fun seekToTimeMs(positionMs: Int) = operations.withLock { seek(positionMs) }
