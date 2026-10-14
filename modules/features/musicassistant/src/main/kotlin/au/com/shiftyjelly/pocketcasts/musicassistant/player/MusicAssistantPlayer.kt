@@ -15,6 +15,7 @@ import au.com.shiftyjelly.pocketcasts.repositories.playback.Player
 import au.com.shiftyjelly.pocketcasts.repositories.playback.PlayerEvent
 import com.squareup.moshi.JsonDataException
 import java.io.IOException
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.math.abs
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -38,6 +39,10 @@ class MusicAssistantPlayer(
 ) : Player {
     private data class Target(val episodeUuid: String, val queueItemId: String, val confirmed: Boolean)
 
+    private class SeekBaseline(val positionMs: Int, val serverSeconds: Double) {
+        fun outdates(queue: MaQueue): Boolean = queue.elapsedTimeLastUpdated < serverSeconds
+    }
+
     private enum class Load { Loaded, MediaRejected, Failed }
 
     @Volatile
@@ -49,7 +54,8 @@ class MusicAssistantPlayer(
     @Volatile
     private var attachedUuid: String? = target?.episodeUuid
 
-    @Volatile
+    private val announcements = Any()
+    private var announcementCount = 0
     private var lastAnnouncedAtMs: Long? = null
 
     @Volatile
@@ -63,6 +69,8 @@ class MusicAssistantPlayer(
 
     @Volatile
     private var lastPositionMs = 0
+
+    private val seekBaseline = AtomicReference<SeekBaseline?>(null)
 
     @Volatile
     private var speed = 1.0
@@ -132,14 +140,14 @@ class MusicAssistantPlayer(
         if (queue == null || !owns(queue)) {
             return
         }
-        if (abs(queue.elapsedAt(remote.serverNow()) * 1000 - positionMs) < SEEK_TOLERANCE_MS) {
+        if (abs(estimatedPositionMs(queue, seekBaseline.get()) - positionMs) < SEEK_TOLERANCE_MS) {
             pendingSeekMs = null
             return
         }
         try {
             remote.call("player_queues/seek", mapOf("queue_id" to queueId, "position" to positionMs / 1000))
             pendingSeekMs = null
-            lastPositionMs = positionMs
+            rebase(positionMs)
         } catch (e: MaCommandException) {
             if (queue.isPlaying) {
                 restartAt(queue, positionMs)
@@ -172,7 +180,7 @@ class MusicAssistantPlayer(
         if (pending != null && !queue.isPlaying) {
             return pending
         }
-        val position = if (remote.isConnected) steadyPosition((queue.elapsedAt(remote.serverNow()) * 1000).toInt()) else lastPositionMs
+        val position = if (remote.isConnected) steadyPosition(queue) else lastPositionMs
         return position.takeIf { it > 0 } ?: -1
     }
 
@@ -210,10 +218,31 @@ class MusicAssistantPlayer(
             current.episodeUuid == episode?.uuid
     }
 
-    private fun steadyPosition(positionMs: Int): Int {
-        val position = if (lastPositionMs - positionMs in 1 until BACKSTEP_TOLERANCE_MS) lastPositionMs else positionMs
+    private fun estimatedPositionMs(queue: MaQueue, baseline: SeekBaseline?): Int {
+        val serverNow = remote.serverNow()
+        if (baseline == null || !baseline.outdates(queue)) {
+            return (queue.elapsedAt(serverNow) * 1000).toInt()
+        }
+        val runningSeconds = if (queue.isPlaying) (serverNow - baseline.serverSeconds).coerceAtLeast(0.0) * queue.playbackSpeed else 0.0
+        return baseline.positionMs + (runningSeconds * 1000).toInt()
+    }
+
+    private fun steadyPosition(queue: MaQueue): Int {
+        val baseline = seekBaseline.get()
+        val seekUnheard = baseline != null && baseline.outdates(queue)
+        if (baseline != null && !seekUnheard) {
+            seekBaseline.compareAndSet(baseline, null)
+        }
+        val positionMs = estimatedPositionMs(queue, baseline)
+        val steppedBack = lastPositionMs - positionMs in 1 until BACKSTEP_TOLERANCE_MS
+        val position = if (steppedBack && !seekUnheard) lastPositionMs else positionMs
         lastPositionMs = position
         return position
+    }
+
+    private fun rebase(positionMs: Int) {
+        seekBaseline.set(SeekBaseline(positionMs, remote.serverNow()))
+        lastPositionMs = positionMs
     }
 
     private suspend fun resume(queue: MaQueue?) {
@@ -229,7 +258,7 @@ class MusicAssistantPlayer(
     private suspend fun restartAt(queue: MaQueue, positionMs: Int): Boolean {
         val restarted = send("player_queues/play_index", "index" to (queue.currentIndex ?: 0), "seek_position" to startSeconds(positionMs))
         if (restarted) {
-            lastPositionMs = positionMs
+            rebase(positionMs)
         }
         return restarted
     }
@@ -310,9 +339,12 @@ class MusicAssistantPlayer(
             setBuffering(false)
             val attached = attachedUuid
             if (attached != null && episode == null) {
-                announceAttach(attached)
+                announceAttach(attached, throttled = false)
                 return
             }
+        }
+        if (queue.isPlaying) {
+            pendingSeekMs = null
         }
         val playing = episode ?: return
         if (playing.uuid != current.episodeUuid) {
@@ -340,9 +372,23 @@ class MusicAssistantPlayer(
         onPlayerEvent(this, PlayerEvent.PlayerPaused)
     }
 
-    private fun announceAttach(uuid: String) {
-        lastAnnouncedAtMs = monotonicMs()
-        onPlayerEvent(this, PlayerEvent.RemoteMetadataNotMatched(uuid))
+    private fun announceAttach(uuid: String, throttled: Boolean) {
+        if (claimAnnouncement(throttled)) {
+            onPlayerEvent(this, PlayerEvent.RemoteMetadataNotMatched(uuid))
+        }
+    }
+
+    private fun claimAnnouncement(throttled: Boolean): Boolean = synchronized(announcements) {
+        val now = monotonicMs()
+        val last = lastAnnouncedAtMs
+        val tooSoon = throttled && last != null && now - last < REANNOUNCE_INTERVAL_MS
+        if (tooSoon || announcementCount >= MAX_ATTACH_ANNOUNCEMENTS) {
+            false
+        } else {
+            announcementCount++
+            lastAnnouncedAtMs = now
+            true
+        }
     }
 
     private fun reannounceAttach() {
@@ -351,10 +397,7 @@ class MusicAssistantPlayer(
         if (episode != null || !current.confirmed || currentQueue()?.currentItem?.queueItemId != current.queueItemId) {
             return
         }
-        val last = lastAnnouncedAtMs
-        if (last == null || monotonicMs() - last >= REANNOUNCE_INTERVAL_MS) {
-            announceAttach(uuid)
-        }
+        announceAttach(uuid, throttled = true)
     }
 
     private fun setBuffering(value: Boolean) {
@@ -369,6 +412,7 @@ class MusicAssistantPlayer(
         attachedUuid = null
         lastState = null
         pendingSeekMs = null
+        seekBaseline.set(null)
         lastPositionMs = 0
         playbackStore.save(null)
     }
@@ -397,6 +441,7 @@ class MusicAssistantPlayer(
         const val SEEK_TOLERANCE_MS = 2000
         const val BACKSTEP_TOLERANCE_MS = 3000
         const val REANNOUNCE_INTERVAL_MS = 2000L
+        const val MAX_ATTACH_ANNOUNCEMENTS = 10
         const val NANOS_PER_MILLI = 1_000_000L
         const val SPEED_TOLERANCE = 0.001
         const val MIN_SPEED = 0.5

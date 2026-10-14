@@ -22,6 +22,7 @@ class FakeMaServer : Closeable {
 
     private val server = MockWebServer()
     private val replies = ConcurrentHashMap<String, List<String>>()
+    private val editedReplies = ConcurrentHashMap<String, Pair<String, (MutableMap<String, Any?>) -> Unit>>()
     private val onceReplies = ConcurrentHashMap<String, ConcurrentLinkedQueue<List<String>>>()
     private val sockets = CopyOnWriteArrayList<WebSocket>()
     val commands = LinkedBlockingQueue<Command>()
@@ -72,12 +73,21 @@ class FakeMaServer : Closeable {
         replies[command] = fixtures.toList()
     }
 
+    fun replyEdited(command: String, fixture: String, edit: (MutableMap<String, Any?>) -> Unit) {
+        editedReplies[command] = fixture to edit
+    }
+
     fun replyOnce(command: String, vararg fixtures: String) {
         onceReplies.getOrPut(command) { ConcurrentLinkedQueue() }.add(fixtures.toList())
     }
 
     fun push(fixture: String) {
         val text = fixture(fixture)
+        sockets.forEach { it.send(text) }
+    }
+
+    fun pushEdited(fixture: String, edit: (MutableMap<String, Any?>) -> Unit) {
+        val text = edited(fixture, edit)
         sockets.forEach { it.send(text) }
     }
 
@@ -124,8 +134,14 @@ class FakeMaServer : Closeable {
             val args = message["args"] as? Map<String, Any?> ?: emptyMap()
             lastMessageIds[name] = message["message_id"] as String
             commands += Command(name, args)
+            val messageId = message["message_id"] as String
+            val editedReply = editedReplies[name]
+            if (editedReply != null) {
+                webSocket.send(withMessageId(edited(editedReply.first, editedReply.second), messageId))
+                return
+            }
             val fixtures = onceReplies[name]?.poll() ?: replies[name] ?: listOf("command_ok")
-            fixtures.forEach { webSocket.send(withMessageId(fixture(it), message["message_id"] as String)) }
+            fixtures.forEach { webSocket.send(withMessageId(fixture(it), messageId)) }
         }
 
         override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
@@ -145,6 +161,12 @@ class FakeMaServer : Closeable {
 
         fun fixture(name: String): String {
             return requireNotNull(FakeMaServer::class.java.getResource("/ma/$name.json")) { "Missing fixture $name" }.readText()
+        }
+
+        fun edited(name: String, edit: (MutableMap<String, Any?>) -> Unit): String {
+            val message = MAP_ADAPTER.fromJson(fixture(name))!!.toMutableMap()
+            edit(message)
+            return MAP_ADAPTER.toJson(message)
         }
 
         fun withMessageId(json: String, messageId: String): String {

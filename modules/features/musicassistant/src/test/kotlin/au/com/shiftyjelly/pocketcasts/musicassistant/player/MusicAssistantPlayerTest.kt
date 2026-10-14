@@ -172,7 +172,7 @@ class MusicAssistantPlayerTest {
 
         player.play(800_000)
         player.seekToTimeMs(1_000_000)
-        player.seekToTimeMs(800_500)
+        player.seekToTimeMs(1_000_500)
         player.pause()
         player.stop()
 
@@ -441,6 +441,104 @@ class MusicAssistantPlayerTest {
     }
 
     @Test
+    fun `stops announcing an attached session after ten attempts`() = runBlocking<Unit> {
+        val player = attachedWithUnheardAnnouncement()
+
+        repeat(30) {
+            nowMs += 2_000
+            player.getCurrentPositionMs()
+        }
+
+        assertEquals(9, events.size)
+        assertEquals(1, unheard.get())
+    }
+
+    @Test
+    fun `announces an attached session once however many callers ask at the same time`() = runBlocking<Unit> {
+        val player = attachedWithUnheardAnnouncement()
+
+        repeat(8) {
+            nowMs += 2_000
+            List(8) { async(Dispatchers.Default) { player.getCurrentPositionMs() } }.awaitAll()
+        }
+
+        assertEquals(8, events.size)
+    }
+
+    @Test
+    fun `shows the seek target while the queue still reports the old position`() = runBlocking<Unit> {
+        val player = playingAt756()
+
+        player.seekToTimeMs(1_000_000)
+
+        assertEquals(FakeMaServer.Command("player_queues/seek", mapOf("queue_id" to KITCHEN, "position" to 1000.0)), server.next())
+        assertEquals(1_000_000, player.getCurrentPositionMs())
+    }
+
+    @Test
+    fun `follows the speaker again once it reports the new position`() = runBlocking<Unit> {
+        val player = playingAt756()
+        player.seekToTimeMs(754_000)
+        assertEquals(754_000, player.getCurrentPositionMs())
+
+        server.pushEdited("event_queue_time_updated") { it["data"] = 754.3 }
+
+        eventually { runBlocking { player.getCurrentPositionMs() } == 754_300 }
+    }
+
+    @Test
+    fun `measures a second seek from the first seek's target`() = runBlocking<Unit> {
+        val player = playingAt756()
+        player.seekToTimeMs(1_000_000)
+        server.commands.clear()
+
+        player.seekToTimeMs(757_000)
+
+        assertEquals(FakeMaServer.Command("player_queues/seek", mapOf("queue_id" to KITCHEN, "position" to 757.0)), server.next())
+    }
+
+    @Test
+    fun `forgets a refused seek once someone else starts the queue`() = runBlocking<Unit> {
+        val player = handedOff()
+        server.push("event_queue_updated_paused")
+        eventually { events.lastOrNull() == PlayerEvent.PlayerPaused }
+        server.reply("player_queues/seek", "error_invalid_command")
+        player.seekToTimeMs(1_000_000)
+        assertEquals(1_000_000, player.getCurrentPositionMs())
+
+        server.push("event_queue_updated_playing")
+        eventually { events.lastOrNull() == PlayerEvent.PlayerPlaying }
+        server.push("event_queue_updated_paused")
+        eventually { events.lastOrNull() == PlayerEvent.PlayerPaused }
+
+        assertEquals(800_000, player.getCurrentPositionMs())
+    }
+
+    @Test
+    fun `does not send a speed when the item has no duration`() = runBlocking<Unit> {
+        server.replyEdited("player_queues/items", "queue_items") { reply -> items(reply).forEach { it["duration"] = null } }
+        val player = player()
+        player.setEpisode(episodeA)
+        player.setPlaybackEffects(PlaybackEffects().apply { playbackSpeed = 1.5 })
+
+        player.play(754_900)
+
+        val handoff = listOf("podcast_episodes", "clear", "play_media", "items", "play_index")
+        assertEquals(handoff, generateSequence { server.commands.poll() }.map { it.name.substringAfterLast('/') }.toList())
+        server.pushEdited("event_queue_updated_playing") { event ->
+            @Suppress("UNCHECKED_CAST")
+            val queue = event["data"] as MutableMap<String, Any?>
+
+            @Suppress("UNCHECKED_CAST")
+            (queue["current_item"] as MutableMap<String, Any?>)["duration"] = null
+        }
+        eventually { events.lastOrNull() == PlayerEvent.PlayerPlaying }
+        player.setPlaybackEffects(PlaybackEffects().apply { playbackSpeed = 2.0 })
+
+        assertTrue(server.commands.isEmpty())
+    }
+
+    @Test
     fun `knows nothing before a handoff`() = runBlocking<Unit> {
         val player = player()
         player.setEpisode(episodeA)
@@ -451,6 +549,28 @@ class MusicAssistantPlayerTest {
         player.seekToTimeMs(5_000)
         assertTrue(server.commands.isEmpty())
     }
+
+    private suspend fun playingAt756(): MusicAssistantPlayer {
+        val player = handedOff()
+        server.push("event_queue_updated_playing")
+        eventually { events.lastOrNull() == PlayerEvent.PlayerPlaying }
+        assertEquals(756_700, player.getCurrentPositionMs())
+        server.commands.clear()
+        return player
+    }
+
+    private fun attachedWithUnheardAnnouncement(): MusicAssistantPlayer {
+        server.push("event_queue_updated_playing")
+        eventually { session.queues.value[KITCHEN]?.currentItem != null }
+        listening = false
+        val player = player(attachTo = RemotePlayback(KITCHEN, ITEM_A, EPISODE_A))
+        eventually { unheard.get() == 1 }
+        listening = true
+        return player
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun items(reply: MutableMap<String, Any?>) = reply["result"] as List<MutableMap<String, Any?>>
 
     private fun player(attachTo: RemotePlayback? = null) = MusicAssistantPlayer(
         remote = session,
