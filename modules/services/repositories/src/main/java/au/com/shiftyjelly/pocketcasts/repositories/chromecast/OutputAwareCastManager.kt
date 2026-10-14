@@ -2,6 +2,7 @@ package au.com.shiftyjelly.pocketcasts.repositories.chromecast
 
 import au.com.shiftyjelly.pocketcasts.repositories.playback.RemoteOutput
 import java.util.Optional
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -47,11 +48,23 @@ class OutputAwareCastManager(
     }
 
     private inner class ChromecastSessionListener(private val listener: CastManager.SessionListener) : CastManager.SessionListener {
-        override fun sessionStarted() = whileChromecastLeads { listener.sessionStarted() }
+        private val listenerHoldsSession = AtomicBoolean(false)
 
-        override fun sessionEnded() = whileChromecastLeads { listener.sessionEnded() }
+        override fun sessionStarted() = whileChromecastLeads {
+            listenerHoldsSession.set(true)
+            listener.sessionStarted()
+        }
 
-        override fun sessionReconnected() = whileChromecastLeads { listener.sessionReconnected() }
+        override fun sessionEnded() {
+            if (listenerHoldsSession.getAndSet(false) || !remoteActive.value) {
+                listener.sessionEnded()
+            }
+        }
+
+        override fun sessionReconnected() = whileChromecastLeads {
+            listenerHoldsSession.set(true)
+            listener.sessionReconnected()
+        }
 
         override fun sessionFailed(errorCode: Int, failureType: CastManager.SessionFailureType) {
             whileChromecastLeads { listener.sessionFailed(errorCode, failureType) }

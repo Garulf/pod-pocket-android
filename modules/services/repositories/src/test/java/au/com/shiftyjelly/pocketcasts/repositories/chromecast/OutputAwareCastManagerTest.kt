@@ -103,6 +103,22 @@ class OutputAwareCastManagerTest {
     }
 
     @Test
+    fun `passes on the end of a Chromecast session the listener holds once the remote output takes over`() = runTest(UnconfinedTestDispatcher()) {
+        val manager = OutputAwareCastManager(cast, Optional.of(remote), backgroundScope)
+        val listener = RecordingListener()
+        manager.startSessionListener(listener)
+        cast.listener?.sessionStarted()
+        remote.active.value = true
+
+        cast.listener?.sessionEnded()
+        cast.listener?.sessionEnded()
+        cast.listener?.sessionReconnected()
+        cast.listener?.sessionEnded()
+
+        assertEquals(listOf("started", "ended"), listener.events)
+    }
+
+    @Test
     fun `still passes the remote output's own session events on`() = runTest(UnconfinedTestDispatcher()) {
         val manager = OutputAwareCastManager(cast, Optional.of(remote), backgroundScope)
         val listener = RecordingListener()
