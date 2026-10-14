@@ -24,6 +24,7 @@ class FakeMaServer : Closeable {
     private val replies = ConcurrentHashMap<String, List<String>>()
     private val editedReplies = ConcurrentHashMap<String, Pair<String, (MutableMap<String, Any?>) -> Unit>>()
     private val onceReplies = ConcurrentHashMap<String, ConcurrentLinkedQueue<List<String>>>()
+    private val pagedReplies = ConcurrentHashMap<String, String>()
     private val sockets = CopyOnWriteArrayList<WebSocket>()
     val commands = LinkedBlockingQueue<Command>()
     val requestPaths = CopyOnWriteArrayList<String>()
@@ -70,10 +71,18 @@ class FakeMaServer : Closeable {
     }
 
     fun reply(command: String, vararg fixtures: String) {
+        pagedReplies.remove(command)
+        editedReplies.remove(command)
         replies[command] = fixtures.toList()
     }
 
+    fun replyPaged(command: String, fixture: String) {
+        editedReplies.remove(command)
+        pagedReplies[command] = fixture
+    }
+
     fun replyEdited(command: String, fixture: String, edit: (MutableMap<String, Any?>) -> Unit) {
+        pagedReplies.remove(command)
         editedReplies[command] = fixture to edit
     }
 
@@ -140,7 +149,13 @@ class FakeMaServer : Closeable {
                 webSocket.send(withMessageId(edited(editedReply.first, editedReply.second), messageId))
                 return
             }
-            val fixtures = onceReplies[name]?.poll() ?: replies[name] ?: listOf("command_ok")
+            val once = onceReplies[name]?.poll()
+            val paged = pagedReplies[name]
+            if (once == null && paged != null) {
+                webSocket.send(withMessageId(page(paged, args), messageId))
+                return
+            }
+            val fixtures = once ?: replies[name] ?: listOf("command_ok")
             fixtures.forEach { webSocket.send(withMessageId(fixture(it), messageId)) }
         }
 
@@ -167,6 +182,13 @@ class FakeMaServer : Closeable {
             val message = MAP_ADAPTER.fromJson(fixture(name))!!.toMutableMap()
             edit(message)
             return MAP_ADAPTER.toJson(message)
+        }
+
+        fun page(name: String, args: Map<String, Any?>): String = edited(name) { message ->
+            val items = message["result"] as List<*>
+            val offset = (args["offset"] as? Number)?.toInt() ?: 0
+            val limit = (args["limit"] as? Number)?.toInt() ?: items.size
+            message["result"] = items.drop(offset).take(limit)
         }
 
         fun withMessageId(json: String, messageId: String): String {
