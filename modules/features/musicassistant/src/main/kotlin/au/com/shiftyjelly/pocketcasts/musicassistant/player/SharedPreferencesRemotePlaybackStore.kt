@@ -12,13 +12,17 @@ class SharedPreferencesRemotePlaybackStore(
 
     override fun load(): RemotePlayback? {
         val json = preferences.getString(KEY_PLAYBACK, null) ?: return null
-        return try {
+        val playback = try {
             adapter.fromJson(json)
         } catch (e: IOException) {
             null
         } catch (e: JsonDataException) {
             null
         }
+        if (playback == null) {
+            save(null)
+        }
+        return playback
     }
 
     override fun save(playback: RemotePlayback?) {

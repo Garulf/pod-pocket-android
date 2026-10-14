@@ -12,6 +12,7 @@ import au.com.shiftyjelly.pocketcasts.repositories.chromecast.CastManager
 import au.com.shiftyjelly.pocketcasts.repositories.playback.Player
 import au.com.shiftyjelly.pocketcasts.repositories.playback.PlayerEvent
 import au.com.shiftyjelly.pocketcasts.repositories.playback.RemoteOutput
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -19,6 +20,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 class MusicAssistantOutput(
     private val session: MaSession,
@@ -76,8 +78,11 @@ class MusicAssistantOutput(
 
     override fun createPlayer(onPlayerEvent: (Player, PlayerEvent) -> Unit): Player {
         val playerId = checkNotNull(_activePlayerId.value) { "No Music Assistant player is selected" }
-        val attach = pendingAttach?.takeIf { it.queueId == playerId }
-        pendingAttach = null
+        val attach = synchronized(attachLock) {
+            val pending = pendingAttach?.takeIf { it.queueId == playerId }
+            pendingAttach = null
+            pending?.let(::reconcile)?.also { finishLater(it.played) }?.playback
+        }
         val name = playerName(playerId)
         lateinit var created: MusicAssistantPlayer
         created = MusicAssistantPlayer(
@@ -222,24 +227,74 @@ class MusicAssistantOutput(
     }
 
     internal fun attachIfPlaying() {
-        val stored = synchronized(attachLock) {
+        val reconciled = synchronized(attachLock) {
             if (_activePlayerId.value != null || heldPlayer != null) {
                 return
             }
-            val stored = playbackStore.load() ?: return
-            val queue = session.queues.value[stored.queueId]
-            if (queue == null || queue.ended || queue.currentItem?.queueItemId != stored.items.firstOrNull()?.queueItemId) {
-                playbackStore.save(null)
+            val reconciled = playbackStore.load()?.let(::reconcile) ?: return
+            if (pendingAttach == reconciled.playback) {
                 return
             }
-            if (pendingAttach == stored) {
-                return
-            }
-            pendingAttach = stored
-            stored
+            pendingAttach = reconciled.playback
+            reconciled
         }
-        routes?.selectPlayer(stored.queueId) ?: onRouteSelected(stored.queueId)
+        val attach = reconciled.playback
+        if (reconciled.played.isEmpty()) {
+            selectPlayer(attach.queueId)
+            return
+        }
+        scope.launch {
+            finish(reconciled.played)
+            val stillWanted = synchronized(attachLock) {
+                pendingAttach === attach && _activePlayerId.value == null && heldPlayer == null
+            }
+            if (stillWanted) {
+                selectPlayer(attach.queueId)
+            }
+        }
     }
+
+    private fun reconcile(stored: RemotePlayback): Reconciled? {
+        val queue = session.queues.value[stored.queueId]
+        val current = stored.items.indexOfFirst { it.queueItemId == queue?.currentItem?.queueItemId }
+        if (queue == null || current < 0) {
+            playbackStore.save(null)
+            return null
+        }
+        if (queue.ended) {
+            playbackStore.save(null)
+            finishLater(stored.items.take(current + 1).map { it.episodeUuid })
+            return null
+        }
+        if (current == 0) {
+            return Reconciled(stored, played = emptyList())
+        }
+        val trimmed = stored.copy(items = stored.items.drop(current))
+        playbackStore.save(trimmed)
+        return Reconciled(trimmed, played = stored.items.take(current).map { it.episodeUuid })
+    }
+
+    private fun finishLater(episodeUuids: List<String>) {
+        if (episodeUuids.isNotEmpty()) {
+            scope.launch { finish(episodeUuids) }
+        }
+    }
+
+    private suspend fun finish(episodeUuids: List<String>) {
+        try {
+            finisher.finish(episodeUuids)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Timber.w(e, "Could not finish the episodes Music Assistant played while the app was away")
+        }
+    }
+
+    private fun selectPlayer(playerId: String) {
+        routes?.selectPlayer(playerId) ?: onRouteSelected(playerId)
+    }
+
+    private class Reconciled(val playback: RemotePlayback, val played: List<String>)
 
     private fun playerName(playerId: String): String = session.players.value[playerId]?.name ?: playerId
 

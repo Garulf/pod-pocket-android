@@ -34,6 +34,7 @@ import okhttp3.OkHttpClient
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -50,12 +51,13 @@ class MusicAssistantOutputTest {
     private val notices = CopyOnWriteArrayList<OutputNotice>()
     private val signals = CopyOnWriteArrayList<String>()
     private val routes = RecordingRoutes()
+    private val finisher = RecordingFinisher()
     private val output = MusicAssistantOutput(
         session = session,
         resolver = MaMediaResolver(session, { emptyMap() }, { null }),
         playbackStore = store,
         upNext = FakeUpNext(),
-        finisher = RecordingFinisher(),
+        finisher = finisher,
         scope = scope,
         notify = { notices += it },
     )
@@ -186,6 +188,63 @@ class MusicAssistantOutputTest {
         }
 
         eventually { heard.isNotEmpty() }
+    }
+
+    @Test
+    fun `finishes what the speaker played while the app was closed`() = runBlocking<Unit> {
+        server.reply("player_queues/all", "queues_all_second_item")
+        store.playback = RemotePlayback(KITCHEN, listOf(MirroredItem("episode-a", ITEM_A, URI_A), MirroredItem("episode-b", ITEM_B, URI_B)))
+        output.routes = routes
+        output.setSessionListener(listener())
+
+        session.start()
+
+        eventually { routes.selected == listOf(KITCHEN) }
+        assertEquals(listOf("episode-a"), finisher.finished.toList())
+        assertEquals(RemotePlayback(KITCHEN, listOf(MirroredItem("episode-b", ITEM_B, URI_B))), store.playback)
+    }
+
+    @Test
+    fun `finishes everything when the speaker reached the end`() = runBlocking<Unit> {
+        server.reply("player_queues/all", "queues_all_ended")
+        store.playback = RemotePlayback(KITCHEN, listOf(MirroredItem("episode-a", ITEM_A, URI_A), MirroredItem("episode-b", ITEM_B, URI_B)))
+        output.routes = routes
+
+        session.start()
+
+        eventually { finisher.finished.toList() == listOf("episode-a", "episode-b") }
+        assertNull(store.playback)
+        assertTrue(routes.selected.isEmpty())
+    }
+
+    @Test
+    fun `attaches where the speaker is when it moved on before the player was created`() = runBlocking<Unit> {
+        store.playback = RemotePlayback(KITCHEN, listOf(MirroredItem("episode-a", ITEM_A, URI_A), MirroredItem("episode-b", ITEM_B, URI_B)))
+        output.routes = routes
+        session.start()
+        eventually { routes.selected == listOf(KITCHEN) }
+        server.push("event_queue_updated_next_item")
+        session.queues.awaitValue { it[KITCHEN]?.currentItem?.queueItemId == ITEM_B }
+        output.onRouteSelected(KITCHEN)
+        val events = CopyOnWriteArrayList<PlayerEvent>()
+
+        output.createPlayer { _, event -> events += event }
+
+        eventually { events.any { (it as? PlayerEvent.RemoteMetadataNotMatched)?.remoteEpisodeUuid == "episode-b" } }
+        assertEquals(listOf("episode-a"), finisher.finished.toList())
+        assertEquals(RemotePlayback(KITCHEN, listOf(MirroredItem("episode-b", ITEM_B, URI_B))), store.playback)
+    }
+
+    @Test
+    fun `forgets a stored playback that has no episodes`() = runBlocking<Unit> {
+        store.playback = RemotePlayback(KITCHEN, emptyList())
+        output.routes = routes
+
+        session.start()
+        session.state.awaitValue { it is MaSessionState.Connected }
+
+        eventually { store.playback == null }
+        assertTrue(routes.selected.isEmpty())
     }
 
     @Test
@@ -476,5 +535,7 @@ class MusicAssistantOutputTest {
         const val OFFICE = "media_player.office"
         const val ITEM_A = "5b2f0e8c9d6a4f1b8e3c7a2d1f0e9b8a"
         const val URI_A = "builtin://track/https://cdn.example.com/a.mp3"
+        const val ITEM_B = "0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f"
+        const val URI_B = "builtin://track/https://cdn.example.com/b.mp3"
     }
 }

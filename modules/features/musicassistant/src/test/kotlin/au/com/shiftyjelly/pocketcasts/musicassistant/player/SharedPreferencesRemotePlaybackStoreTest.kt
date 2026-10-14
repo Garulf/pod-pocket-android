@@ -5,6 +5,7 @@ import androidx.test.core.app.ApplicationProvider
 import au.com.shiftyjelly.pocketcasts.musicassistant.mirror.MirroredItem
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -49,6 +50,7 @@ class SharedPreferencesRemotePlaybackStoreTest {
         preferences.edit().putString(SharedPreferencesRemotePlaybackStore.KEY_PLAYBACK, """{"queue_id": 3}""").commit()
 
         assertNull(SharedPreferencesRemotePlaybackStore(preferences).load())
+        assertFalse(preferences.contains(SharedPreferencesRemotePlaybackStore.KEY_PLAYBACK))
     }
 
     @Test
@@ -58,5 +60,6 @@ class SharedPreferencesRemotePlaybackStoreTest {
             .commit()
 
         assertNull(SharedPreferencesRemotePlaybackStore(preferences).load())
+        assertFalse(preferences.contains(SharedPreferencesRemotePlaybackStore.KEY_PLAYBACK))
     }
 }
