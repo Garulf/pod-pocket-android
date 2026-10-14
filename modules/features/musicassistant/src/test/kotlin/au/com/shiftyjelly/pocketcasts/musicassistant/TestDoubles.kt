@@ -1,7 +1,10 @@
 package au.com.shiftyjelly.pocketcasts.musicassistant
 
+import au.com.shiftyjelly.pocketcasts.models.entity.PodcastEpisode
 import au.com.shiftyjelly.pocketcasts.musicassistant.auth.MaAccount
 import au.com.shiftyjelly.pocketcasts.musicassistant.auth.MaAccountStore
+import au.com.shiftyjelly.pocketcasts.musicassistant.mirror.EpisodeFinisher
+import au.com.shiftyjelly.pocketcasts.musicassistant.mirror.UpNextEpisodes
 import au.com.shiftyjelly.pocketcasts.musicassistant.player.RemotePlayback
 import au.com.shiftyjelly.pocketcasts.musicassistant.player.RemotePlaybackStore
 import java.util.concurrent.CopyOnWriteArrayList
@@ -10,6 +13,7 @@ import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
@@ -56,5 +60,20 @@ fun eventually(timeoutMs: Long = 10_000, check: () -> Boolean) = runBlocking {
         }
     } catch (e: TimeoutCancellationException) {
         throw AssertionError("Condition was not met within $timeoutMs ms", e)
+    }
+}
+
+class FakeUpNext(initial: List<PodcastEpisode> = emptyList()) : UpNextEpisodes {
+    val episodes = MutableStateFlow(initial)
+    override val changes: Flow<List<PodcastEpisode>> = episodes
+
+    override fun current(): List<PodcastEpisode> = episodes.value
+}
+
+class RecordingFinisher : EpisodeFinisher {
+    val finished = CopyOnWriteArrayList<String>()
+
+    override suspend fun finish(episodeUuids: List<String>) {
+        finished += episodeUuids
     }
 }

@@ -1,13 +1,13 @@
 package au.com.shiftyjelly.pocketcasts.musicassistant.player
 
+import au.com.shiftyjelly.pocketcasts.musicassistant.mirror.MirroredItem
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 
 @JsonClass(generateAdapter = true)
 data class RemotePlayback(
     @Json(name = "queue_id") val queueId: String,
-    @Json(name = "queue_item_id") val queueItemId: String,
-    @Json(name = "episode_uuid") val episodeUuid: String,
+    val items: List<MirroredItem>,
 )
 
 interface RemotePlaybackStore {

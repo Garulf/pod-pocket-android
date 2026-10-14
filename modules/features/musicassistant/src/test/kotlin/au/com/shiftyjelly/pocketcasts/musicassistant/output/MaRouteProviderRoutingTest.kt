@@ -14,6 +14,7 @@ import au.com.shiftyjelly.pocketcasts.musicassistant.client.MaConnection
 import au.com.shiftyjelly.pocketcasts.musicassistant.client.MaSession
 import au.com.shiftyjelly.pocketcasts.musicassistant.client.MaSessionState
 import au.com.shiftyjelly.pocketcasts.musicassistant.media.MaMediaResolver
+import au.com.shiftyjelly.pocketcasts.musicassistant.mirror.MirroredItem
 import au.com.shiftyjelly.pocketcasts.musicassistant.player.RemotePlayback
 import java.time.Duration
 import java.util.concurrent.CopyOnWriteArrayList
@@ -133,7 +134,7 @@ class MaRouteProviderRoutingTest {
     fun `gives up a selection whose speaker does not show up and lets the attach try again`() {
         server.push("event_player_updated_unavailable")
         idleUntil { routeFor(KITCHEN) == null }
-        store.playback = RemotePlayback(KITCHEN, ITEM_A, "episode-a")
+        store.playback = RemotePlayback(KITCHEN, listOf(MirroredItem("episode-a", ITEM_A, URI_A)))
 
         output.attachIfPlaying()
         output.attachIfPlaying()
@@ -155,7 +156,7 @@ class MaRouteProviderRoutingTest {
 
     @Test
     fun `keeps waiting for a selection only until it lands`() {
-        store.playback = RemotePlayback(KITCHEN, ITEM_A, "episode-a")
+        store.playback = RemotePlayback(KITCHEN, listOf(MirroredItem("episode-a", ITEM_A, URI_A)))
         output.attachIfPlaying()
         idleUntil { output.activePlayerId.value == KITCHEN }
 
@@ -289,6 +290,7 @@ class MaRouteProviderRoutingTest {
         const val KITCHEN = "media_player.kitchen"
         const val DOWNSTAIRS = "syncgroup_1"
         const val ITEM_A = "5b2f0e8c9d6a4f1b8e3c7a2d1f0e9b8a"
+        const val URI_A = "builtin://track/https://cdn.example.com/a.mp3"
         const val CONNECTED = "Music Assistant"
         const val RECONNECTING = "Reconnecting"
         const val SIGN_IN = "Sign in again"

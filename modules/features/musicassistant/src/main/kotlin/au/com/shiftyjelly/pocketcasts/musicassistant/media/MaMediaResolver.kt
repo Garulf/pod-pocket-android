@@ -8,6 +8,8 @@ import au.com.shiftyjelly.pocketcasts.musicassistant.protocol.MaMediaItem
 import com.squareup.moshi.JsonDataException
 import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
@@ -39,18 +41,32 @@ class MaMediaResolver(
     private val episodesByFeed = ConcurrentHashMap<FeedKey, CachedEpisodes>()
     private val feedLocks = HashMap<FeedKey, FeedLock>()
 
-    suspend fun resolve(episode: PodcastEpisode): MaMedia? {
-        val plain = plainUrl(episode)
-        val instanceId = gpodderInstanceId() ?: return plain
-        if (!remote.isConnected) {
-            return plain
+    suspend fun resolve(episode: PodcastEpisode): MaMedia? = resolveAll(listOf(episode)).firstOrNull()
+
+    suspend fun resolveAll(episodes: List<PodcastEpisode>): List<MaMedia> {
+        val instanceId = gpodderInstanceId()
+        if (instanceId == null || !remote.isConnected || episodes.isEmpty()) {
+            return episodes.mapNotNull(::plainUrl)
         }
-        val source = sources.find(listOf(episode.uuid))[episode.uuid] ?: return plain
-        val candidates = podcastEpisodes(source.feedUrl, instanceId) ?: return plain
+        val found = sources.find(episodes.map { it.uuid })
+        val candidatesByFeed = listFeeds(episodes.mapNotNull { found[it.uuid] }.map { FeedKey(instanceId, it.feedUrl) }.distinct())
+        return episodes.mapNotNull { episode ->
+            val source = found[episode.uuid]
+            val candidates = source?.let { candidatesByFeed[FeedKey(instanceId, it.feedUrl)] }
+            val provided = if (source != null && candidates != null) providerEpisode(episode, source, candidates, instanceId) else null
+            provided ?: plainUrl(episode)
+        }
+    }
+
+    private suspend fun listFeeds(feeds: List<FeedKey>): Map<FeedKey, List<MaMediaItem>?> = coroutineScope {
+        feeds.associateWith { key -> async { podcastEpisodes(key) } }.mapValues { it.value.await() }
+    }
+
+    private fun providerEpisode(episode: PodcastEpisode, source: EpisodeSource, candidates: List<MaMediaItem>, instanceId: String): MaMedia? {
         val wanted = listOfNotNull(source.enclosureUrl, episode.downloadUrl).map(::normalised)
         val match = candidates.firstOrNull { item -> item.providerMappings.any { mapping -> mapping.url?.let(::normalised) in wanted } }
             ?: guidItemIds(source).firstNotNullOfOrNull { itemId -> candidates.firstOrNull { it.itemId == itemId } }
-            ?: return plain
+            ?: return null
         return MaMedia.ProviderEpisode(episode.uuid, match.uri ?: "$instanceId://podcast_episode/${match.itemId}")
     }
 
@@ -59,8 +75,7 @@ class MaMediaResolver(
             ?.let { MaMedia.PlainUrl(episode.uuid, "$BUILTIN_TRACK$it") }
     }
 
-    private suspend fun podcastEpisodes(feedUrl: String, instanceId: String): List<MaMediaItem>? {
-        val key = FeedKey(instanceId, feedUrl)
+    private suspend fun podcastEpisodes(key: FeedKey): List<MaMediaItem>? {
         val lock = synchronized(feedLocks) { feedLocks.getOrPut(key) { FeedLock() }.also { it.users++ } }
         try {
             return lock.mutex.withLock {

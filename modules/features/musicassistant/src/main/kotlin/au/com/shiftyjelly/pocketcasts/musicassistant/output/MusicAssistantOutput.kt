@@ -222,7 +222,7 @@ class MusicAssistantOutput(
             }
             val stored = playbackStore.load() ?: return
             val queue = session.queues.value[stored.queueId]
-            if (queue == null || queue.ended || queue.currentItem?.queueItemId != stored.queueItemId) {
+            if (queue == null || queue.ended || queue.currentItem?.queueItemId != stored.items.firstOrNull()?.queueItemId) {
                 playbackStore.save(null)
                 return
             }

@@ -14,6 +14,7 @@ import au.com.shiftyjelly.pocketcasts.musicassistant.client.MaSessionState
 import au.com.shiftyjelly.pocketcasts.musicassistant.eventually
 import au.com.shiftyjelly.pocketcasts.musicassistant.media.EpisodeSource
 import au.com.shiftyjelly.pocketcasts.musicassistant.media.MaMediaResolver
+import au.com.shiftyjelly.pocketcasts.musicassistant.mirror.MirroredItem
 import au.com.shiftyjelly.pocketcasts.repositories.playback.Player
 import au.com.shiftyjelly.pocketcasts.repositories.playback.PlayerEvent
 import java.util.Date
@@ -105,7 +106,7 @@ class MusicAssistantPlayerTest {
             FakeMaServer.Command("player_queues/play_index", mapOf("queue_id" to KITCHEN, "index" to 0.0, "seek_position" to 754.0)),
             server.next(),
         )
-        assertEquals(RemotePlayback(KITCHEN, ITEM_A, EPISODE_A), store.playback)
+        assertEquals(RemotePlayback(KITCHEN, listOf(MirroredItem(EPISODE_A, ITEM_A, URI_A))), store.playback)
     }
 
     @Test
@@ -330,7 +331,7 @@ class MusicAssistantPlayerTest {
 
         assertEquals("player_queues/clear", server.nextExcept("music/podcasts/podcast_episodes").name)
         assertFalse(events.any { it == PlayerEvent.PlayerPaused })
-        assertEquals(RemotePlayback(KITCHEN, ITEM_A, "episode-b"), store.playback)
+        assertEquals(RemotePlayback(KITCHEN, listOf(MirroredItem("episode-b", ITEM_A, "builtin://track/https://cdn.example.com/b.mp3"))), store.playback)
     }
 
     @Test
@@ -372,7 +373,7 @@ class MusicAssistantPlayerTest {
 
         val playMedia = generateSequence { server.commands.poll() }.filter { it.name == "player_queues/play_media" }.toList()
         assertEquals(listOf(listOf(URI_A), listOf("builtin://track/$URL_A")), playMedia.map { it.args["media"] })
-        assertEquals(RemotePlayback(KITCHEN, ITEM_A, EPISODE_A), store.playback)
+        assertEquals(RemotePlayback(KITCHEN, listOf(MirroredItem(EPISODE_A, ITEM_A, "builtin://track/$URL_A"))), store.playback)
         assertFalse(fellBack)
     }
 
@@ -401,7 +402,7 @@ class MusicAssistantPlayerTest {
 
     @Test
     fun `attaches to a session this phone started`() = runBlocking<Unit> {
-        val player = player(attachTo = RemotePlayback(KITCHEN, ITEM_A, EPISODE_A))
+        val player = player(attachTo = RemotePlayback(KITCHEN, listOf(MirroredItem(EPISODE_A, ITEM_A, URI_A))))
         server.push("event_queue_updated_playing")
 
         eventually { (events.lastOrNull() as? PlayerEvent.RemoteMetadataNotMatched)?.remoteEpisodeUuid == EPISODE_A }
@@ -433,7 +434,7 @@ class MusicAssistantPlayerTest {
         server.push("event_queue_updated_playing")
         eventually { session.queues.value[KITCHEN]?.currentItem != null }
         listening = false
-        val player = player(attachTo = RemotePlayback(KITCHEN, ITEM_A, EPISODE_A))
+        val player = player(attachTo = RemotePlayback(KITCHEN, listOf(MirroredItem(EPISODE_A, ITEM_A, URI_A))))
         eventually { unheard.get() == 1 }
         listening = true
         assertTrue(events.isEmpty())
@@ -648,7 +649,7 @@ class MusicAssistantPlayerTest {
         session.stop()
         player.stop()
 
-        assertEquals(RemotePlayback(KITCHEN, ITEM_A, EPISODE_A), store.playback)
+        assertEquals(RemotePlayback(KITCHEN, listOf(MirroredItem(EPISODE_A, ITEM_A, URI_A))), store.playback)
     }
 
     @Test
@@ -676,7 +677,7 @@ class MusicAssistantPlayerTest {
         server.push("event_queue_updated_playing")
         eventually { session.queues.value[KITCHEN]?.currentItem != null }
         listening = false
-        val player = player(attachTo = RemotePlayback(KITCHEN, ITEM_A, EPISODE_A))
+        val player = player(attachTo = RemotePlayback(KITCHEN, listOf(MirroredItem(EPISODE_A, ITEM_A, URI_A))))
         eventually { unheard.get() == 1 }
         listening = true
         return player

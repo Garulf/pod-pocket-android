@@ -11,6 +11,7 @@ import au.com.shiftyjelly.pocketcasts.musicassistant.client.MaSession
 import au.com.shiftyjelly.pocketcasts.musicassistant.client.MaSessionState
 import au.com.shiftyjelly.pocketcasts.musicassistant.eventually
 import au.com.shiftyjelly.pocketcasts.musicassistant.media.MaMediaResolver
+import au.com.shiftyjelly.pocketcasts.musicassistant.mirror.MirroredItem
 import au.com.shiftyjelly.pocketcasts.musicassistant.player.MusicAssistantPlayer
 import au.com.shiftyjelly.pocketcasts.musicassistant.player.RemotePlayback
 import au.com.shiftyjelly.pocketcasts.repositories.chromecast.CastManager
@@ -149,7 +150,7 @@ class MusicAssistantOutputTest {
 
     @Test
     fun `attaches to the speaker this phone left playing`() = runBlocking<Unit> {
-        store.playback = RemotePlayback(KITCHEN, ITEM_A, "episode-a")
+        store.playback = RemotePlayback(KITCHEN, listOf(MirroredItem("episode-a", ITEM_A, URI_A)))
         output.routes = routes
         output.setSessionListener(listener())
 
@@ -166,7 +167,7 @@ class MusicAssistantOutputTest {
 
     @Test
     fun `asks the attached player again when the playback manager did not hear the first announcement`() = runBlocking<Unit> {
-        store.playback = RemotePlayback(KITCHEN, ITEM_A, "episode-a")
+        store.playback = RemotePlayback(KITCHEN, listOf(MirroredItem("episode-a", ITEM_A, URI_A)))
         output.routes = routes
         session.start()
         eventually { routes.selected == listOf(KITCHEN) }
@@ -185,7 +186,7 @@ class MusicAssistantOutputTest {
 
     @Test
     fun `forgets a session the speaker has moved on from`() = runBlocking<Unit> {
-        store.playback = RemotePlayback(KITCHEN, "an-item-from-yesterday", "episode-a")
+        store.playback = RemotePlayback(KITCHEN, listOf(MirroredItem("episode-a", "an-item-from-yesterday", URI_A)))
         output.routes = routes
 
         session.start()
@@ -205,21 +206,21 @@ class MusicAssistantOutputTest {
         output.onRouteSelected(KITCHEN)
         val kept = output.createPlayer { _, _ -> }
         output.onRouteUnselected(KITCHEN)
-        store.playback = RemotePlayback(KITCHEN, ITEM_A, "episode-a")
+        store.playback = RemotePlayback(KITCHEN, listOf(MirroredItem("episode-a", ITEM_A, URI_A)))
 
         output.attachIfPlaying()
 
         assertTrue(routes.selected.isEmpty())
         assertEquals(listOf("started", "ended"), signals)
         kept.stop()
-        store.playback = RemotePlayback(KITCHEN, ITEM_A, "episode-a")
+        store.playback = RemotePlayback(KITCHEN, listOf(MirroredItem("episode-a", ITEM_A, URI_A)))
         output.attachIfPlaying()
         assertEquals(listOf(KITCHEN), routes.selected.toList())
     }
 
     @Test
     fun `asks for the speaker once and says nothing until the selection lands`() = runBlocking<Unit> {
-        store.playback = RemotePlayback(KITCHEN, ITEM_A, "episode-a")
+        store.playback = RemotePlayback(KITCHEN, listOf(MirroredItem("episode-a", ITEM_A, URI_A)))
         output.routes = routes
         session.start()
         eventually { routes.selected == listOf(KITCHEN) }
@@ -273,7 +274,7 @@ class MusicAssistantOutputTest {
 
     @Test
     fun `tries the attach again once the route selection was given up`() = runBlocking<Unit> {
-        store.playback = RemotePlayback(KITCHEN, ITEM_A, "episode-a")
+        store.playback = RemotePlayback(KITCHEN, listOf(MirroredItem("episode-a", ITEM_A, URI_A)))
         output.routes = routes
         session.start()
         eventually { routes.selected == listOf(KITCHEN) }
@@ -460,5 +461,6 @@ class MusicAssistantOutputTest {
         const val KITCHEN = "media_player.kitchen"
         const val OFFICE = "media_player.office"
         const val ITEM_A = "5b2f0e8c9d6a4f1b8e3c7a2d1f0e9b8a"
+        const val URI_A = "builtin://track/https://cdn.example.com/a.mp3"
     }
 }

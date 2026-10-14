@@ -2,6 +2,7 @@ package au.com.shiftyjelly.pocketcasts.musicassistant.player
 
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
+import au.com.shiftyjelly.pocketcasts.musicassistant.mirror.MirroredItem
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -13,7 +14,13 @@ import org.robolectric.RobolectricTestRunner
 class SharedPreferencesRemotePlaybackStoreTest {
     private val preferences = ApplicationProvider.getApplicationContext<Context>()
         .getSharedPreferences(SharedPreferencesRemotePlaybackStore.PREFERENCES_NAME, Context.MODE_PRIVATE)
-    private val playback = RemotePlayback("media_player.kitchen", "5b2f0e8c9d6a4f1b8e3c7a2d1f0e9b8a", "episode-a")
+    private val playback = RemotePlayback(
+        "media_player.kitchen",
+        listOf(
+            MirroredItem("episode-a", "5b2f0e8c9d6a4f1b8e3c7a2d1f0e9b8a", "gpodder--Xk3dTq9a://podcast_episode/https://pod.example.com/feeds/show.xml https://pod.example.com/feeds/ep-a"),
+            MirroredItem("episode-b", "0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f", "builtin://track/https://cdn.example.com/b.mp3"),
+        ),
+    )
 
     @After
     fun tearDown() {
@@ -40,6 +47,15 @@ class SharedPreferencesRemotePlaybackStoreTest {
     @Test
     fun `ignores a record it cannot read`() {
         preferences.edit().putString(SharedPreferencesRemotePlaybackStore.KEY_PLAYBACK, """{"queue_id": 3}""").commit()
+
+        assertNull(SharedPreferencesRemotePlaybackStore(preferences).load())
+    }
+
+    @Test
+    fun `ignores a record from the previous version`() {
+        preferences.edit()
+            .putString(SharedPreferencesRemotePlaybackStore.KEY_PLAYBACK, """{"queue_id":"media_player.kitchen","queue_item_id":"5b2f","episode_uuid":"episode-a"}""")
+            .commit()
 
         assertNull(SharedPreferencesRemotePlaybackStore(preferences).load())
     }

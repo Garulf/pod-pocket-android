@@ -8,6 +8,7 @@ import au.com.shiftyjelly.pocketcasts.musicassistant.client.MaCommandException
 import au.com.shiftyjelly.pocketcasts.musicassistant.client.MaRemote
 import au.com.shiftyjelly.pocketcasts.musicassistant.media.MaMedia
 import au.com.shiftyjelly.pocketcasts.musicassistant.media.MaMediaResolver
+import au.com.shiftyjelly.pocketcasts.musicassistant.mirror.MirroredItem
 import au.com.shiftyjelly.pocketcasts.musicassistant.protocol.MaJson
 import au.com.shiftyjelly.pocketcasts.musicassistant.protocol.MaQueue
 import au.com.shiftyjelly.pocketcasts.musicassistant.protocol.MaQueueItem
@@ -63,7 +64,7 @@ class MusicAssistantPlayer(
     private var episode: BaseEpisode? = null
 
     @Volatile
-    private var target: Target? = attachTo?.takeIf { it.queueId == queueId }?.let { Target(it.episodeUuid, it.queueItemId, confirmed = false) }
+    private var target: Target? = attachTo?.takeIf { it.queueId == queueId }?.items?.firstOrNull()?.let { Target(it.episodeUuid, it.queueItemId, confirmed = false) }
 
     @Volatile
     private var attachedUuid: String? = target?.episodeUuid
@@ -359,7 +360,7 @@ class MusicAssistantPlayer(
             target = Target(media.episodeUuid, first.queueItemId, confirmed = false, loadedHere = true, replacedItemId = replacedItemId)
             lastState = null
             lastPositionMs = positionMs
-            playbackStore.save(RemotePlayback(queueId, first.queueItemId, media.episodeUuid))
+            playbackStore.save(RemotePlayback(queueId, listOf(MirroredItem(media.episodeUuid, first.queueItemId, media.uri))))
             remote.call("player_queues/play_index", mapOf("queue_id" to queueId, "index" to 0, "seek_position" to startSeconds(positionMs)))
             rebase(positionMs)
             applySpeed(first)

@@ -193,6 +193,48 @@ class MaMediaResolverTest {
     }
 
     @Test
+    fun `lists each feed once per batch even when the listing fails`() = runBlocking<Unit> {
+        sources["a"] = EpisodeSource("a", FEED, guid = null, enclosureUrl = "https://cdn.example.com/a.mp3")
+        sources["c"] = EpisodeSource("c", FEED, guid = null, enclosureUrl = "https://cdn.example.com/c.mp3")
+        val remote = ScriptedRemote { throw MaTimeoutException("music/podcasts/podcast_episodes") }
+        val scripted = MaMediaResolver(remote, { uuids -> sources.filterKeys { it in uuids }.also { lookups.incrementAndGet() } }, { GPODDER })
+
+        val media = scripted.resolveAll(listOf(episode("a", "https://cdn.example.com/a.mp3"), episode("c", "https://cdn.example.com/c.mp3")))
+
+        assertEquals(
+            listOf(
+                MaMedia.PlainUrl("a", "builtin://track/https://cdn.example.com/a.mp3"),
+                MaMedia.PlainUrl("c", "builtin://track/https://cdn.example.com/c.mp3"),
+            ),
+            media,
+        )
+        assertEquals(1, remote.calls.get())
+        assertEquals(1, lookups.get())
+    }
+
+    @Test
+    fun `keeps the order and leaves out episodes without a stream`() = runBlocking<Unit> {
+        sources["a"] = EpisodeSource("a", FEED, guid = null, enclosureUrl = "https://cdn.example.com/a.mp3")
+
+        val media = resolver.resolveAll(
+            listOf(
+                episode("x", "https://cdn.example.com/x.mp3"),
+                episode("b", null),
+                episode("a", "https://cdn.example.com/a.mp3"),
+            ),
+        )
+
+        assertEquals(
+            listOf(
+                MaMedia.PlainUrl("x", "builtin://track/https://cdn.example.com/x.mp3"),
+                MaMedia.ProviderEpisode("a", "$GPODDER://podcast_episode/$FEED https://pod.example.com/feeds/ep-a"),
+            ),
+            media,
+        )
+        assertEquals(1, lookups.get())
+    }
+
+    @Test
     fun `plays the plain URL at once when Music Assistant is not connected`() = runBlocking<Unit> {
         sources["a"] = EpisodeSource("a", FEED, guid = null, enclosureUrl = "https://cdn.example.com/a.mp3")
         session.stop()
