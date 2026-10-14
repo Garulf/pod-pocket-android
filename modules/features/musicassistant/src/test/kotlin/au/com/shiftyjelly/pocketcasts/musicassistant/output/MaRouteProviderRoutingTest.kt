@@ -6,8 +6,10 @@ import android.support.v4.media.session.MediaSessionCompat
 import androidx.mediarouter.media.MediaRouter
 import androidx.test.core.app.ApplicationProvider
 import au.com.shiftyjelly.pocketcasts.musicassistant.FakeMaServer
+import au.com.shiftyjelly.pocketcasts.musicassistant.FakeUpNext
 import au.com.shiftyjelly.pocketcasts.musicassistant.InMemoryAccountStore
 import au.com.shiftyjelly.pocketcasts.musicassistant.InMemoryPlaybackStore
+import au.com.shiftyjelly.pocketcasts.musicassistant.RecordingFinisher
 import au.com.shiftyjelly.pocketcasts.musicassistant.account
 import au.com.shiftyjelly.pocketcasts.musicassistant.awaitValue
 import au.com.shiftyjelly.pocketcasts.musicassistant.client.MaConnection
@@ -51,6 +53,8 @@ class MaRouteProviderRoutingTest {
         session = session,
         resolver = MaMediaResolver(session, { emptyMap() }, { null }),
         playbackStore = store,
+        upNext = FakeUpNext(),
+        finisher = RecordingFinisher(),
         scope = scope,
         notify = { notices += it },
     )

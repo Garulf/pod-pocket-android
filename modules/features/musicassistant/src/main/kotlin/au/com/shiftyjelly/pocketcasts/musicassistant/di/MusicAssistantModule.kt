@@ -18,6 +18,8 @@ import au.com.shiftyjelly.pocketcasts.musicassistant.client.MaSession
 import au.com.shiftyjelly.pocketcasts.musicassistant.media.EpisodeSourceLookup
 import au.com.shiftyjelly.pocketcasts.musicassistant.media.MaMediaResolver
 import au.com.shiftyjelly.pocketcasts.musicassistant.media.ServerEpisodeSourceLookup
+import au.com.shiftyjelly.pocketcasts.musicassistant.mirror.EpisodeFinisher
+import au.com.shiftyjelly.pocketcasts.musicassistant.mirror.UpNextEpisodes
 import au.com.shiftyjelly.pocketcasts.musicassistant.output.MusicAssistantOutput
 import au.com.shiftyjelly.pocketcasts.musicassistant.output.MusicAssistantRemoteOutput
 import au.com.shiftyjelly.pocketcasts.musicassistant.output.MusicAssistantStarter
@@ -110,6 +112,8 @@ object MusicAssistantModule {
         session: MaSession,
         resolver: MaMediaResolver,
         playbackStore: RemotePlaybackStore,
+        upNext: UpNextEpisodes,
+        finisher: EpisodeFinisher,
         signals: RemoteSessionSignals,
         @ApplicationScope scope: CoroutineScope,
         @ApplicationContext context: Context,
@@ -118,6 +122,8 @@ object MusicAssistantModule {
             session = session,
             resolver = resolver,
             playbackStore = playbackStore,
+            upNext = upNext,
+            finisher = finisher,
             scope = scope,
             signals = signals,
             notify = ToastOutputNotices(context)::show,

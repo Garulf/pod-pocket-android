@@ -3,6 +3,8 @@ package au.com.shiftyjelly.pocketcasts.musicassistant.output
 import au.com.shiftyjelly.pocketcasts.musicassistant.client.MaSession
 import au.com.shiftyjelly.pocketcasts.musicassistant.client.MaSessionState
 import au.com.shiftyjelly.pocketcasts.musicassistant.media.MaMediaResolver
+import au.com.shiftyjelly.pocketcasts.musicassistant.mirror.EpisodeFinisher
+import au.com.shiftyjelly.pocketcasts.musicassistant.mirror.UpNextEpisodes
 import au.com.shiftyjelly.pocketcasts.musicassistant.player.MusicAssistantPlayer
 import au.com.shiftyjelly.pocketcasts.musicassistant.player.RemotePlayback
 import au.com.shiftyjelly.pocketcasts.musicassistant.player.RemotePlaybackStore
@@ -22,6 +24,8 @@ class MusicAssistantOutput(
     private val session: MaSession,
     private val resolver: MaMediaResolver,
     private val playbackStore: RemotePlaybackStore,
+    private val upNext: UpNextEpisodes,
+    private val finisher: EpisodeFinisher,
     private val scope: CoroutineScope,
     private val heldPlayerGraceMs: Long = HELD_PLAYER_GRACE_MS,
     private val signals: RemoteSessionSignals = RemoteSessionSignals(),
@@ -80,6 +84,8 @@ class MusicAssistantOutput(
             remote = session,
             resolver = resolver,
             playbackStore = playbackStore,
+            upNext = upNext,
+            finisher = finisher,
             queueId = playerId,
             playerName = name,
             scope = scope,

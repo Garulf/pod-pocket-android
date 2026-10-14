@@ -2,8 +2,10 @@ package au.com.shiftyjelly.pocketcasts.musicassistant.output
 
 import au.com.shiftyjelly.pocketcasts.models.entity.PodcastEpisode
 import au.com.shiftyjelly.pocketcasts.musicassistant.FakeMaServer
+import au.com.shiftyjelly.pocketcasts.musicassistant.FakeUpNext
 import au.com.shiftyjelly.pocketcasts.musicassistant.InMemoryAccountStore
 import au.com.shiftyjelly.pocketcasts.musicassistant.InMemoryPlaybackStore
+import au.com.shiftyjelly.pocketcasts.musicassistant.RecordingFinisher
 import au.com.shiftyjelly.pocketcasts.musicassistant.account
 import au.com.shiftyjelly.pocketcasts.musicassistant.awaitValue
 import au.com.shiftyjelly.pocketcasts.musicassistant.client.MaConnection
@@ -52,6 +54,8 @@ class MusicAssistantOutputTest {
         session = session,
         resolver = MaMediaResolver(session, { emptyMap() }, { null }),
         playbackStore = store,
+        upNext = FakeUpNext(),
+        finisher = RecordingFinisher(),
         scope = scope,
         notify = { notices += it },
     )
@@ -255,6 +259,8 @@ class MusicAssistantOutputTest {
             session = session,
             resolver = MaMediaResolver(session, { emptyMap() }, { null }),
             playbackStore = store,
+            upNext = FakeUpNext(),
+            finisher = RecordingFinisher(),
             scope = scope,
             heldPlayerGraceMs = 300,
             notify = { },
@@ -326,7 +332,15 @@ class MusicAssistantOutputTest {
     fun `delivers each session signal exactly once while the listener registers`() {
         repeat(200) {
             val received = CopyOnWriteArrayList<String>()
-            val racing = MusicAssistantOutput(session, MaMediaResolver(session, { emptyMap() }, { null }), store, scope) { }
+            val racing = MusicAssistantOutput(
+                session = session,
+                resolver = MaMediaResolver(session, { emptyMap() }, { null }),
+                playbackStore = store,
+                upNext = FakeUpNext(),
+                finisher = RecordingFinisher(),
+                scope = scope,
+                notify = { },
+            )
             val start = CountDownLatch(1)
             val threads = listOf(
                 thread { start.await(); racing.onRouteSelected(KITCHEN) },

@@ -58,6 +58,7 @@ data class MaQueue(
     @Json(name = "current_item") val currentItem: MaQueueItem? = null,
     @Json(name = "next_item") val nextItem: MaQueueItem? = null,
     val ended: Boolean = false,
+    @Json(name = "index_in_buffer") val indexInBuffer: Int? = null,
 ) {
     val isPlaying: Boolean get() = state == STATE_PLAYING
 

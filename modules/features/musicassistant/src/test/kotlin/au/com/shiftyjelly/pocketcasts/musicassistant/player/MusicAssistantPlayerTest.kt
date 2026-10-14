@@ -4,8 +4,10 @@ import au.com.shiftyjelly.pocketcasts.models.entity.PodcastEpisode
 import au.com.shiftyjelly.pocketcasts.models.entity.UserEpisode
 import au.com.shiftyjelly.pocketcasts.models.to.PlaybackEffects
 import au.com.shiftyjelly.pocketcasts.musicassistant.FakeMaServer
+import au.com.shiftyjelly.pocketcasts.musicassistant.FakeUpNext
 import au.com.shiftyjelly.pocketcasts.musicassistant.InMemoryAccountStore
 import au.com.shiftyjelly.pocketcasts.musicassistant.InMemoryPlaybackStore
+import au.com.shiftyjelly.pocketcasts.musicassistant.RecordingFinisher
 import au.com.shiftyjelly.pocketcasts.musicassistant.account
 import au.com.shiftyjelly.pocketcasts.musicassistant.awaitValue
 import au.com.shiftyjelly.pocketcasts.musicassistant.client.MaConnection
@@ -703,6 +705,8 @@ class MusicAssistantPlayerTest {
         remote = session,
         resolver = resolver,
         playbackStore = store,
+        upNext = FakeUpNext(),
+        finisher = RecordingFinisher(),
         queueId = KITCHEN,
         playerName = "Kitchen",
         scope = scope,
