@@ -16,9 +16,14 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import timber.log.Timber
@@ -32,6 +37,7 @@ class MusicAssistantOutput(
     private val scope: CoroutineScope,
     private val heldPlayerGraceMs: Long = HELD_PLAYER_GRACE_MS,
     private val signals: RemoteSessionSignals = RemoteSessionSignals(),
+    podPocketSignedIn: Flow<Boolean> = emptyFlow(),
     private val notify: (OutputNotice) -> Unit,
 ) : RemoteOutput {
     private val _activePlayerId = MutableStateFlow<String?>(null)
@@ -65,6 +71,9 @@ class MusicAssistantOutput(
                 onSessionState(previous, state)
                 previous = state
             }
+        }
+        scope.launch {
+            podPocketSignedIn.distinctUntilChanged().drop(1).filter { signedIn -> !signedIn }.collect { forgetStoredPlayback() }
         }
     }
 
@@ -223,6 +232,7 @@ class MusicAssistantOutput(
             is MaSessionState.Connected -> attachIfPlaying()
             is MaSessionState.Reconnecting -> if (_activePlayerId.value != null && previous is MaSessionState.Connected) notify(OutputNotice.Reconnecting)
             MaSessionState.SignInRequired -> if (previous != MaSessionState.SignInRequired) notify(OutputNotice.SignInRequired)
+            MaSessionState.NotConfigured -> forgetStoredPlayback()
             else -> Unit
         }
     }
@@ -255,6 +265,13 @@ class MusicAssistantOutput(
             if (stillWanted) {
                 selectPlayer(attach.queueId)
             }
+        }
+    }
+
+    private fun forgetStoredPlayback() {
+        synchronized(attachLock) {
+            pendingAttach = null
+            playbackStore.save(null)
         }
     }
 

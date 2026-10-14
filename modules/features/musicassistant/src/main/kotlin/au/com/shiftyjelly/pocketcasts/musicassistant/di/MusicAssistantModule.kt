@@ -48,6 +48,9 @@ import java.util.concurrent.TimeUnit
 import javax.inject.Provider
 import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.rx2.asFlow
 import okhttp3.Call
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.OkHttpClient
@@ -136,6 +139,7 @@ object MusicAssistantModule {
         upNext: UpNextEpisodes,
         finisher: EpisodeFinisher,
         signals: RemoteSessionSignals,
+        sync: Lazy<SyncManager>,
         @ApplicationScope scope: CoroutineScope,
         @ApplicationContext context: Context,
     ): MusicAssistantOutput {
@@ -147,6 +151,7 @@ object MusicAssistantModule {
             finisher = finisher,
             scope = scope,
             signals = signals,
+            podPocketSignedIn = flow { emitAll(sync.get().isLoggedInObservable.asFlow()) },
             notify = ToastOutputNotices(context)::show,
         )
     }

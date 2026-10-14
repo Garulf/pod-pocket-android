@@ -48,12 +48,14 @@ class MusicAssistantOutputTest {
 
     private val server = FakeMaServer().signedIn()
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-    private val session = MaSession(scope, InMemoryAccountStore(account(server.url)), { MaConnection(OkHttpClient()) }, retryDelayMs = { 20L })
+    private val accounts = InMemoryAccountStore(account(server.url))
+    private val session = MaSession(scope, accounts, { MaConnection(OkHttpClient()) }, retryDelayMs = { 20L })
     private val store = InMemoryPlaybackStore()
     private val notices = CopyOnWriteArrayList<OutputNotice>()
     private val signals = CopyOnWriteArrayList<String>()
     private val routes = RecordingRoutes()
     private val finisher = GatedFinisher()
+    private val podPocketSignedIn = MutableStateFlow(true)
     private val output = MusicAssistantOutput(
         session = session,
         resolver = MaMediaResolver(session, { emptyMap() }, { null }),
@@ -61,6 +63,7 @@ class MusicAssistantOutputTest {
         upNext = FakeUpNext(),
         finisher = finisher,
         scope = scope,
+        podPocketSignedIn = podPocketSignedIn,
         notify = { notices += it },
     )
 
@@ -387,6 +390,29 @@ class MusicAssistantOutputTest {
         assertTrue(finisher.finished.isEmpty())
         assertTrue(routes.selected.isEmpty())
         assertNull(server.commands.firstOrNull { it.name == "player_queues/stop" })
+    }
+
+    @Test
+    fun `forgets the stored playback once signed out of Music Assistant`() = runBlocking<Unit> {
+        session.start()
+        session.state.awaitValue { it is MaSessionState.Connected }
+        store.playback = RemotePlayback(KITCHEN, listOf(MirroredItem("episode-a", ITEM_A, URI_A)))
+
+        accounts.save(null)
+        session.restart()
+
+        eventually { store.playback == null }
+    }
+
+    @Test
+    fun `forgets the stored playback once signed out of Pod Pocket`() = runBlocking<Unit> {
+        store.playback = RemotePlayback(KITCHEN, listOf(MirroredItem("episode-a", ITEM_A, URI_A)))
+        Thread.sleep(SETTLE_MS)
+        assertEquals(KITCHEN, store.playback?.queueId)
+
+        podPocketSignedIn.value = false
+
+        eventually { store.playback == null }
     }
 
     @Test

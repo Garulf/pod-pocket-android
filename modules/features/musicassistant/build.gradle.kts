@@ -35,6 +35,7 @@ dependencies {
     implementation(libs.compose.material)
     implementation(libs.compose.ui)
     implementation(libs.coroutines.core)
+    implementation(libs.coroutines.rx2)
     implementation(libs.fragment.ktx)
     implementation(libs.lifecycle.process)
     implementation(libs.lifecycle.runtime.compose)
