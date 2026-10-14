@@ -247,6 +247,42 @@ class MusicAssistantOutputTest {
     }
 
     @Test
+    fun `stops keeping the connection for a held player after the grace period`() = runBlocking<Unit> {
+        val graceful = MusicAssistantOutput(
+            session = session,
+            resolver = MaMediaResolver(session, { emptyMap() }, { null }),
+            playbackStore = store,
+            scope = scope,
+            heldPlayerGraceMs = 300,
+            notify = { },
+        )
+        session.start()
+        session.state.awaitValue { it is MaSessionState.Connected }
+        graceful.onRouteSelected(KITCHEN)
+        graceful.createPlayer { _, _ -> }
+
+        graceful.onRouteUnselected(KITCHEN)
+        assertTrue(graceful.needsConnection.value)
+
+        graceful.needsConnection.awaitValue { !it }
+        graceful.onRouteSelected(KITCHEN)
+        assertTrue(graceful.needsConnection.value)
+    }
+
+    @Test
+    fun `tries the attach again once the route selection was given up`() = runBlocking<Unit> {
+        store.playback = RemotePlayback(KITCHEN, ITEM_A, "episode-a")
+        output.routes = routes
+        session.start()
+        eventually { routes.selected == listOf(KITCHEN) }
+
+        output.onRouteSelectionAbandoned(KITCHEN)
+        output.attachIfPlaying()
+
+        assertEquals(listOf(KITCHEN, KITCHEN), routes.selected.toList())
+    }
+
+    @Test
     fun `stays connected in the background until a pulled back player is released`() = runBlocking<Unit> {
         val foreground = MutableStateFlow(false)
         val accounts = InMemoryAccountStore(account(server.url))
@@ -279,7 +315,7 @@ class MusicAssistantOutputTest {
         second.play(0)
 
         eventually { routes.phoneSelections >= 1 }
-        assertEquals(1, routes.phoneSelections)
+        assertEquals(listOf(OFFICE), routes.phone.toList())
         assertEquals(listOf<OutputNotice>(OutputNotice.PlaybackFailed("Office")), notices.toList())
     }
 
@@ -363,7 +399,7 @@ class MusicAssistantOutputTest {
 
         output.endSession()
 
-        assertEquals(1, routes.phoneSelections)
+        assertEquals(listOf(KITCHEN), routes.phone.toList())
     }
 
     private fun listener() = object : CastManager.SessionListener {
@@ -382,23 +418,22 @@ class MusicAssistantOutputTest {
 
     private class RecordingRoutes : OutputRoutes {
         val selected = CopyOnWriteArrayList<String>()
-
-        @Volatile
-        var phoneSelections = 0
+        val phone = CopyOnWriteArrayList<String>()
+        val phoneSelections: Int get() = phone.size
 
         override fun selectPlayer(playerId: String) {
             selected += playerId
         }
 
-        override fun selectPhone() {
-            phoneSelections++
+        override fun selectPhone(playerId: String) {
+            phone += playerId
         }
     }
 
     private inner class StoppingRoutes(private val player: Player) : OutputRoutes {
         override fun selectPlayer(playerId: String) = Unit
 
-        override fun selectPhone() {
+        override fun selectPhone(playerId: String) {
             runBlocking { player.stop() }
             output.onRouteUnselected(KITCHEN)
         }

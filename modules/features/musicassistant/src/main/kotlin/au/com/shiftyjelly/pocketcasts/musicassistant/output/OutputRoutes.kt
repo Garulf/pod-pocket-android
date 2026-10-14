@@ -5,7 +5,7 @@ import au.com.shiftyjelly.pocketcasts.musicassistant.protocol.MaPlayer
 interface OutputRoutes {
     fun selectPlayer(playerId: String)
 
-    fun selectPhone()
+    fun selectPhone(playerId: String)
 }
 
 sealed interface OutputNotice {

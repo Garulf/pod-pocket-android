@@ -11,6 +11,7 @@ import au.com.shiftyjelly.pocketcasts.repositories.playback.Player
 import au.com.shiftyjelly.pocketcasts.repositories.playback.PlayerEvent
 import au.com.shiftyjelly.pocketcasts.repositories.playback.RemoteOutput
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -22,6 +23,7 @@ class MusicAssistantOutput(
     private val resolver: MaMediaResolver,
     private val playbackStore: RemotePlaybackStore,
     private val scope: CoroutineScope,
+    private val heldPlayerGraceMs: Long = HELD_PLAYER_GRACE_MS,
     private val notify: (OutputNotice) -> Unit,
 ) : RemoteOutput {
     private val _activePlayerId = MutableStateFlow<String?>(null)
@@ -47,6 +49,9 @@ class MusicAssistantOutput(
 
     @Volatile
     private var heldPlayer: MusicAssistantPlayer? = null
+
+    private var heldPlayerGrace: Job? = null
+    private var heldPlayerGraceOver = false
 
     init {
         scope.launch {
@@ -129,9 +134,20 @@ class MusicAssistantOutput(
         deliver { it.sessionEnded() }
     }
 
+    fun onRouteSelectionAbandoned(playerId: String) {
+        synchronized(attachLock) {
+            if (pendingAttach?.queueId == playerId && _activePlayerId.value != playerId) {
+                pendingAttach = null
+            }
+        }
+    }
+
     private fun selectPhone() {
-        val current = _activePlayerId.value ?: return
-        routes?.selectPhone() ?: onRouteUnselected(current)
+        selectPhone(_activePlayerId.value ?: return)
+    }
+
+    private fun selectPhone(playerId: String) {
+        routes?.selectPhone(playerId) ?: onRouteUnselected(playerId)
     }
 
     private fun handBackAfterFailure(failed: MusicAssistantPlayer, playerId: String, playerName: String) {
@@ -141,7 +157,7 @@ class MusicAssistantOutput(
         scope.launch {
             if (stillOnSpeaker(failed, playerId)) {
                 notify(OutputNotice.PlaybackFailed(playerName))
-                selectPhone()
+                selectPhone(playerId)
             }
         }
     }
@@ -159,8 +175,28 @@ class MusicAssistantOutput(
 
     private fun refreshNeedsConnection() {
         synchronized(handoff) {
-            _needsConnection.value = _activePlayerId.value != null || heldPlayer != null
+            val active = _activePlayerId.value != null
+            if (active || heldPlayer == null) {
+                heldPlayerGrace?.cancel()
+                heldPlayerGrace = null
+                heldPlayerGraceOver = false
+            } else if (heldPlayerGrace == null && !heldPlayerGraceOver) {
+                heldPlayerGrace = endHeldPlayerGraceLater()
+            }
+            _needsConnection.value = active || (heldPlayer != null && !heldPlayerGraceOver)
         }
+    }
+
+    private fun endHeldPlayerGraceLater(): Job = scope.launch {
+        delay(heldPlayerGraceMs)
+        synchronized(handoff) {
+            if (heldPlayerGrace !== coroutineContext[Job]) {
+                return@launch
+            }
+            heldPlayerGrace = null
+            heldPlayerGraceOver = true
+        }
+        refreshNeedsConnection()
     }
 
     private fun nudgeUntilAdopted(player: MusicAssistantPlayer, playerId: String) {
@@ -217,5 +253,6 @@ class MusicAssistantOutput(
     private companion object {
         const val MAX_ATTACH_NUDGES = 3
         const val ATTACH_NUDGE_DELAY_MS = 2_500L
+        const val HELD_PLAYER_GRACE_MS = 3 * 60_000L
     }
 }

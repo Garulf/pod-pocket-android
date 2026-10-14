@@ -11,6 +11,9 @@ android {
         buildConfig = true
         compose = true
     }
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
+    }
 }
 
 dependencies {
@@ -43,4 +46,5 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.okHttp.mockwebserver)
     testImplementation(libs.robolectric)
+    testImplementation(projects.modules.services.selfhosted)
 }
