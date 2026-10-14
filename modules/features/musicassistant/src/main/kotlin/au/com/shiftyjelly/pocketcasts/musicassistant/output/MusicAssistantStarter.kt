@@ -3,6 +3,7 @@ package au.com.shiftyjelly.pocketcasts.musicassistant.output
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
+import android.support.v4.media.session.MediaSessionCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ProcessLifecycleInitializer
 import androidx.lifecycle.ProcessLifecycleOwner
@@ -31,6 +32,7 @@ class MusicAssistantStarter(
     private val session: Lazy<MaSession>,
     private val output: Lazy<MusicAssistantOutput>,
     private val scope: CoroutineScope,
+    private val mediaSession: () -> MediaSessionCompat? = { null },
 ) {
     private var started = false
 
@@ -45,7 +47,7 @@ class MusicAssistantStarter(
                 val session = session.get()
                 val output = output.get()
                 val foreground = withContext(Dispatchers.Main) {
-                    val routes = MaRouteProvider(context, session, output, scope)
+                    val routes = MaRouteProvider(context, session, output, scope, mediaSession = mediaSession)
                     output.routes = routes
                     routes.start()
                     ProcessLifecycleOwner.get().lifecycle.currentStateFlow

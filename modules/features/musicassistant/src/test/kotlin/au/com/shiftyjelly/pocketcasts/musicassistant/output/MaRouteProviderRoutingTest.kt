@@ -2,6 +2,7 @@ package au.com.shiftyjelly.pocketcasts.musicassistant.output
 
 import android.content.Context
 import android.os.Looper
+import android.support.v4.media.session.MediaSessionCompat
 import androidx.mediarouter.media.MediaRouter
 import androidx.test.core.app.ApplicationProvider
 import au.com.shiftyjelly.pocketcasts.musicassistant.FakeMaServer
@@ -52,7 +53,8 @@ class MaRouteProviderRoutingTest {
         scope = scope,
         notify = { notices += it },
     )
-    private val provider = MaRouteProvider(context, session, output, scope, describe = ::label)
+    private val appSession = MediaSessionCompat(context, "MaRouteProviderRoutingTest")
+    private val provider = MaRouteProvider(context, session, output, scope, describe = ::label, mediaSession = { appSession })
     private val router = MediaRouter.getInstance(context)
 
     @Before
@@ -70,6 +72,7 @@ class MaRouteProviderRoutingTest {
         shadowOf(Looper.getMainLooper()).idle()
         // Robolectric resets the framework MediaRouter between tests but not the androidx router that wraps it.
         MediaRouter.resetGlobalRouter()
+        appSession.release()
         session.stop()
         scope.cancel()
         server.close()
@@ -212,6 +215,35 @@ class MaRouteProviderRoutingTest {
         val command = generateSequence { server.next() }.first { it.name == "players/cmd/volume_set" }
         assertEquals(KITCHEN, command.args["player_id"])
         assertEquals(50.0, (command.args["volume_level"] as Number).toDouble(), 0.0)
+    }
+
+    @Test
+    fun `steps the speaker volume with the volume keys`() {
+        val kitchen = routeFor(KITCHEN)!!
+        kitchen.select()
+
+        kitchen.requestUpdateVolume(1)
+        kitchen.requestUpdateVolume(-1)
+
+        val commands = generateSequence { server.next() }.filter { it.name.startsWith("players/cmd/volume") }.take(2).toList()
+        assertEquals(
+            listOf(
+                FakeMaServer.Command("players/cmd/volume_up", mapOf("player_id" to KITCHEN)),
+                FakeMaServer.Command("players/cmd/volume_down", mapOf("player_id" to KITCHEN)),
+            ),
+            commands,
+        )
+    }
+
+    @Test
+    fun `hands the app's media session to the router only while a speaker is selected`() {
+        assertNull(router.mediaSessionToken)
+
+        routeFor(KITCHEN)!!.select()
+        idleUntil { router.mediaSessionToken == appSession.sessionToken }
+
+        router.unselect(MediaRouter.UNSELECT_REASON_STOPPED)
+        idleUntil { router.mediaSessionToken == null }
     }
 
     private fun label(state: MaSessionState) = when (state) {

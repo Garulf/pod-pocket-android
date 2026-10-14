@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.IntentFilter
 import android.os.Handler
 import android.os.Looper
+import android.support.v4.media.session.MediaSessionCompat
 import androidx.mediarouter.media.MediaRouteDescriptor
 import androidx.mediarouter.media.MediaRouteProvider
 import androidx.mediarouter.media.MediaRouteProviderDescriptor
@@ -28,6 +29,7 @@ class MaRouteProvider(
     private val output: MusicAssistantOutput,
     private val scope: CoroutineScope,
     private val describe: (MaSessionState) -> String = { state -> context.getString(routeLabel(state)) },
+    private val mediaSession: () -> MediaSessionCompat? = { null },
 ) : MediaRouteProvider(context),
     OutputRoutes {
     private val mainHandler = Handler(Looper.getMainLooper())
@@ -49,6 +51,10 @@ class MaRouteProvider(
                 override fun onRouteAdded(router: MediaRouter, route: MediaRouter.RouteInfo) = selectPending()
 
                 override fun onRouteChanged(router: MediaRouter, route: MediaRouter.RouteInfo) = selectPending()
+
+                override fun onRouteSelected(router: MediaRouter, route: MediaRouter.RouteInfo, reason: Int) = handVolumeKeysToSelectedSpeaker()
+
+                override fun onRouteUnselected(router: MediaRouter, route: MediaRouter.RouteInfo, reason: Int) = handVolumeKeysToSelectedSpeaker()
             },
         )
         scope.launch(Dispatchers.Main) {
@@ -103,8 +109,10 @@ class MaRouteProvider(
             }
 
             override fun onUpdateVolume(delta: Int) {
-                val current = session.players.value[playerId]?.volumeLevel ?: return
-                setVolume(playerId, current + delta)
+                when {
+                    delta > 0 -> sendVolume("players/cmd/volume_up", mapOf("player_id" to playerId))
+                    delta < 0 -> sendVolume("players/cmd/volume_down", mapOf("player_id" to playerId))
+                }
             }
         }
     }
@@ -152,10 +160,22 @@ class MaRouteProvider(
         return route.provider.providerInstance === this && route.id.endsWith(":${routeId(playerId)}")
     }
 
+    private fun handVolumeKeysToSelectedSpeaker() {
+        val appSession = mediaSession() ?: return
+        when {
+            router.selectedRoute.provider.providerInstance === this -> router.setMediaSessionCompat(appSession)
+            router.mediaSessionToken == appSession.sessionToken -> router.setMediaSessionCompat(null)
+        }
+    }
+
     private fun setVolume(playerId: String, volume: Int) {
+        sendVolume("players/cmd/volume_set", mapOf("player_id" to playerId, "volume_level" to volume.coerceIn(0, MAX_VOLUME)))
+    }
+
+    private fun sendVolume(command: String, args: Map<String, Any?>) {
         scope.launch {
             try {
-                session.call("players/cmd/volume_set", mapOf("player_id" to playerId, "volume_level" to volume.coerceIn(0, MAX_VOLUME)))
+                session.call(command, args)
             } catch (e: MaCommandException) {
                 return@launch
             } catch (e: IOException) {

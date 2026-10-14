@@ -26,6 +26,7 @@ import au.com.shiftyjelly.pocketcasts.musicassistant.output.ToastOutputNotices
 import au.com.shiftyjelly.pocketcasts.musicassistant.player.RemotePlaybackStore
 import au.com.shiftyjelly.pocketcasts.musicassistant.player.SharedPreferencesRemotePlaybackStore
 import au.com.shiftyjelly.pocketcasts.preferences.Settings
+import au.com.shiftyjelly.pocketcasts.repositories.playback.PlaybackManager
 import au.com.shiftyjelly.pocketcasts.repositories.sync.SyncManager
 import au.com.shiftyjelly.pocketcasts.selfhosted.ServerUrlStore
 import au.com.shiftyjelly.pocketcasts.servers.di.NoCacheTokened
@@ -136,9 +137,10 @@ object MusicAssistantModule {
         accounts: Lazy<MaAccountStore>,
         session: Lazy<MaSession>,
         output: Lazy<MusicAssistantOutput>,
+        playback: Lazy<PlaybackManager>,
         @ApplicationScope scope: CoroutineScope,
     ): MusicAssistantStarter {
-        return MusicAssistantStarter(context, accounts, session, output, scope)
+        return MusicAssistantStarter(context, accounts, session, output, scope, mediaSession = { playback.get().mediaSession })
     }
 }
 
