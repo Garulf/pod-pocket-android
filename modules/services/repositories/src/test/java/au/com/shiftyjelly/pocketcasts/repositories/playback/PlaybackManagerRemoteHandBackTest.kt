@@ -77,7 +77,7 @@ class PlaybackManagerRemoteHandBackTest {
     }
 
     @Test
-    fun `replays the episode on the phone when a speaker player outlived its output`() = runBlocking<Unit> {
+    fun `switches players when a speaker player outlived its output`() = runBlocking<Unit> {
         playbackManager.player = speakerPlayer
 
         playbackManager.playNowSync(episode)

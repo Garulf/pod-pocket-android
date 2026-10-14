@@ -53,4 +53,28 @@ class MaConnectionPolicyTest {
 
         assertEquals(listOf("start", "restart", "restart"), calls)
     }
+
+    @Test
+    fun `waits for the app to open before using a new account`() = runTest(UnconfinedTestDispatcher()) {
+        MaConnectionPolicy(session, foreground, active, account).launchIn(backgroundScope)
+
+        account.value = MaAccount("http://ma.local:8095/".toHttpUrl(), "token", null)
+        assertEquals(emptyList<String>(), calls)
+        foreground.value = true
+
+        assertEquals(listOf("start"), calls)
+    }
+
+    @Test
+    fun `stays connected in the background while a speaker is selected`() = runTest(UnconfinedTestDispatcher()) {
+        MaConnectionPolicy(session, foreground, active, account).launchIn(backgroundScope)
+        foreground.value = true
+        active.value = true
+
+        foreground.value = false
+        assertEquals(listOf("start"), calls)
+        active.value = false
+
+        assertEquals(listOf("start", "stop"), calls)
+    }
 }

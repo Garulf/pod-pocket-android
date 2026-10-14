@@ -18,10 +18,14 @@ import au.com.shiftyjelly.pocketcasts.repositories.playback.Player
 import au.com.shiftyjelly.pocketcasts.repositories.playback.PlayerEvent
 import java.util.Date
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.atomic.AtomicInteger
+import kotlin.concurrent.thread
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.runBlocking
 import okhttp3.OkHttpClient
 import org.junit.After
@@ -167,13 +171,16 @@ class MusicAssistantOutputTest {
         session.start()
         eventually { routes.selected == listOf(KITCHEN) }
         output.onRouteSelected(KITCHEN)
-        val events = CopyOnWriteArrayList<PlayerEvent>()
-        var listening = false
+        val announcements = AtomicInteger()
+        val heard = CopyOnWriteArrayList<PlayerEvent>()
 
-        output.createPlayer { _, event -> if (listening) events += event }
-        listening = true
+        output.createPlayer { _, event ->
+            if (event is PlayerEvent.RemoteMetadataNotMatched && announcements.incrementAndGet() > 1) {
+                heard += event
+            }
+        }
 
-        eventually { events.any { it is PlayerEvent.RemoteMetadataNotMatched } }
+        eventually { heard.isNotEmpty() }
     }
 
     @Test
@@ -200,17 +207,110 @@ class MusicAssistantOutputTest {
         output.onRouteUnselected(KITCHEN)
         store.playback = RemotePlayback(KITCHEN, ITEM_A, "episode-a")
 
-        session.restart()
-        session.state.awaitValue { it is MaSessionState.Connected }
-        Thread.sleep(300)
+        output.attachIfPlaying()
 
         assertTrue(routes.selected.isEmpty())
         assertEquals(listOf("started", "ended"), signals)
         kept.stop()
         store.playback = RemotePlayback(KITCHEN, ITEM_A, "episode-a")
-        session.restart()
-        session.state.awaitValue { it is MaSessionState.Connected }
+        output.attachIfPlaying()
+        assertEquals(listOf(KITCHEN), routes.selected.toList())
+    }
+
+    @Test
+    fun `announces an attach only once while the selection is pending`() = runBlocking<Unit> {
+        store.playback = RemotePlayback(KITCHEN, ITEM_A, "episode-a")
+        output.routes = routes
+        session.start()
         eventually { routes.selected == listOf(KITCHEN) }
+
+        output.attachIfPlaying()
+        output.attachIfPlaying()
+
+        assertEquals(listOf(KITCHEN), routes.selected.toList())
+        assertEquals(listOf<OutputNotice>(OutputNotice.PlayingOn("Kitchen")), notices.toList())
+    }
+
+    @Test
+    fun `keeps needing the connection until the playback manager lets go of the player`() = runBlocking<Unit> {
+        session.start()
+        session.state.awaitValue { it is MaSessionState.Connected }
+        assertFalse(output.needsConnection.value)
+
+        output.onRouteSelected(KITCHEN)
+        val kept = output.createPlayer { _, _ -> }
+        output.onRouteUnselected(KITCHEN)
+        assertTrue(output.needsConnection.value)
+
+        kept.stop()
+        assertFalse(output.needsConnection.value)
+    }
+
+    @Test
+    fun `stays connected in the background until a pulled back player is released`() = runBlocking<Unit> {
+        val foreground = MutableStateFlow(false)
+        val accounts = InMemoryAccountStore(account(server.url))
+        MaConnectionPolicy(session, foreground, output.needsConnection, accounts.account).launchIn(scope)
+        output.onRouteSelected(KITCHEN)
+        session.state.awaitValue { it is MaSessionState.Connected }
+        val kept = output.createPlayer { _, _ -> }
+
+        output.onRouteUnselected(KITCHEN)
+        assertTrue(session.state.value is MaSessionState.Connected)
+        kept.stop()
+
+        session.state.awaitValue { it == MaSessionState.Disconnected }
+    }
+
+    @Test
+    fun `ignores a failure that arrives after the user picked another speaker`() = runBlocking<Unit> {
+        server.reply("player_queues/play_media", "error_media_not_found")
+        output.routes = routes
+        output.onRouteSelected(KITCHEN)
+        session.start()
+        session.state.awaitValue { it is MaSessionState.Connected }
+        val first = output.createPlayer { _, _ -> }
+        first.setEpisode(PodcastEpisode(uuid = "e", publishedDate = Date(), downloadUrl = "https://cdn.example.com/e.mp3"))
+        output.onRouteSelected(OFFICE)
+        val second = output.createPlayer { _, _ -> }
+        second.setEpisode(PodcastEpisode(uuid = "e", publishedDate = Date(), downloadUrl = "https://cdn.example.com/e.mp3"))
+
+        first.play(0)
+        second.play(0)
+
+        eventually { routes.phoneSelections >= 1 }
+        assertEquals(1, routes.phoneSelections)
+        assertEquals(listOf<OutputNotice>(OutputNotice.PlaybackFailed("Office")), notices.toList())
+    }
+
+    @Test
+    fun `delivers each session signal exactly once while the listener registers`() {
+        repeat(200) {
+            val received = CopyOnWriteArrayList<String>()
+            val racing = MusicAssistantOutput(session, MaMediaResolver(session, { emptyMap() }, { null }), store, scope) { }
+            val start = CountDownLatch(1)
+            val threads = listOf(
+                thread { start.await(); racing.onRouteSelected(KITCHEN) },
+                thread {
+                    start.await()
+                    racing.setSessionListener(
+                        object : CastManager.SessionListener {
+                            override fun sessionStarted() {
+                                received += "started"
+                            }
+
+                            override fun sessionEnded() = Unit
+
+                            override fun sessionReconnected() = Unit
+                        },
+                    )
+                },
+            )
+            start.countDown()
+            threads.forEach { it.join() }
+
+            assertEquals(listOf("started"), received.toList())
+        }
     }
 
     @Test

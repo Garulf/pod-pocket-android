@@ -22,6 +22,6 @@ private val OUTPUT_PLAYER_TYPES = setOf("player", "stereo_pair", "group")
 
 fun outputPlayers(players: Collection<MaPlayer>): List<MaPlayer> {
     return players
-        .filter { it.enabled && !it.hideInUi && it.syncedTo == null && it.type in OUTPUT_PLAYER_TYPES }
+        .filter { it.enabled && it.available && !it.hideInUi && it.syncedTo == null && it.type in OUTPUT_PLAYER_TYPES }
         .sortedBy { it.name.lowercase() }
 }

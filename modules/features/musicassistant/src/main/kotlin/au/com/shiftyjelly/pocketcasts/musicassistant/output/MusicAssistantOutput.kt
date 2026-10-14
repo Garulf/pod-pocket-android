@@ -30,14 +30,17 @@ class MusicAssistantOutput(
     private val _isActive = MutableStateFlow(false)
     override val isActive: StateFlow<Boolean> = _isActive.asStateFlow()
 
+    private val _needsConnection = MutableStateFlow(false)
+    val needsConnection: StateFlow<Boolean> = _needsConnection.asStateFlow()
+
     @Volatile
     var routes: OutputRoutes? = null
 
-    @Volatile
+    private val handoff = Any()
     private var listener: CastManager.SessionListener? = null
-
-    @Volatile
     private var undelivered: ((CastManager.SessionListener) -> Unit)? = null
+
+    private val attachLock = Any()
 
     @Volatile
     private var pendingAttach: RemotePlayback? = null
@@ -56,10 +59,12 @@ class MusicAssistantOutput(
     }
 
     override fun setSessionListener(listener: CastManager.SessionListener?) {
-        this.listener = listener
+        val waiting = synchronized(handoff) {
+            this.listener = listener
+            if (listener != null) undelivered.also { undelivered = null } else null
+        }
         if (listener != null) {
-            undelivered?.invoke(listener)
-            undelivered = null
+            waiting?.invoke(listener)
         }
     }
 
@@ -83,10 +88,11 @@ class MusicAssistantOutput(
             scope = scope,
             onPlayerEvent = onPlayerEvent,
             attachTo = attach,
-            onPlaybackFailed = { scope.launch { handBackAfterFailure(name) } },
+            onPlaybackFailed = { handBackAfterFailure(created, playerId, name) },
             onStopped = { releaseHeld(created) },
         )
         heldPlayer = created
+        refreshNeedsConnection()
         if (attach != null) {
             nudgeUntilAdopted(created, playerId)
         }
@@ -104,7 +110,8 @@ class MusicAssistantOutput(
         _activePlayerId.value?.let(::onRouteUnselected)
         _activePlayerId.value = playerId
         _isActive.value = true
-        val attaching = pendingAttach?.queueId == playerId
+        refreshNeedsConnection()
+        val attaching = pendingAttach?.queueId == playerId && heldPlayer == null
         if (!attaching) {
             pendingAttach = null
         }
@@ -118,6 +125,7 @@ class MusicAssistantOutput(
         _activePlayerId.value = null
         _isActive.value = false
         pendingAttach = null
+        refreshNeedsConnection()
         deliver { it.sessionEnded() }
     }
 
@@ -126,14 +134,32 @@ class MusicAssistantOutput(
         routes?.selectPhone() ?: onRouteUnselected(current)
     }
 
-    private fun handBackAfterFailure(playerName: String) {
-        notify(OutputNotice.PlaybackFailed(playerName))
-        selectPhone()
+    private fun handBackAfterFailure(failed: MusicAssistantPlayer, playerId: String, playerName: String) {
+        if (!stillOnSpeaker(failed, playerId)) {
+            return
+        }
+        scope.launch {
+            if (stillOnSpeaker(failed, playerId)) {
+                notify(OutputNotice.PlaybackFailed(playerName))
+                selectPhone()
+            }
+        }
+    }
+
+    private fun stillOnSpeaker(player: MusicAssistantPlayer, playerId: String): Boolean {
+        return _activePlayerId.value == playerId && heldPlayer === player
     }
 
     private fun releaseHeld(player: MusicAssistantPlayer) {
         if (heldPlayer === player) {
             heldPlayer = null
+            refreshNeedsConnection()
+        }
+    }
+
+    private fun refreshNeedsConnection() {
+        synchronized(handoff) {
+            _needsConnection.value = _activePlayerId.value != null || heldPlayer != null
         }
     }
 
@@ -141,7 +167,7 @@ class MusicAssistantOutput(
         scope.launch {
             repeat(MAX_ATTACH_NUDGES) {
                 delay(ATTACH_NUDGE_DELAY_MS)
-                if (heldPlayer !== player || _activePlayerId.value != playerId || player.episodeUuid != null) {
+                if (!stillOnSpeaker(player, playerId) || player.episodeUuid != null) {
                     return@launch
                 }
                 player.isPlaying()
@@ -158,17 +184,23 @@ class MusicAssistantOutput(
         }
     }
 
-    private fun attachIfPlaying() {
-        if (_activePlayerId.value != null || heldPlayer != null) {
-            return
+    internal fun attachIfPlaying() {
+        val stored = synchronized(attachLock) {
+            if (_activePlayerId.value != null || heldPlayer != null) {
+                return
+            }
+            val stored = playbackStore.load() ?: return
+            val queue = session.queues.value[stored.queueId]
+            if (queue == null || queue.ended || queue.currentItem?.queueItemId != stored.queueItemId) {
+                playbackStore.save(null)
+                return
+            }
+            if (pendingAttach == stored) {
+                return
+            }
+            pendingAttach = stored
+            stored
         }
-        val stored = playbackStore.load() ?: return
-        val queue = session.queues.value[stored.queueId]
-        if (queue == null || queue.ended || queue.currentItem?.queueItemId != stored.queueItemId) {
-            playbackStore.save(null)
-            return
-        }
-        pendingAttach = stored
         notify(OutputNotice.PlayingOn(playerName(stored.queueId)))
         routes?.selectPlayer(stored.queueId) ?: onRouteSelected(stored.queueId)
     }
@@ -176,12 +208,10 @@ class MusicAssistantOutput(
     private fun playerName(playerId: String): String = session.players.value[playerId]?.name ?: playerId
 
     private fun deliver(signal: (CastManager.SessionListener) -> Unit) {
-        val current = listener
-        if (current == null) {
-            undelivered = signal
-        } else {
-            signal(current)
+        val current = synchronized(handoff) {
+            listener.also { if (it == null) undelivered = signal }
         }
+        current?.let(signal)
     }
 
     private companion object {

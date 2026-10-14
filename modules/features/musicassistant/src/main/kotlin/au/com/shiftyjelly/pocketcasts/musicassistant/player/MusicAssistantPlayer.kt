@@ -127,14 +127,17 @@ class MusicAssistantPlayer(
     }
 
     override suspend fun stop() = operations.withLock {
-        queueUpdates.cancel()
-        val queue = currentQueue()
-        if (owns(queue) && queue?.state != MaQueue.STATE_IDLE) {
-            send("player_queues/stop")
+        try {
+            queueUpdates.cancel()
+            val queue = currentQueue()
+            if (owns(queue) && queue?.state != MaQueue.STATE_IDLE) {
+                send("player_queues/stop")
+            }
+            forgetTarget()
+            setBuffering(false)
+        } finally {
+            onStopped()
         }
-        forgetTarget()
-        setBuffering(false)
-        onStopped()
     }
 
     override suspend fun seekToTimeMs(positionMs: Int) = operations.withLock { seek(positionMs) }

@@ -6,7 +6,7 @@ import org.junit.Test
 
 class OutputPlayersTest {
     @Test
-    fun `lists speakers and groups a person can pick`() {
+    fun `lists the available speakers and groups a person can pick`() {
         val players = listOf(
             MaPlayer("kitchen", "kitchen", "player", available = true),
             MaPlayer("office", "Office", "player", available = false),
@@ -18,6 +18,6 @@ class OutputPlayersTest {
             MaPlayer("screen", "Display", "display", available = true),
         )
 
-        assertEquals(listOf("group", "kitchen", "office"), outputPlayers(players).map { it.playerId })
+        assertEquals(listOf("group", "kitchen"), outputPlayers(players).map { it.playerId })
     }
 }
