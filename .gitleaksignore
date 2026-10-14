@@ -2,3 +2,6 @@ d1502d9bf89fec3e19098f3ec78bc41e1473b447:app/src/androidTest/java/au/com/shiftyj
 d1502d9bf89fec3e19098f3ec78bc41e1473b447:app/src/androidTest/java/au/com/shiftyjelly/pocketcasts/views/helper/IntentUtilTest.kt:generic-api-key:33
 d1502d9bf89fec3e19098f3ec78bc41e1473b447:app/src/androidTest/java/au/com/shiftyjelly/pocketcasts/views/helper/IntentUtilTest.kt:generic-api-key:49
 d1502d9bf89fec3e19098f3ec78bc41e1473b447:app/src/androidTest/java/au/com/shiftyjelly/pocketcasts/views/helper/IntentUtilTest.kt:generic-api-key:53
+modules/features/musicassistant/src/test/resources/ma/providers.json:generic-api-key:10
+modules/features/musicassistant/src/test/resources/ma/providers.json:generic-api-key:33
+scripts/podpocket/generate_ma_fixtures.py:generic-api-key:217

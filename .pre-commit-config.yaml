@@ -21,6 +21,12 @@ repos:
         language: system
         pass_filenames: false
         stages: [pre-push]
+      - id: musicassistant-unit-tests
+        name: musicassistant unit tests
+        entry: ./gradlew --no-daemon --max-workers=2 "-Dorg.gradle.jvmargs=-Xmx3g -XX:MaxMetaspaceSize=1g" -Pkotlin.compiler.execution.strategy=in-process :modules:features:musicassistant:testDebugUnitTest
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
       - id: disabled-features
         name: cloud-only features stay off
         entry: python3 scripts/podpocket/disable_features.py --check

@@ -1,0 +1,91 @@
+{
+  "message_id": "10",
+  "partial": false,
+  "result": [
+    {
+      "available": true,
+      "duration": 1800,
+      "extra_attributes": {},
+      "image": null,
+      "index": 0,
+      "media_item": {
+        "album": null,
+        "artists": [],
+        "audio_metadata": null,
+        "date_added": null,
+        "disc_number": 0,
+        "duration": 1800,
+        "external_ids": [],
+        "favorite": null,
+        "is_playable": true,
+        "item_id": "https://cdn.example.com/a.mp3",
+        "last_played": 0,
+        "media_type": "track",
+        "metadata": {
+          "artist_entity_type": null,
+          "chapters": null,
+          "collections": null,
+          "copyright": null,
+          "description": null,
+          "description_language": null,
+          "explicit": null,
+          "genres": null,
+          "grouping": null,
+          "has_transcript": null,
+          "images": null,
+          "label": null,
+          "languages": null,
+          "last_musicbrainz_lookup": null,
+          "last_refresh": null,
+          "life_span": null,
+          "links": null,
+          "lrc_lyrics": null,
+          "lyrics": null,
+          "mood": null,
+          "performers": null,
+          "popularity": null,
+          "preview": null,
+          "release_date": null,
+          "review": null,
+          "style": null,
+          "transcript": null,
+          "transcript_cues": null
+        },
+        "name": "Episode A",
+        "position": null,
+        "provider": "builtin",
+        "provider_mappings": [
+          {
+            "audio_format": {
+              "bit_depth": 16,
+              "bit_rate": 0,
+              "channels": 2,
+              "codec_type": "?",
+              "content_type": "mp3",
+              "output_format_str": "mp3",
+              "sample_rate": 44100
+            },
+            "available": true,
+            "details": null,
+            "in_library": null,
+            "is_unique": null,
+            "item_id": "https://cdn.example.com/a.mp3",
+            "provider_domain": "builtin",
+            "provider_instance": "builtin",
+            "url": null
+          }
+        ],
+        "sort_name": "episode a",
+        "track_number": 0,
+        "uri": "builtin://track/https://cdn.example.com/a.mp3",
+        "version": ""
+      },
+      "name": "Episode A",
+      "origin": null,
+      "queue_id": "media_player.kitchen",
+      "queue_item_id": "7f6e5d4c3b2a19087f6e5d4c3b2a1908",
+      "sort_index": 0,
+      "streamdetails": null
+    }
+  ]
+}

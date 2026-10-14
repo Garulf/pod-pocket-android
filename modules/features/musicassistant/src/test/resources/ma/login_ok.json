@@ -1,0 +1,14 @@
+{
+  "message_id": "1",
+  "partial": false,
+  "result": {
+    "access_token": "short.lived.jwt",
+    "success": true,
+    "user": {
+      "display_name": "Alice",
+      "role": "user",
+      "user_id": "u-1f2e",
+      "username": "alice"
+    }
+  }
+}
