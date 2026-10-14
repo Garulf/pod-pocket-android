@@ -31,6 +31,7 @@ import au.com.shiftyjelly.pocketcasts.musicassistant.player.RemotePlaybackStore
 import au.com.shiftyjelly.pocketcasts.musicassistant.player.SharedPreferencesRemotePlaybackStore
 import au.com.shiftyjelly.pocketcasts.preferences.Settings
 import au.com.shiftyjelly.pocketcasts.repositories.playback.PlaybackManager
+import au.com.shiftyjelly.pocketcasts.repositories.playback.SleepTimer
 import au.com.shiftyjelly.pocketcasts.repositories.playback.UpNextQueue
 import au.com.shiftyjelly.pocketcasts.repositories.podcast.EpisodeManager
 import au.com.shiftyjelly.pocketcasts.repositories.podcast.PodcastManager
@@ -114,7 +115,9 @@ object MusicAssistantModule {
 
     @Provides
     @Singleton
-    fun provideUpNextEpisodes(upNextQueue: UpNextQueue): UpNextEpisodes = UpNextQueueEpisodes(upNextQueue)
+    fun provideUpNextEpisodes(upNextQueue: UpNextQueue, sleepTimer: SleepTimer, settings: Settings): UpNextEpisodes {
+        return UpNextQueueEpisodes(upNextQueue, sleepTimer.stateFlow, settings.upNextShuffle.flow)
+    }
 
     @Provides
     fun provideFinisher(

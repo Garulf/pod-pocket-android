@@ -1,6 +1,6 @@
 package au.com.shiftyjelly.pocketcasts.musicassistant
 
-import au.com.shiftyjelly.pocketcasts.models.entity.PodcastEpisode
+import au.com.shiftyjelly.pocketcasts.models.entity.BaseEpisode
 import au.com.shiftyjelly.pocketcasts.musicassistant.auth.MaAccount
 import au.com.shiftyjelly.pocketcasts.musicassistant.auth.MaAccountStore
 import au.com.shiftyjelly.pocketcasts.musicassistant.mirror.EpisodeFinisher
@@ -63,11 +63,11 @@ fun eventually(timeoutMs: Long = 10_000, check: () -> Boolean) = runBlocking {
     }
 }
 
-class FakeUpNext(initial: List<PodcastEpisode> = emptyList()) : UpNextEpisodes {
+class FakeUpNext(initial: List<BaseEpisode> = emptyList()) : UpNextEpisodes {
     val episodes = MutableStateFlow(initial)
-    override val changes: Flow<List<PodcastEpisode>> = episodes
+    override val changes: Flow<List<BaseEpisode>> = episodes
 
-    override fun current(): List<PodcastEpisode> = episodes.value
+    override fun current(): List<BaseEpisode> = episodes.value
 }
 
 class RecordingFinisher : EpisodeFinisher {

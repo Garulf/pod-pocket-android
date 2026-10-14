@@ -8,6 +8,7 @@ import com.squareup.moshi.JsonClass
 data class RemotePlayback(
     @Json(name = "queue_id") val queueId: String,
     val items: List<MirroredItem>,
+    @Json(name = "stop_owed") val stopOwed: Boolean = false,
 )
 
 interface RemotePlaybackStore {

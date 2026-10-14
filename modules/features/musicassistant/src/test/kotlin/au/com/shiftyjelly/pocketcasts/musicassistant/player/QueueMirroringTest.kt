@@ -1,6 +1,8 @@
 package au.com.shiftyjelly.pocketcasts.musicassistant.player
 
+import au.com.shiftyjelly.pocketcasts.models.entity.BaseEpisode
 import au.com.shiftyjelly.pocketcasts.models.entity.PodcastEpisode
+import au.com.shiftyjelly.pocketcasts.models.entity.UserEpisode
 import au.com.shiftyjelly.pocketcasts.musicassistant.FakeMaServer
 import au.com.shiftyjelly.pocketcasts.musicassistant.FakeUpNext
 import au.com.shiftyjelly.pocketcasts.musicassistant.InMemoryAccountStore
@@ -20,6 +22,7 @@ import au.com.shiftyjelly.pocketcasts.repositories.playback.Player
 import au.com.shiftyjelly.pocketcasts.repositories.playback.PlayerEvent
 import java.util.Date
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -89,19 +92,127 @@ class QueueMirroringTest {
     }
 
     @Test
-    fun `leaves out an Up Next episode that has no stream`() = runBlocking<Unit> {
-        val local = PodcastEpisode(uuid = "local", publishedDate = Date(), downloadUrl = null)
-        upNext.episodes.value = listOf(a, local, b)
-        server.reply("player_queues/items", "queue_items")
-        val player = player()
-        player.setEpisode(a)
+    fun `ends the speaker's queue before an Up Next episode that has no stream`() = runBlocking<Unit> {
+        endsBefore(PodcastEpisode(uuid = "local", publishedDate = Date(), downloadUrl = null))
+    }
+
+    @Test
+    fun `ends the speaker's queue before an Up Next file`() = runBlocking<Unit> {
+        endsBefore(UserEpisode(uuid = "file", publishedDate = Date()))
+    }
+
+    @Test
+    fun `drops what follows an episode without a stream put in the middle`() = runBlocking<Unit> {
+        handedOff(listOf(a, b), "queue_items")
+        val reads = AtomicInteger()
+        server.replyEdited("player_queues/items", "queue_items_play_next") { reply ->
+            if (reads.incrementAndGet() > 1) {
+                reply["result"] = (reply["result"] as List<*>).take(2)
+            }
+        }
+
+        upNext.episodes.value = listOf(a, c, PodcastEpisode(uuid = "local", publishedDate = Date(), downloadUrl = null), b)
+
+        val playMedia = server.nextExcept("music/podcasts/podcast_episodes")
+        assertEquals(mapOf("queue_id" to KITCHEN, "media" to listOf(URI_C), "option" to "next"), playMedia.args)
+        assertEquals(FakeMaServer.Command("player_queues/delete_item", mapOf("queue_id" to KITCHEN, "item_id_or_index" to ITEM_B)), server.nextExcept("player_queues/items"))
+        eventually { store.playback?.items == listOf(MIRROR_A, MIRROR_C) }
+    }
+
+    @Test
+    fun `stops the speaker after a failed handoff from a mirrored episode`() = runBlocking<Unit> {
+        val player = handedOff(listOf(a, b), "queue_items")
+        server.push("event_queue_updated_next_item")
+        eventually { (events.lastOrNull() as? PlayerEvent.Completion)?.episodeUUID == "a" }
+        player.setEpisode(PodcastEpisode(uuid = "local", publishedDate = Date(), downloadUrl = null))
+        player.play(0)
+        eventually { events.lastOrNull() is PlayerEvent.PlayerError }
         server.commands.clear()
 
+        player.stop()
+
+        assertEquals(FakeMaServer.Command("player_queues/stop", mapOf("queue_id" to KITCHEN)), server.next())
+    }
+
+    @Test
+    fun `finishes nothing when it cannot read the queue after removing an episode`() = runBlocking<Unit> {
+        handedOff(listOf(a, b, c), "queue_items_three")
+        server.reply("player_queues/items", "error_invalid_command")
+
+        upNext.episodes.value = listOf(a, c)
+        assertEquals(FakeMaServer.Command("player_queues/delete_item", mapOf("queue_id" to KITCHEN, "item_id_or_index" to ITEM_B)), server.next())
+        eventually { store.playback?.items == listOf(MIRROR_A, MIRROR_C) }
+
+        server.push("event_queue_updated_third_item")
+
+        eventually { (events.lastOrNull() as? PlayerEvent.Completion)?.episodeUUID == "a" }
+        assertTrue(finisher.finished.isEmpty())
+        assertEquals(listOf(MIRROR_C), store.playback?.items)
+    }
+
+    @Test
+    fun `finishes nothing it passed while it cannot read the queue`() = runBlocking<Unit> {
+        handedOff(listOf(a, b, c), "queue_items_three")
+        server.reply("player_queues/items", "error_invalid_command")
+        upNext.episodes.value = listOf(a, b, c, PodcastEpisode(uuid = "d", publishedDate = Date(), downloadUrl = "https://cdn.example.com/d.mp3"))
+        assertEquals("player_queues/items", server.nextExcept("music/podcasts/podcast_episodes", "player_queues/play_media").name)
+
+        server.push("event_queue_updated_third_item")
+
+        eventually { (events.lastOrNull() as? PlayerEvent.Completion)?.episodeUUID == "a" }
+        assertTrue(finisher.finished.isEmpty())
+    }
+
+    @Test
+    fun `skips an episode it removed when the speaker had already buffered it`() = runBlocking<Unit> {
+        handedOff(listOf(a, b, c), "queue_items_three")
+        server.replyEdited("player_queues/delete_item", "command_ok") { buffering(1) }
+
+        upNext.episodes.value = listOf(a, c)
+        assertEquals("player_queues/delete_item", server.next().name)
+        assertEquals("player_queues/items", server.next().name)
+        eventually { store.playback?.items == listOf(MIRROR_A, MIRROR_B, MIRROR_C) }
+        Thread.sleep(300)
+
+        server.push("event_queue_updated_next_item")
+
+        assertEquals(FakeMaServer.Command("player_queues/next", mapOf("queue_id" to KITCHEN)), server.nextExcept("player_queues/items"))
+    }
+
+    @Test
+    fun `deletes an episode the speaker added by itself once`() = runBlocking<Unit> {
+        upNext.episodes.value = listOf(a, b)
+        server.reply("player_queues/items", "queue_items_three")
+        val player = player()
+        player.setEpisode(a)
         player.play(60_000)
         server.push("event_queue_updated_playing")
 
-        assertEquals(listOf(URI_B), secondPlayMedia().args["media"])
+        val delete = generateSequence { server.next() }.first { it.name == "player_queues/delete_item" }
+        assertEquals(mapOf("queue_id" to KITCHEN, "item_id_or_index" to MIRROR_C.queueItemId), delete.args)
         eventually { store.playback?.items == listOf(MIRROR_A, MIRROR_B) }
+        Thread.sleep(300)
+        server.commands.clear()
+
+        player.play(60_000)
+
+        assertNull(server.commands.firstOrNull { it.name == "player_queues/delete_item" })
+    }
+
+    @Test
+    fun `reports the end of the last episode when the speaker moves on to an item it added`() = runBlocking<Unit> {
+        val player = handedOff(listOf(a, b), "queue_items")
+        server.push("event_queue_updated_next_item")
+        eventually { (events.lastOrNull() as? PlayerEvent.Completion)?.episodeUUID == "a" }
+        player.setEpisode(b)
+        server.pushEdited("event_queue_updated_next_item") { event -> queue(event)["elapsed_time"] = 2399.0 }
+        eventually { session.queues.value[KITCHEN]?.elapsedTime == 2399.0 }
+
+        server.push("event_queue_updated_third_item")
+
+        eventually { (events.lastOrNull() as? PlayerEvent.Completion)?.episodeUUID == "b" }
+        assertTrue(events.none { it == PlayerEvent.PlayerPaused })
+        assertNull(store.playback)
     }
 
     @Test
@@ -538,6 +649,24 @@ class QueueMirroringTest {
 
         val playMedia = server.nextExcept("music/podcasts/podcast_episodes", "player_queues/items")
         assertEquals(mapOf("queue_id" to KITCHEN, "media" to listOf(URI_C, URI_B), "option" to "add"), playMedia.args)
+    }
+
+    private suspend fun endsBefore(unplayable: BaseEpisode) {
+        upNext.episodes.value = listOf(a, unplayable, b)
+        server.reply("player_queues/items", "queue_items_current_only")
+        val player = player()
+        player.setEpisode(a)
+        server.commands.clear()
+
+        player.play(60_000)
+        server.push("event_queue_updated_playing")
+        eventually { events.lastOrNull() == PlayerEvent.PlayerPlaying }
+        Thread.sleep(600)
+
+        assertEquals(1, server.commands.count { it.name == "player_queues/play_media" })
+        assertEquals(listOf(MIRROR_A), store.playback?.items)
+        server.push("event_queue_updated_ended")
+        eventually { (events.lastOrNull() as? PlayerEvent.Completion)?.episodeUUID == "a" }
     }
 
     private fun player(

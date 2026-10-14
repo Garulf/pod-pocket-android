@@ -360,6 +360,36 @@ class MusicAssistantOutputTest {
     }
 
     @Test
+    fun `stops but neither finishes nor attaches to a speaker the user pulled back from while offline`() = runBlocking<Unit> {
+        server.reply("player_queues/all", "queues_all_second_item")
+        store.playback = RemotePlayback(KITCHEN, listOf(MirroredItem("episode-a", ITEM_A, URI_A), MirroredItem("episode-b", ITEM_B, URI_B)), stopOwed = true)
+        output.routes = routes
+
+        session.start()
+
+        assertEquals(mapOf("queue_id" to KITCHEN), generateSequence { server.next() }.first { it.name == "player_queues/stop" }.args)
+        assertNull(store.playback)
+        Thread.sleep(SETTLE_MS)
+        assertTrue(finisher.finished.isEmpty())
+        assertTrue(routes.selected.isEmpty())
+    }
+
+    @Test
+    fun `finishes nothing for a speaker the user pulled back from while offline once it reached the end`() = runBlocking<Unit> {
+        server.reply("player_queues/all", "queues_all_ended")
+        store.playback = RemotePlayback(KITCHEN, listOf(MirroredItem("episode-a", ITEM_A, URI_A), MirroredItem("episode-b", ITEM_B, URI_B)), stopOwed = true)
+        output.routes = routes
+
+        session.start()
+
+        eventually { store.playback == null }
+        Thread.sleep(SETTLE_MS)
+        assertTrue(finisher.finished.isEmpty())
+        assertTrue(routes.selected.isEmpty())
+        assertNull(server.commands.firstOrNull { it.name == "player_queues/stop" })
+    }
+
+    @Test
     fun `forgets a session the speaker has moved on from`() = runBlocking<Unit> {
         store.playback = RemotePlayback(KITCHEN, listOf(MirroredItem("episode-a", "an-item-from-yesterday", URI_A)))
         output.routes = routes

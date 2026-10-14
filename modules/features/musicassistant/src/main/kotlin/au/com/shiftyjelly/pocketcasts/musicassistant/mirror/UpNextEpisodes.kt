@@ -1,12 +1,13 @@
 package au.com.shiftyjelly.pocketcasts.musicassistant.mirror
 
-import au.com.shiftyjelly.pocketcasts.models.entity.PodcastEpisode
+import au.com.shiftyjelly.pocketcasts.models.entity.BaseEpisode
 import kotlinx.coroutines.flow.Flow
 
+/** The episodes the speaker may play in order, current first. Episodes Music Assistant cannot play, such as files, stay in place. */
 interface UpNextEpisodes {
-    val changes: Flow<List<PodcastEpisode>>
+    val changes: Flow<List<BaseEpisode>>
 
-    fun current(): List<PodcastEpisode>
+    fun current(): List<BaseEpisode>
 }
 
 /**

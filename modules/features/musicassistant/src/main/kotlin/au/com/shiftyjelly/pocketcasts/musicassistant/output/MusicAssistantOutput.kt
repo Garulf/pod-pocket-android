@@ -261,6 +261,13 @@ class MusicAssistantOutput(
     private fun reconcile(stored: RemotePlayback): Reconciled? {
         val queue = session.queues.value[stored.queueId]
         val current = stored.items.indexOfFirst { it.queueItemId == queue?.currentItem?.queueItemId }
+        if (stored.stopOwed) {
+            playbackStore.save(null)
+            if (queue != null && current >= 0 && !queue.ended) {
+                stopLater(stored.queueId)
+            }
+            return null
+        }
         if (queue == null || current < 0) {
             playbackStore.save(null)
             return null
@@ -276,6 +283,18 @@ class MusicAssistantOutput(
         val trimmed = stored.copy(items = stored.items.drop(current))
         playbackStore.save(trimmed)
         return Reconciled(trimmed, played = stored.items.take(current).map { it.episodeUuid })
+    }
+
+    private fun stopLater(queueId: String) {
+        scope.launch {
+            try {
+                session.call("player_queues/stop", mapOf("queue_id" to queueId))
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Timber.w("Could not stop the speaker this phone left playing: ${e.javaClass.simpleName}")
+            }
+        }
     }
 
     private fun finishLater(episodeUuids: List<String>) {

@@ -90,7 +90,10 @@ class MusicAssistantPlayer(
     private var skippingItemId: String? = null
     private val unmirrorable = mutableSetOf<String>()
     private val pendingCandidates = mutableListOf<Mirrorable>()
+    private val deletedForeignIds = mutableSetOf<String>()
     private var mirrorStale = false
+    private var editOwed = false
+    private var targetQueue: MaQueue? = null
 
     @Volatile
     private var attachedUuid: String? = target?.episodeUuid
@@ -166,8 +169,9 @@ class MusicAssistantPlayer(
         }
         val queue = currentQueue()
         if (owns(queue)) {
-            resume(queue)
-            followUpNext(upNext.current().take(MAX_MIRRORED))
+            if (resume(queue)) {
+                followUpNext(upNext.current().take(MAX_MIRRORED))
+            }
         } else {
             handOff(current, currentPositionMs)
         }
@@ -197,7 +201,9 @@ class MusicAssistantPlayer(
                 } else {
                     false
                 }
-                forgetTarget(keepStoredPlayback = speakerStillPlays)
+                val owedStop = RemotePlayback(queueId, storedMirror(), stopOwed = true).takeIf { speakerStillPlays && it.items.isNotEmpty() }
+                forgetTarget()
+                owedStop?.let(playbackStore::save)
                 setBuffering(false)
             } finally {
                 onStopped()
@@ -298,7 +304,7 @@ class MusicAssistantPlayer(
 
     private fun playsMirror(queue: MaQueue?): Boolean {
         val itemId = queue?.currentItem?.queueItemId ?: return false
-        return owns(queue) || (!queue.ended && upcoming.any { it.queueItemId == itemId })
+        return owns(queue) || (!queue.ended && (target?.queueItemId == itemId || upcoming.any { it.queueItemId == itemId }))
     }
 
     private fun estimatedPositionMs(queue: MaQueue, baseline: SeekBaseline?): Int {
@@ -328,14 +334,21 @@ class MusicAssistantPlayer(
         lastPositionMs = positionMs
     }
 
-    private suspend fun resume(queue: MaQueue?) {
+    private suspend fun resume(queue: MaQueue?): Boolean {
         val pending = pendingSeekMs
         pendingSeekMs = null
-        when {
-            queue?.isPlaying == true -> onPlayerEvent(this, PlayerEvent.PlayerPlaying)
-            pending != null -> if (queue == null || !restartAt(queue, pending)) fail("Could not resume on $playerName")
-            !send("player_queues/play") -> fail("Could not resume on $playerName")
+        val resumed = when {
+            queue?.isPlaying == true -> {
+                onPlayerEvent(this, PlayerEvent.PlayerPlaying)
+                true
+            }
+            pending != null -> queue != null && restartAt(queue, pending)
+            else -> send("player_queues/play")
         }
+        if (!resumed) {
+            fail("Could not resume on $playerName")
+        }
+        return resumed
     }
 
     private suspend fun restartAt(queue: MaQueue, positionMs: Int): Boolean {
@@ -367,7 +380,6 @@ class MusicAssistantPlayer(
     }
 
     private suspend fun loadOnSpeaker(episode: PodcastEpisode, positionMs: Int): Load {
-        forgetTarget()
         unmirrorable.clear()
         setBuffering(true)
         try {
@@ -392,10 +404,13 @@ class MusicAssistantPlayer(
     }
 
     private suspend fun load(media: MaMedia, positionMs: Int): Load {
+        var cleared = false
         var addingMedia = false
         val replacedItemId = currentQueue()?.currentItem?.queueItemId
         return try {
             remote.call("player_queues/clear", mapOf("queue_id" to queueId))
+            cleared = true
+            forgetTarget()
             addingMedia = true
             remote.call("player_queues/play_media", mapOf("queue_id" to queueId, "media" to listOf(media.uri), "option" to "add"))
             addingMedia = false
@@ -411,14 +426,20 @@ class MusicAssistantPlayer(
             applySpeed(first)
             Load.Loaded
         } catch (e: MaCommandException) {
-            forgetTarget()
+            forgetTargetOnceCleared(cleared)
             if (addingMedia && e.rejectsMedia) Load.MediaRejected else Load.Failed
         } catch (e: IOException) {
-            forgetTarget()
+            forgetTargetOnceCleared(cleared)
             Load.Failed
         } catch (e: JsonDataException) {
-            forgetTarget()
+            forgetTargetOnceCleared(cleared)
             Load.Failed
+        }
+    }
+
+    private fun forgetTargetOnceCleared(cleared: Boolean) {
+        if (cleared) {
+            forgetTarget()
         }
     }
 
@@ -436,17 +457,17 @@ class MusicAssistantPlayer(
         val current = target ?: return
         val item = queue?.currentItem
         if (queue == null || item == null || item.queueItemId != current.queueItemId) {
-            var arrived = upcoming.indexOfFirst { it.queueItemId == item?.queueItemId }
-            if (arrived < 0 && item != null && current.confirmed && mirrorStale && refreshMirror() != null) {
-                arrived = upcoming.indexOfFirst { it.queueItemId == item.queueItemId }
-            }
+            val unread = item != null && current.confirmed && mirrorStale && refreshMirror() == null
+            val arrived = upcoming.indexOfFirst { it.queueItemId == item?.queueItemId }
             when {
-                arrived >= 0 && current.confirmed && queue != null -> advance(queue, current, arrived)
+                arrived >= 0 && current.confirmed && queue != null -> advance(queue, current, arrived, finishPassed = !unread)
                 arrived >= 0 -> Unit
+                current.confirmed && queue != null && movedOnAfterTheEnd(queue) -> completeAndLetGo(current)
                 current.confirmed || current.lostTo(item) -> letGo()
             }
             return
         }
+        targetQueue = queue
         val confirming = !current.confirmed
         if (confirming) {
             target = current.copy(confirmed = true)
@@ -459,7 +480,7 @@ class MusicAssistantPlayer(
         }
         followItem(queue, item, current)
         val settled = queue.isPlaying || queue.state == MaQueue.STATE_PAUSED
-        if ((confirming && current.loadedHere) || (mirrorStale && settled)) {
+        if ((confirming && current.loadedHere) || ((mirrorStale || editOwed) && settled)) {
             followUpNext(upNext.current().take(MAX_MIRRORED))
         }
     }
@@ -488,7 +509,20 @@ class MusicAssistantPlayer(
         }
     }
 
-    private suspend fun advance(queue: MaQueue, current: Target, arrivedIndex: Int) {
+    private fun movedOnAfterTheEnd(queue: MaQueue): Boolean {
+        val previous = targetQueue ?: return false
+        val previousIndex = previous.currentIndex ?: return false
+        val duration = previous.currentItem?.duration?.takeIf { it > 0 } ?: return false
+        return queue.currentIndex == previousIndex + 1 && previous.elapsedAt(remote.serverNow()) >= duration - END_TOLERANCE_SECONDS
+    }
+
+    private fun completeAndLetGo(current: Target) {
+        forgetTarget()
+        setBuffering(false)
+        onPlayerEvent(this, PlayerEvent.Completion(current.episodeUuid))
+    }
+
+    private suspend fun advance(queue: MaQueue, current: Target, arrivedIndex: Int, finishPassed: Boolean) {
         val arrived = upcoming[arrivedIndex]
         var ended = queue.ended
         if (arrived.queueItemId in skipOnArrival && !ended) {
@@ -507,13 +541,14 @@ class MusicAssistantPlayer(
                 ended = true
             }
         }
-        val passed = upcoming.take(arrivedIndex) + listOfNotNull(arrived.takeIf { ended })
-        finish(passed.filter { it.queueItemId !in skipOnArrival }.map { it.episodeUuid })
+        val passed = upcoming.take(arrivedIndex).takeIf { finishPassed }.orEmpty() + listOfNotNull(arrived.takeIf { ended })
+        finish(passed.filter { it.queueItemId !in skipOnArrival && !it.isForeign }.map { it.episodeUuid })
         resetItemState()
-        if (ended) {
+        if (ended || arrived.isForeign) {
             forgetTarget()
         } else {
             target = Target(arrived.episodeUuid, arrived.queueItemId, arrived.uri, confirmed = true, loadedHere = current.loadedHere)
+            targetQueue = queue
             upcoming = upcoming.drop(arrivedIndex + 1)
             if (attachedUuid != null) {
                 attachedUuid = arrived.episodeUuid
@@ -538,11 +573,16 @@ class MusicAssistantPlayer(
         }
     }
 
-    private suspend fun followUpNext(episodes: List<PodcastEpisode>) {
+    private suspend fun followUpNext(episodes: List<BaseEpisode>, mayReplan: Boolean = true) {
         val queue = currentQueue()
-        if (target?.confirmed != true || queue == null || !owns(queue)) {
+        if (target?.confirmed != true || queue == null) {
             return
         }
+        if (!owns(queue)) {
+            editOwed = true
+            return
+        }
+        editOwed = false
         val buffered = bufferedAfterCurrent(queue)
         if (queue.state == MaQueue.STATE_IDLE && buffered > 0) {
             mirrorStale = true
@@ -551,7 +591,7 @@ class MusicAssistantPlayer(
         if (mirrorStale && refreshMirror() == null) {
             return
         }
-        val wanted = episodes.filter { it.uuid !in unmirrorable }
+        val wanted = playablePrefix(episodes)
         val mirrorItems = mirror()
         val plan = planQueueEdit(mirrorItems, wanted.map { it.uuid }, buffered)
         if (plan.edit == QueueEdit.Restart) {
@@ -569,6 +609,13 @@ class MusicAssistantPlayer(
         if (applied) {
             unmirrorable += attempted.map { it.episodeUuid } - mirrored
         }
+        if (mayReplan) {
+            followUpNext(episodes, mayReplan = false)
+        }
+    }
+
+    private fun playablePrefix(episodes: List<BaseEpisode>): List<PodcastEpisode> {
+        return episodes.takeWhile { it is PodcastEpisode && it.uuid !in unmirrorable }.filterIsInstance<PodcastEpisode>()
     }
 
     private fun bufferedAfterCurrent(queue: MaQueue): Int {
@@ -598,8 +645,22 @@ class MusicAssistantPlayer(
     }
 
     private suspend fun delete(queueItemIds: List<String>) {
-        queueItemIds.forEach { id ->
-            remote.call("player_queues/delete_item", mapOf("queue_id" to queueId, "item_id_or_index" to id))
+        try {
+            queueItemIds.forEach { id ->
+                val item = upcoming.firstOrNull { it.queueItemId == id }
+                if (item?.isForeign == true && !deletedForeignIds.add(id)) {
+                    return@forEach
+                }
+                remote.call("player_queues/delete_item", mapOf("queue_id" to queueId, "item_id_or_index" to id))
+                if (item != null) {
+                    upcoming = upcoming - item
+                    if (!item.isForeign) {
+                        pendingCandidates += Mirrorable(item.episodeUuid, item.uri)
+                    }
+                }
+            }
+        } finally {
+            rememberMirror()
         }
     }
 
@@ -607,13 +668,14 @@ class MusicAssistantPlayer(
         val wanted = episodeUuids.mapNotNull(episodes::get)
         val media = resolver.resolveAll(wanted)
         unmirrorable += wanted.map { it.uuid } - media.map { it.episodeUuid }.toSet()
-        if (media.isEmpty()) {
+        val playable = media.zip(wanted).takeWhile { (resolved, episode) -> resolved.episodeUuid == episode.uuid }.map { it.first }
+        if (playable.isEmpty()) {
             return
         }
-        attempted += media
+        attempted += playable
         remote.call(
             "player_queues/play_media",
-            mapOf("queue_id" to queueId, "media" to media.map { it.uri }, "option" to option),
+            mapOf("queue_id" to queueId, "media" to playable.map { it.uri }, "option" to option),
             timeoutMs = enqueueTimeoutMs,
         )
     }
@@ -637,8 +699,9 @@ class MusicAssistantPlayer(
         if (targetAt < 0) {
             return null
         }
-        val candidates = upcoming.map { Mirrorable(it.episodeUuid, it.uri) } + pendingCandidates
+        val candidates = upcoming.filterNot { it.isForeign }.map { Mirrorable(it.episodeUuid, it.uri) } + pendingCandidates
         upcoming = match(items.drop(targetAt + 1), candidates)
+        skipOnArrival += upcoming.filter { it.isForeign }.map { it.queueItemId }
         pendingCandidates.clear()
         mirrorStale = false
         rememberMirror()
@@ -647,8 +710,8 @@ class MusicAssistantPlayer(
 
     private fun match(items: List<MaQueueItem>, candidates: List<Mirrorable>): List<MirroredItem> {
         val unused = candidates.toMutableList()
-        return items.mapNotNull { item ->
-            val found = unused.firstOrNull { item.isFor(it.uri) } ?: return@mapNotNull null
+        return items.map { item ->
+            val found = unused.firstOrNull { item.isFor(it.uri) } ?: return@map MirroredItem(FOREIGN_EPISODE, item.queueItemId, item.mediaItem?.uri.orEmpty())
             unused.remove(found)
             MirroredItem(found.episodeUuid, item.queueItemId, found.uri)
         }
@@ -661,13 +724,15 @@ class MusicAssistantPlayer(
 
     private fun mirror(): List<MirroredItem> = listOfNotNull(target?.mirrored) + upcoming
 
+    private fun storedMirror(): List<MirroredItem> = mirror().filterNot { it.isForeign }
+
     private fun rememberMirror() {
-        val items = mirror()
-        val ids = items.map { it.queueItemId }.toSet()
+        val ids = mirror().map { it.queueItemId }.toSet()
         skipOnArrival.retainAll(ids)
         if (skippingItemId !in ids) {
             skippingItemId = null
         }
+        val items = storedMirror()
         playbackStore.save(if (items.isEmpty()) null else RemotePlayback(queueId, items))
     }
 
@@ -726,21 +791,22 @@ class MusicAssistantPlayer(
         setBuffering(false)
     }
 
-    private fun forgetTarget(keepStoredPlayback: Boolean = false) {
+    private fun forgetTarget() {
         target = null
+        targetQueue = null
         upcoming = emptyList()
         skipOnArrival.clear()
         skippingItemId = null
         pendingCandidates.clear()
+        deletedForeignIds.clear()
         mirrorStale = false
+        editOwed = false
         attachedUuid = null
         lastState = null
         pendingSeekMs = null
         seekBaseline.set(null)
         lastPositionMs = 0
-        if (!keepStoredPlayback) {
-            playbackStore.save(null)
-        }
+        playbackStore.save(null)
     }
 
     private suspend fun send(command: String, vararg extra: Pair<String, Any?>): Boolean {
@@ -776,7 +842,11 @@ class MusicAssistantPlayer(
         const val UP_NEXT_DEBOUNCE_MS = 300L
         const val ENQUEUE_TIMEOUT_MS = 30_000L
         const val FINISH_TIMEOUT_MS = 10_000L
+        const val END_TOLERANCE_SECONDS = 30
         const val BUILTIN_TRACK = "builtin://track/"
+        const val FOREIGN_EPISODE = ""
+
+        val MirroredItem.isForeign: Boolean get() = episodeUuid == FOREIGN_EPISODE
 
         fun differs(first: Double, second: Double): Boolean = abs(first - second) > SPEED_TOLERANCE
 

@@ -36,6 +36,26 @@ class SharedPreferencesRemotePlaybackStoreTest {
     }
 
     @Test
+    fun `keeps a stop the speaker still owes`() {
+        val owed = playback.copy(stopOwed = true)
+        SharedPreferencesRemotePlaybackStore(preferences).save(owed)
+
+        assertEquals(owed, SharedPreferencesRemotePlaybackStore(preferences).load())
+    }
+
+    @Test
+    fun `reads a record saved before stops could be owed`() {
+        preferences.edit()
+            .putString(
+                SharedPreferencesRemotePlaybackStore.KEY_PLAYBACK,
+                """{"queue_id":"media_player.kitchen","items":[{"episode_uuid":"episode-b","queue_item_id":"0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f","uri":"builtin://track/https://cdn.example.com/b.mp3"}]}""",
+            )
+            .commit()
+
+        assertEquals(RemotePlayback("media_player.kitchen", playback.items.drop(1)), SharedPreferencesRemotePlaybackStore(preferences).load())
+    }
+
+    @Test
     fun `forgets the playback`() {
         val store = SharedPreferencesRemotePlaybackStore(preferences)
         store.save(playback)

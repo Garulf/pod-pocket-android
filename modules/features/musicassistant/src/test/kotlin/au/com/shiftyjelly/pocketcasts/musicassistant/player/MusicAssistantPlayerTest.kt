@@ -651,7 +651,7 @@ class MusicAssistantPlayerTest {
         session.stop()
         player.stop()
 
-        assertEquals(RemotePlayback(KITCHEN, listOf(MirroredItem(EPISODE_A, ITEM_A, URI_A))), store.playback)
+        assertEquals(RemotePlayback(KITCHEN, listOf(MirroredItem(EPISODE_A, ITEM_A, URI_A)), stopOwed = true), store.playback)
     }
 
     @Test
